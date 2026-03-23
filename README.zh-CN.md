@@ -1,8 +1,8 @@
-# Anime BT Batch
+# Anime BT Batch Downloader
 
 [English](README.md) | [简体中文](README.zh-CN.md)
 
-Anime BT Batch 是一个开源浏览器扩展，用于把受支持的动漫 BT 源站页面中的条目批量提交到 qBittorrent。它会在列表页注入轻量选择 UI，后台打开选中的详情页，解析真实的磁力链或种子地址，完成去重后统一提交到 `qBittorrent WebUI`。
+Anime BT Batch Downloader 是一个开源浏览器扩展，用于把受支持的动漫 BT 源站页面中的条目批量提交到 qBittorrent。它会在列表页注入轻量选择 UI，后台打开选中的详情页，解析真实的磁力链或种子地址，完成去重后统一提交到 `qBittorrent WebUI`。
 
 项目基于 `Plasmo + React 19 + TypeScript` 构建，并通过源站适配器组织站点逻辑，使扩展可以从单站脚本逐步演进为可复用的多源站动漫 BT 工具。
 

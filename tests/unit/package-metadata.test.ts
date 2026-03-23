@@ -4,6 +4,7 @@ import { resolve } from "node:path"
 import { describe, expect, it } from "vitest"
 
 type PackageJson = {
+  name?: string
   displayName?: string
   license?: string
   manifest?: {
@@ -24,6 +25,7 @@ describe("package metadata", () => {
   it("defines the Anime BT Batch brand for generated extension pages and extension metadata", () => {
     const packageJson = readPackageJson()
 
+    expect(packageJson.name).toBe("anime-bt-batch-downloader")
     expect(packageJson.displayName).toBe("Anime BT Batch")
     expect(packageJson.license).toBe("MIT")
     expect(packageJson.manifest?.name).toBe("Anime BT Batch")

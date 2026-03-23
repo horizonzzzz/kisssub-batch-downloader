@@ -1,8 +1,8 @@
-# Anime BT Batch
+# Anime BT Batch Downloader
 
 [English](README.md) | [简体中文](README.zh-CN.md)
 
-Anime BT Batch is an open-source browser extension for batching downloads from supported anime BT source pages into qBittorrent. It injects lightweight selection UI on list pages, opens selected detail pages in the background, resolves the real magnet or torrent links, deduplicates entries, and submits the final batch to `qBittorrent WebUI`.
+Anime BT Batch Downloader is an open-source browser extension for batching downloads from supported anime BT source pages into qBittorrent. It injects lightweight selection UI on list pages, opens selected detail pages in the background, resolves the real magnet or torrent links, deduplicates entries, and submits the final batch to `qBittorrent WebUI`.
 
 Built with `Plasmo + React 19 + TypeScript`, the project is organized around source adapters so the extension can evolve from a single-site workflow into a reusable multi-source anime BT tool.
 
