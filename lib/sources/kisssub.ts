@@ -1,4 +1,5 @@
 import { extractDetailHash, normalizeTitle } from "../batch"
+import { DEFAULT_SOURCE_DELIVERY_MODES, getSupportedDeliveryModes } from "../delivery"
 import type { BatchItem, ExtractionResult, Settings } from "../types"
 import { withDetailTab } from "./detail-tab"
 import type { SourceAdapter } from "./types"
@@ -18,6 +19,8 @@ function normalizeText(value: string | null | undefined): string {
 export const kisssubSourceAdapter: SourceAdapter = {
   id: "kisssub",
   displayName: "Kisssub",
+  supportedDeliveryModes: getSupportedDeliveryModes("kisssub"),
+  defaultDeliveryMode: DEFAULT_SOURCE_DELIVERY_MODES.kisssub,
   matchesListPage(url) {
     if (!matchesHost(url)) {
       return false

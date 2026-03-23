@@ -7,14 +7,16 @@ import {
   Form,
   Input,
   InputNumber,
+  Radio,
   Space,
   Tag,
   Typography
 } from "antd"
 import type { AlertProps } from "antd"
 
+import { getDeliveryModeLabel, getSupportedDeliveryModes } from "../lib/delivery"
 import { DEFAULT_SETTINGS } from "../lib/settings"
-import type { Settings, TestQbConnectionResult } from "../lib/types"
+import type { Settings, SourceId, TestQbConnectionResult } from "../lib/types"
 
 export type OptionsApi = {
   loadSettings: () => Promise<Settings>
@@ -62,8 +64,20 @@ function normalizeSettings(values: Partial<Settings>): Settings {
     concurrency: Number(values.concurrency ?? DEFAULT_SETTINGS.concurrency),
     retryCount: Number(values.retryCount ?? DEFAULT_SETTINGS.retryCount),
     injectTimeoutMs: Number(values.injectTimeoutMs ?? DEFAULT_SETTINGS.injectTimeoutMs),
-    domSettleMs: Number(values.domSettleMs ?? DEFAULT_SETTINGS.domSettleMs)
+    domSettleMs: Number(values.domSettleMs ?? DEFAULT_SETTINGS.domSettleMs),
+    sourceDeliveryModes: {
+      ...DEFAULT_SETTINGS.sourceDeliveryModes,
+      ...(values.sourceDeliveryModes ?? {})
+    }
   }
+}
+
+function renderDeliveryModeOptions(sourceId: SourceId) {
+  return getSupportedDeliveryModes(sourceId).map((mode) => (
+    <Radio key={mode} value={mode}>
+      {getDeliveryModeLabel(mode)}
+    </Radio>
+  ))
 }
 
 export function OptionsPage({ api }: OptionsPageProps) {
@@ -260,6 +274,9 @@ export function OptionsPage({ api }: OptionsPageProps) {
                         <Form.Item label="Kisssub 脚本版本号" name="remoteScriptRevision">
                           <Input />
                         </Form.Item>
+                        <Form.Item label="下载策略" name={["sourceDeliveryModes", "kisssub"]}>
+                          <Radio.Group>{renderDeliveryModeOptions("kisssub")}</Radio.Group>
+                        </Form.Item>
                       </div>
                     </Card>
 
@@ -272,7 +289,7 @@ export function OptionsPage({ api }: OptionsPageProps) {
                       </div>
 
                       <div className="options-source-placeholder">
-                        <Typography.Paragraph>当前暂无专属设置。</Typography.Paragraph>
+                        <Typography.Paragraph>当前仅支持磁力链，无需切换下载策略。</Typography.Paragraph>
                       </div>
                     </Card>
 
@@ -280,15 +297,16 @@ export function OptionsPage({ api }: OptionsPageProps) {
                       <div className="options-source-card__header">
                         <Typography.Title level={4}>ACG.RIP</Typography.Title>
                         <Tag variant="filled" color="cyan">
-                          直链优先
+                          推荐上传
                         </Tag>
                       </div>
 
-                      <div className="options-source-placeholder">
-                        <Typography.Paragraph>
-                          默认优先使用列表页公开的种子下载地址，无需额外站点专属设置。
-                        </Typography.Paragraph>
-                      </div>
+                      <Form.Item label="下载策略" name={["sourceDeliveryModes", "acgrip"]}>
+                        <Radio.Group>{renderDeliveryModeOptions("acgrip")}</Radio.Group>
+                      </Form.Item>
+                      <Typography.Paragraph className="options-source-placeholder">
+                        默认使用“先下载种子再上传到 qB”，因为 qB 直接拉取该站种子链接可能失败。
+                      </Typography.Paragraph>
                     </Card>
                   </div>
                 </Card>

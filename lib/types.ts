@@ -1,6 +1,6 @@
 export type SourceId = "kisssub" | "dongmanhuayuan" | "acgrip"
 
-export type SubmitKind = "magnet" | "torrent"
+export type DeliveryMode = "magnet" | "torrent-url" | "torrent-file"
 
 export type BatchEventStage =
   | "started"
@@ -14,8 +14,8 @@ export type BatchItem = {
   sourceId: SourceId
   detailUrl: string
   title: string
-  submitKind?: SubmitKind
-  submitUrl?: string
+  magnetUrl?: string
+  torrentUrl?: string
 }
 
 export type BatchLogStatus = "ready" | "submitted" | "duplicate" | "failed"
@@ -47,6 +47,7 @@ export type Settings = {
   remoteScriptUrl: string
   remoteScriptRevision: string
   lastSavePath: string
+  sourceDeliveryModes: Partial<Record<SourceId, DeliveryMode>>
 }
 
 export type TestQbConnectionResult = {
@@ -66,7 +67,7 @@ export type ExtractionResult = {
 
 export type ClassifiedBatchResult = ExtractionResult & {
   status: BatchLogStatus
-  submitKind: "" | SubmitKind
+  deliveryMode: "" | DeliveryMode
   submitUrl: string
   message: string
 }

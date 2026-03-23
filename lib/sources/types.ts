@@ -1,8 +1,10 @@
-import type { BatchItem, ExtractionResult, Settings, SourceId } from "../types"
+import type { BatchItem, DeliveryMode, ExtractionResult, Settings, SourceId } from "../types"
 
 export type SourceAdapter = {
   id: SourceId
   displayName: string
+  supportedDeliveryModes: readonly DeliveryMode[]
+  defaultDeliveryMode: DeliveryMode
   matchesListPage: (url: URL) => boolean
   matchesDetailUrl: (url: URL) => boolean
   getDetailAnchors: (root: ParentNode, pageUrl: URL) => HTMLAnchorElement[]

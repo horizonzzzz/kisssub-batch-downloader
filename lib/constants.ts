@@ -1,3 +1,4 @@
+import { DEFAULT_SOURCE_DELIVERY_MODES } from "./delivery"
 import type { Settings } from "./types"
 
 export const BATCH_EVENT = "KISSSUB_BATCH_EVENT"
@@ -13,5 +14,6 @@ export const DEFAULT_SETTINGS: Settings = Object.freeze({
   retryCount: 1,
   remoteScriptUrl: "//1.acgscript.com/script/miobt/4.js?3",
   remoteScriptRevision: "20181120.2",
-  lastSavePath: ""
+  lastSavePath: "",
+  sourceDeliveryModes: DEFAULT_SOURCE_DELIVERY_MODES
 })

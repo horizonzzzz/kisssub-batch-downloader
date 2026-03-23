@@ -1,4 +1,5 @@
 import { extractMagnetHash, normalizeTitle } from "../batch"
+import { DEFAULT_SOURCE_DELIVERY_MODES, getSupportedDeliveryModes } from "../delivery"
 import type { BatchItem, ExtractionResult, Settings } from "../types"
 import { withDetailTab } from "./detail-tab"
 import type { SourceAdapter } from "./types"
@@ -47,6 +48,8 @@ export function parseDongmanhuayuanDetailSnapshot(
 export const dongmanhuayuanSourceAdapter: SourceAdapter = {
   id: "dongmanhuayuan",
   displayName: "动漫花园",
+  supportedDeliveryModes: getSupportedDeliveryModes("dongmanhuayuan"),
+  defaultDeliveryMode: DEFAULT_SOURCE_DELIVERY_MODES.dongmanhuayuan,
   matchesListPage(url) {
     return matchesHost(url) && !this.matchesDetailUrl(url)
   },

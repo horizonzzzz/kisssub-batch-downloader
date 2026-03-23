@@ -1,5 +1,6 @@
+import { getDeliveryModePriority } from "./delivery"
 import { getSourceAdapterById } from "./sources"
-import type { BatchItem, BatchStats, ClassifiedBatchResult, ExtractionResult, SubmitKind } from "./types"
+import type { BatchItem, BatchStats, ClassifiedBatchResult, ExtractionResult, Settings, SourceId } from "./types"
 
 export function normalizeBatchItems(items: unknown): BatchItem[] {
   const seen = new Set<string>()
@@ -38,9 +39,9 @@ export function normalizeBatchItems(items: unknown): BatchItem[] {
     }
 
     seen.add(dedupeKey)
-    const preparedSubmission = normalizePreparedSubmission(
-      (item as BatchItem).submitKind,
-      (item as BatchItem).submitUrl,
+    const preparedCandidates = normalizePreparedCandidates(
+      (item as BatchItem).magnetUrl,
+      (item as BatchItem).torrentUrl,
       detailUrl
     )
 
@@ -48,7 +49,7 @@ export function normalizeBatchItems(items: unknown): BatchItem[] {
       sourceId: adapter.id,
       detailUrl,
       title: normalizeTitle((item as BatchItem).title) || detailUrl,
-      ...(preparedSubmission ?? {})
+      ...preparedCandidates
     })
   }
 
@@ -78,63 +79,36 @@ export function createStats(total: number): BatchStats {
 
 export function classifyPreparedBatchItem(
   item: BatchItem,
+  settings: Pick<Settings, "sourceDeliveryModes">,
   seenHashes: Set<string>,
   seenUrls: Set<string>
 ): ClassifiedBatchResult | null {
-  const preparedSubmission = normalizePreparedSubmission(item.submitKind, item.submitUrl, item.detailUrl)
-  if (!preparedSubmission) {
+  const preparedCandidates = normalizePreparedCandidates(item.magnetUrl, item.torrentUrl, item.detailUrl)
+  if (!preparedCandidates.magnetUrl && !preparedCandidates.torrentUrl) {
     return null
   }
 
-  const classified: ClassifiedBatchResult = {
-    ok: true,
-    title: normalizeTitle(item.title) || item.detailUrl,
-    detailUrl: item.detailUrl,
-    hash: "",
-    magnetUrl: preparedSubmission.submitKind === "magnet" ? preparedSubmission.submitUrl : "",
-    torrentUrl: preparedSubmission.submitKind === "torrent" ? preparedSubmission.submitUrl : "",
-    failureReason: "",
-    status: "failed",
-    submitKind: "",
-    submitUrl: "",
-    message: ""
-  }
-
-  if (preparedSubmission.submitKind === "magnet") {
-    const magnetHash = extractMagnetHash(preparedSubmission.submitUrl)
-    if (magnetHash && seenHashes.has(magnetHash)) {
-      classified.status = "duplicate"
-      classified.message = `Duplicate magnet hash skipped: ${magnetHash}`
-      return classified
-    }
-
-    classified.status = "ready"
-    classified.submitKind = "magnet"
-    classified.submitUrl = preparedSubmission.submitUrl
-    classified.message = "Magnet resolved and queued for submission."
-    if (magnetHash) {
-      seenHashes.add(magnetHash)
-    }
-    return classified
-  }
-
-  const normalizedTorrentUrl = normalizeComparableUrl(preparedSubmission.submitUrl)
-  if (seenUrls.has(normalizedTorrentUrl)) {
-    classified.status = "duplicate"
-    classified.message = "Duplicate torrent URL skipped."
-    return classified
-  }
-
-  classified.status = "ready"
-  classified.submitKind = "torrent"
-  classified.submitUrl = preparedSubmission.submitUrl
-  classified.message = "Torrent URL resolved and queued for submission."
-  seenUrls.add(normalizedTorrentUrl)
-  return classified
+  return classifyCandidateUrls(
+    item.sourceId,
+    {
+      ok: true,
+      title: normalizeTitle(item.title) || item.detailUrl,
+      detailUrl: item.detailUrl,
+      hash: "",
+      magnetUrl: preparedCandidates.magnetUrl || "",
+      torrentUrl: preparedCandidates.torrentUrl || "",
+      failureReason: ""
+    },
+    settings,
+    seenHashes,
+    seenUrls
+  )
 }
 
 export function classifyExtractionResult(
+  sourceId: SourceId,
   result: ExtractionResult,
+  settings: Pick<Settings, "sourceDeliveryModes">,
   seenHashes: Set<string>,
   seenUrls: Set<string>
 ): ClassifiedBatchResult {
@@ -145,7 +119,7 @@ export function classifyExtractionResult(
     torrentUrl: result.torrentUrl || "",
     failureReason: result.failureReason || "",
     status: "failed",
-    submitKind: "",
+    deliveryMode: "",
     submitUrl: "",
     message: ""
   }
@@ -155,43 +129,7 @@ export function classifyExtractionResult(
     return classified
   }
 
-  const magnetHash = extractMagnetHash(result.magnetUrl)
-  const normalizedTorrentUrl = normalizeComparableUrl(result.torrentUrl)
-
-  if (magnetHash && seenHashes.has(magnetHash)) {
-    classified.status = "duplicate"
-    classified.message = `Duplicate magnet hash skipped: ${magnetHash}`
-    return classified
-  }
-
-  if (normalizedTorrentUrl && seenUrls.has(normalizedTorrentUrl)) {
-    classified.status = "duplicate"
-    classified.message = "Duplicate torrent URL skipped."
-    return classified
-  }
-
-  if (result.magnetUrl) {
-    classified.status = "ready"
-    classified.submitKind = "magnet"
-    classified.submitUrl = result.magnetUrl
-    classified.message = "Magnet resolved and queued for submission."
-    if (magnetHash) {
-      seenHashes.add(magnetHash)
-    }
-    return classified
-  }
-
-  if (result.torrentUrl) {
-    classified.status = "ready"
-    classified.submitKind = "torrent"
-    classified.submitUrl = result.torrentUrl
-    classified.message = "Torrent URL resolved and queued for submission."
-    seenUrls.add(normalizedTorrentUrl)
-    return classified
-  }
-
-  classified.message = "The helper script ran, but no magnet or torrent URL was exposed."
-  return classified
+  return classifyCandidateUrls(sourceId, classified, settings, seenHashes, seenUrls)
 }
 
 export function extractMagnetHash(magnetUrl: string): string {
@@ -208,39 +146,98 @@ export function extractDetailHash(url: string): string {
   return match ? match[1].toLowerCase() : ""
 }
 
-function normalizePreparedSubmission(
-  submitKind: unknown,
-  submitUrl: unknown,
-  detailUrl: string
-): { submitKind: SubmitKind; submitUrl: string } | null {
-  if (submitKind !== "magnet" && submitKind !== "torrent") {
-    return null
+function classifyCandidateUrls(
+  sourceId: SourceId,
+  result: ExtractionResult,
+  settings: Pick<Settings, "sourceDeliveryModes">,
+  seenHashes: Set<string>,
+  seenUrls: Set<string>
+): ClassifiedBatchResult {
+  const classified: ClassifiedBatchResult = {
+    ...result,
+    hash: result.hash || "",
+    magnetUrl: normalizeComparableUrl(result.magnetUrl),
+    torrentUrl: normalizeComparableUrl(result.torrentUrl),
+    failureReason: result.failureReason || "",
+    status: "failed",
+    deliveryMode: "",
+    submitUrl: "",
+    message: ""
   }
 
-  if (typeof submitUrl !== "string") {
-    return null
-  }
+  for (const deliveryMode of getDeliveryModePriority(sourceId, settings)) {
+    if (deliveryMode === "magnet") {
+      if (!classified.magnetUrl) {
+        continue
+      }
 
-  const normalizedUrl = normalizeComparableUrl(submitUrl)
-  if (!normalizedUrl) {
-    return null
-  }
+      const magnetHash = extractMagnetHash(classified.magnetUrl)
+      if (magnetHash && seenHashes.has(magnetHash)) {
+        classified.status = "duplicate"
+        classified.message = `Duplicate magnet hash skipped: ${magnetHash}`
+        return classified
+      }
 
-  if (submitKind === "magnet") {
-    return /^magnet:/i.test(normalizedUrl)
-      ? {
-          submitKind,
-          submitUrl: normalizedUrl
-        }
-      : null
-  }
-
-  try {
-    return {
-      submitKind,
-      submitUrl: new URL(normalizedUrl, detailUrl).href
+      classified.status = "ready"
+      classified.deliveryMode = "magnet"
+      classified.submitUrl = classified.magnetUrl
+      classified.message = "Magnet resolved and queued for submission."
+      if (magnetHash) {
+        seenHashes.add(magnetHash)
+      }
+      return classified
     }
-  } catch {
-    return null
+
+    if (!classified.torrentUrl) {
+      continue
+    }
+
+    const normalizedTorrentUrl = normalizeComparableUrl(classified.torrentUrl)
+    if (seenUrls.has(normalizedTorrentUrl)) {
+      classified.status = "duplicate"
+      classified.message = "Duplicate torrent URL skipped."
+      return classified
+    }
+
+    classified.status = "ready"
+    classified.deliveryMode = deliveryMode
+    classified.submitUrl = classified.torrentUrl
+    classified.message =
+      deliveryMode === "torrent-file"
+        ? "Torrent file resolved and queued for upload."
+        : "Torrent URL resolved and queued for submission."
+    seenUrls.add(normalizedTorrentUrl)
+    return classified
+  }
+
+  classified.message = "No supported delivery mode was available for this source."
+  return classified
+}
+
+function normalizePreparedCandidates(
+  magnetUrl: unknown,
+  torrentUrl: unknown,
+  detailUrl: string
+): Pick<BatchItem, "magnetUrl" | "torrentUrl"> {
+  const normalizedMagnetUrl =
+    typeof magnetUrl === "string" && /^magnet:/i.test(normalizeComparableUrl(magnetUrl))
+      ? normalizeComparableUrl(magnetUrl)
+      : ""
+
+  let normalizedTorrentUrl = ""
+  if (typeof torrentUrl === "string") {
+    const candidate = normalizeComparableUrl(torrentUrl)
+    if (candidate) {
+      try {
+        normalizedTorrentUrl = new URL(candidate, detailUrl).href
+      } catch {
+        normalizedTorrentUrl = ""
+      }
+    }
+  }
+
+  return {
+    ...(normalizedMagnetUrl ? { magnetUrl: normalizedMagnetUrl } : {}),
+    ...(normalizedTorrentUrl ? { torrentUrl: normalizedTorrentUrl } : {})
   }
 }

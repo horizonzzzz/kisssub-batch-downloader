@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react"
+import { render, screen, waitFor, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { describe, expect, it, vi } from "vitest"
 
@@ -14,7 +14,12 @@ const settings = {
   retryCount: 1,
   remoteScriptUrl: "//1.acgscript.com/script/miobt/4.js?3",
   remoteScriptRevision: "20181120.2",
-  lastSavePath: ""
+  lastSavePath: "",
+  sourceDeliveryModes: {
+    kisssub: "magnet",
+    dongmanhuayuan: "magnet",
+    acgrip: "torrent-file"
+  }
 }
 
 describe("OptionsPage", () => {
@@ -44,9 +49,11 @@ describe("OptionsPage", () => {
     expect(screen.getAllByText("Kisssub")).toHaveLength(2)
     expect(screen.getAllByText("Dongmanhuayuan")).toHaveLength(2)
     expect(screen.getAllByText("ACG.RIP")).toHaveLength(2)
-    expect(screen.getByText("当前暂无专属设置。")).toBeInTheDocument()
+    expect(screen.getByText("当前仅支持磁力链，无需切换下载策略。")).toBeInTheDocument()
     expect(screen.getByLabelText("Kisssub 外部脚本地址")).toBeInTheDocument()
     expect(screen.getByLabelText("Kisssub 脚本版本号")).toBeInTheDocument()
+    expect(screen.getAllByText("下载策略")).toHaveLength(2)
+    expect(screen.getAllByText("先下载种子再上传到 qB")).toHaveLength(2)
     expect(screen.getByPlaceholderText("http://127.0.0.1:7474")).toBeInTheDocument()
     expect(screen.queryByText("站点专属脚本")).not.toBeInTheDocument()
     expect(screen.queryByText("通用提取流程")).not.toBeInTheDocument()
@@ -96,14 +103,20 @@ describe("OptionsPage", () => {
       expect(await screen.findByDisplayValue("http://127.0.0.1:17474")).toBeInTheDocument()
 
       const usernameField = screen.getByLabelText("用户名")
+      const acgRipCard = screen.getByRole("heading", { name: "ACG.RIP" }).closest(".options-source-card")
+      expect(acgRipCard).not.toBeNull()
       await user.clear(usernameField)
       await user.type(usernameField, "operator")
+      await user.click(within(acgRipCard as HTMLElement).getByRole("radio", { name: "直接提交种子链接" }))
       await user.click(screen.getByRole("button", { name: "保存设置" }))
 
       await waitFor(() => {
         expect(api.saveSettings).toHaveBeenCalledWith(
           expect.objectContaining({
-            qbUsername: "operator"
+            qbUsername: "operator",
+            sourceDeliveryModes: expect.objectContaining({
+              acgrip: "torrent-url"
+            })
           })
         )
       })

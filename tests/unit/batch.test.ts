@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest"
 
 import * as batchModule from "../../lib/batch"
+import { DEFAULT_SETTINGS } from "../../lib/settings"
 
 const { classifyExtractionResult } = batchModule
 
@@ -11,6 +12,7 @@ describe("classifyExtractionResult", () => {
 
     expect(
       classifyExtractionResult(
+        "kisssub",
         {
           ok: true,
           title: "Episode 01",
@@ -20,12 +22,13 @@ describe("classifyExtractionResult", () => {
           torrentUrl: "https://example.com/file.torrent",
           failureReason: ""
         },
+        DEFAULT_SETTINGS,
         seenHashes,
         seenUrls
       )
     ).toMatchObject({
       status: "ready",
-      submitKind: "magnet",
+      deliveryMode: "magnet",
       submitUrl: "magnet:?xt=urn:btih:ABCDEF123456",
       message: "Magnet resolved and queued for submission."
     })
@@ -39,6 +42,7 @@ describe("classifyExtractionResult", () => {
 
     expect(
       classifyExtractionResult(
+        "kisssub",
         {
           ok: true,
           title: "Episode 02",
@@ -48,6 +52,7 @@ describe("classifyExtractionResult", () => {
           torrentUrl: "https://example.com/file.torrent",
           failureReason: ""
         },
+        DEFAULT_SETTINGS,
         seenHashes,
         seenUrls
       )
@@ -67,9 +72,10 @@ describe("classifyPreparedBatchItem", () => {
             sourceId: string
             detailUrl: string
             title: string
-            submitKind?: "magnet" | "torrent"
-            submitUrl?: string
+            magnetUrl?: string
+            torrentUrl?: string
           },
+          settings: typeof DEFAULT_SETTINGS,
           seenHashes: Set<string>,
           seenUrls: Set<string>
         ) => unknown
@@ -84,19 +90,19 @@ describe("classifyPreparedBatchItem", () => {
           sourceId: "acgrip",
           detailUrl: "https://acg.rip/t/350361",
           title: "Hell Mode - 11",
-          submitKind: "torrent",
-          submitUrl: "https://acg.rip/t/350361.torrent"
+          torrentUrl: "https://acg.rip/t/350361.torrent"
         },
+        DEFAULT_SETTINGS,
         new Set<string>(),
         new Set<string>()
       )
     ).toMatchObject({
       ok: true,
       status: "ready",
-      submitKind: "torrent",
+      deliveryMode: "torrent-file",
       submitUrl: "https://acg.rip/t/350361.torrent",
       torrentUrl: "https://acg.rip/t/350361.torrent",
-      message: "Torrent URL resolved and queued for submission."
+      message: "Torrent file resolved and queued for upload."
     })
   })
 
@@ -108,9 +114,10 @@ describe("classifyPreparedBatchItem", () => {
             sourceId: string
             detailUrl: string
             title: string
-            submitKind?: "magnet" | "torrent"
-            submitUrl?: string
+            magnetUrl?: string
+            torrentUrl?: string
           },
+          settings: typeof DEFAULT_SETTINGS,
           seenHashes: Set<string>,
           seenUrls: Set<string>
         ) => unknown
@@ -125,17 +132,45 @@ describe("classifyPreparedBatchItem", () => {
           sourceId: "acgrip",
           detailUrl: "https://acg.rip/t/350361",
           title: "Hell Mode - 11",
-          submitKind: "torrent",
-          submitUrl: "https://acg.rip/t/350361.torrent"
+          torrentUrl: "https://acg.rip/t/350361.torrent"
         },
+        DEFAULT_SETTINGS,
         new Set<string>(),
         new Set<string>(["https://acg.rip/t/350361.torrent"])
       )
     ).toMatchObject({
       status: "duplicate",
-      submitKind: "",
+      deliveryMode: "",
       submitUrl: "",
       message: "Duplicate torrent URL skipped."
+    })
+  })
+
+  it("falls back to torrent-url when the preferred magnet mode is unavailable", () => {
+    const seenHashes = new Set<string>()
+    const seenUrls = new Set<string>()
+
+    expect(
+      classifyExtractionResult(
+        "kisssub",
+        {
+          ok: true,
+          title: "Episode 03",
+          detailUrl: "https://www.kisssub.org/show-cafebabe.html",
+          hash: "cafebabe",
+          magnetUrl: "",
+          torrentUrl: "https://files.example.com/cafebabe.torrent",
+          failureReason: ""
+        },
+        DEFAULT_SETTINGS,
+        seenHashes,
+        seenUrls
+      )
+    ).toMatchObject({
+      status: "ready",
+      deliveryMode: "torrent-url",
+      submitUrl: "https://files.example.com/cafebabe.torrent",
+      message: "Torrent URL resolved and queued for submission."
     })
   })
 })

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest"
 
 import { getSourceAdapterById, getSourceAdapterForPage } from "../../lib/sources"
 import { normalizeBatchItems } from "../../lib/batch"
+import { DEFAULT_SOURCE_DELIVERY_MODES, getSupportedDeliveryModes } from "../../lib/delivery"
 
 describe("source registry", () => {
   it("resolves the source adapter for supported list pages", () => {
@@ -19,6 +20,17 @@ describe("source registry", () => {
     expect(getSourceAdapterById("kisssub")?.displayName).toBe("Kisssub")
     expect(getSourceAdapterById("dongmanhuayuan")?.displayName).toBe("动漫花园")
     expect(getSourceAdapterById("acgrip" as never)?.displayName).toBe("ACG.RIP")
+  })
+
+  it("exposes source-specific delivery mode capabilities", () => {
+    expect(getSupportedDeliveryModes("kisssub")).toEqual(["magnet", "torrent-url", "torrent-file"])
+    expect(getSupportedDeliveryModes("dongmanhuayuan")).toEqual(["magnet"])
+    expect(getSupportedDeliveryModes("acgrip")).toEqual(["torrent-url", "torrent-file"])
+    expect(DEFAULT_SOURCE_DELIVERY_MODES).toEqual({
+      kisssub: "magnet",
+      dongmanhuayuan: "magnet",
+      acgrip: "torrent-file"
+    })
   })
 })
 
@@ -45,8 +57,7 @@ describe("normalizeBatchItems", () => {
           sourceId: "acgrip",
           detailUrl: "https://acg.rip/t/350361",
           title: "Hell Mode - 11",
-          submitKind: "torrent",
-          submitUrl: "https://acg.rip/t/350361.torrent"
+          torrentUrl: "https://acg.rip/t/350361.torrent"
         }
       ])
     ).toEqual([
@@ -64,8 +75,7 @@ describe("normalizeBatchItems", () => {
         sourceId: "acgrip",
         detailUrl: "https://acg.rip/t/350361",
         title: "Hell Mode - 11",
-        submitKind: "torrent",
-        submitUrl: "https://acg.rip/t/350361.torrent"
+        torrentUrl: "https://acg.rip/t/350361.torrent"
       }
     ])
   })

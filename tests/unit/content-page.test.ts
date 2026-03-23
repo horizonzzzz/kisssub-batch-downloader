@@ -113,15 +113,13 @@ describe("content page helpers", () => {
         sourceId: "acgrip",
         detailUrl: "https://acg.rip/t/350361",
         title: "[LoliHouse] Hell Mode - 11",
-        submitKind: "torrent",
-        submitUrl: "https://acg.rip/t/350361.torrent"
+        torrentUrl: "https://acg.rip/t/350361.torrent"
       },
       {
         sourceId: "acgrip",
         detailUrl: "https://acg.rip/t/350360",
         title: "[丸子家族] 海螺小姐",
-        submitKind: "torrent",
-        submitUrl: "https://acg.rip/t/350360.torrent"
+        torrentUrl: "https://acg.rip/t/350360.torrent"
       }
     ])
   })
@@ -152,8 +150,7 @@ describe("content page helpers", () => {
       sourceId: "acgrip",
       detailUrl: "https://acg.rip/t/287166",
       title: "[新Sub&萌樱字幕组][满怀美梦的少年是现实主义者][09]",
-      submitKind: "torrent",
-      submitUrl: "https://acg.rip/t/287166.torrent"
+      torrentUrl: "https://acg.rip/t/287166.torrent"
     })
   })
 })

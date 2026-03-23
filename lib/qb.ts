@@ -2,6 +2,11 @@ import type { Settings } from "./types"
 
 type FetchLike = typeof fetch
 
+export type QbTorrentFile = {
+  filename: string
+  blob: Blob
+}
+
 export async function loginQb(settings: Settings, fetchImpl: FetchLike = fetch): Promise<void> {
   const body = new URLSearchParams()
   body.set("username", settings.qbUsername)
@@ -69,6 +74,44 @@ export async function addUrlsToQb(
 
   if (!response.ok) {
     throw new Error(`qBittorrent rejected the batch add request with HTTP ${response.status}.`)
+  }
+}
+
+export async function addTorrentFilesToQb(
+  settings: Settings,
+  torrents: QbTorrentFile[],
+  options: {
+    savePath?: string
+  } = {},
+  fetchImpl: FetchLike = fetch
+): Promise<void> {
+  if (!torrents.length) {
+    return
+  }
+
+  const formData = new FormData()
+  for (const torrent of torrents) {
+    formData.append(
+      "torrents",
+      new File([torrent.blob], torrent.filename, {
+        type: torrent.blob.type || "application/x-bittorrent"
+      })
+    )
+  }
+
+  const savePath = String(options.savePath ?? "").trim()
+  if (savePath) {
+    formData.append("savepath", savePath)
+  }
+
+  const response = await fetchImpl(`${settings.qbBaseUrl}/api/v2/torrents/add`, {
+    method: "POST",
+    credentials: "include",
+    body: formData
+  })
+
+  if (!response.ok) {
+    throw new Error(`qBittorrent rejected the torrent file upload with HTTP ${response.status}.`)
   }
 }
 

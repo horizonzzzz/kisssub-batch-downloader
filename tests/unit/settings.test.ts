@@ -24,6 +24,24 @@ describe("sanitizeSettings", () => {
     })
   })
 
+  it("normalizes per-source delivery modes and falls back to source defaults", () => {
+    expect(
+      sanitizeSettings({
+        sourceDeliveryModes: {
+          kisssub: "torrent-file",
+          dongmanhuayuan: "torrent-file",
+          acgrip: "magnet"
+        }
+      })
+    ).toMatchObject({
+      sourceDeliveryModes: {
+        kisssub: "torrent-file",
+        dongmanhuayuan: "magnet",
+        acgrip: "torrent-file"
+      }
+    })
+  })
+
   it("clamps numeric settings to the existing limits", () => {
     expect(
       sanitizeSettings({

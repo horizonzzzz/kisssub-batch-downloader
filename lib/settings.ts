@@ -1,4 +1,5 @@
 import { DEFAULT_SETTINGS } from "./constants"
+import { normalizeSourceDeliveryModes } from "./delivery"
 import type { Settings } from "./types"
 
 type RawSettings = Partial<Settings> & Record<string, unknown>
@@ -18,7 +19,10 @@ export function sanitizeSettings(raw: RawSettings): Settings {
     remoteScriptRevision:
       String(raw.remoteScriptRevision ?? DEFAULT_SETTINGS.remoteScriptRevision).trim() ||
       DEFAULT_SETTINGS.remoteScriptRevision,
-    lastSavePath: normalizeSavePath(raw.lastSavePath ?? DEFAULT_SETTINGS.lastSavePath)
+    lastSavePath: normalizeSavePath(raw.lastSavePath ?? DEFAULT_SETTINGS.lastSavePath),
+    sourceDeliveryModes: normalizeSourceDeliveryModes(
+      raw.sourceDeliveryModes ?? DEFAULT_SETTINGS.sourceDeliveryModes
+    )
   }
 }
 

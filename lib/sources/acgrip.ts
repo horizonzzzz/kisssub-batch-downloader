@@ -1,4 +1,5 @@
 import { normalizeTitle } from "../batch"
+import { DEFAULT_SOURCE_DELIVERY_MODES, getSupportedDeliveryModes } from "../delivery"
 import type { BatchItem, ExtractionResult, Settings } from "../types"
 import { withDetailTab } from "./detail-tab"
 import type { SourceAdapter } from "./types"
@@ -50,6 +51,8 @@ export function parseAcgRipDetailSnapshot(
 export const acgRipSourceAdapter: SourceAdapter = {
   id: "acgrip",
   displayName: "ACG.RIP",
+  supportedDeliveryModes: getSupportedDeliveryModes("acgrip"),
+  defaultDeliveryMode: DEFAULT_SOURCE_DELIVERY_MODES.acgrip,
   matchesListPage(url) {
     if (!matchesHost(url) || this.matchesDetailUrl(url) || matchesTorrentUrl(url)) {
       return false
@@ -105,8 +108,7 @@ export const acgRipSourceAdapter: SourceAdapter = {
     }
 
     if (submitUrl) {
-      item.submitKind = "torrent"
-      item.submitUrl = submitUrl
+      item.torrentUrl = submitUrl
     }
 
     return item

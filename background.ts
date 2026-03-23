@@ -6,7 +6,7 @@ import {
   normalizeBatchItems
 } from "./lib/batch"
 import { extractSingleItem } from "./lib/extraction"
-import { addUrlsToQb, loginQb, qbFetchText } from "./lib/qb"
+import { addTorrentFilesToQb, addUrlsToQb, loginQb, qbFetchText } from "./lib/qb"
 import {
   ensureSettings,
   getSettings,
@@ -184,31 +184,13 @@ async function runBatch(job: BatchJob, items: BatchItem[]) {
     stage: "submitting",
     stats: job.stats,
     message: job.savePath
-      ? `Submitting ${preparedSubmissions.length} unique link(s) to qBittorrent with save path ${job.savePath}.`
+      ? `Submitting ${preparedSubmissions.length} unique item(s) to qBittorrent with save path ${job.savePath}.`
       : `Submitting ${preparedSubmissions.length} unique link(s) to the downloader using the default save path.`
   })
 
   try {
     await loginQb(job.settings)
-    await addUrlsToQb(
-      job.settings,
-      preparedSubmissions.map((entry) => entry.submitUrl),
-      job.savePath
-        ? {
-            savePath: job.savePath
-          }
-        : undefined
-    )
-
-    for (const entry of preparedSubmissions) {
-      entry.status = "submitted"
-      entry.message =
-        entry.submitKind === "magnet"
-          ? "Magnet queued in qBittorrent."
-          : "Torrent URL queued in qBittorrent."
-    }
-
-    job.stats.submitted = preparedSubmissions.length
+    await submitPreparedResults(job, preparedSubmissions)
   } catch (error: unknown) {
     const failure = error instanceof Error ? error.message : String(error)
     for (const entry of preparedSubmissions) {
@@ -235,8 +217,14 @@ async function processQueue(
     }
 
     const classified =
-      classifyPreparedBatchItem(item, seenHashes, seenUrls) ??
-      classifyExtractionResult(await extractSingleItem(item, job.settings), seenHashes, seenUrls)
+      classifyPreparedBatchItem(item, job.settings, seenHashes, seenUrls) ??
+      classifyExtractionResult(
+        item.sourceId,
+        await extractSingleItem(item, job.settings),
+        job.settings,
+        seenHashes,
+        seenUrls
+      )
 
     job.results.push(classified)
     job.stats.processed += 1
@@ -299,6 +287,105 @@ async function sendBatchEvent(tabId: number, payload: BatchEventPayload) {
 
 function normalizeSavePath(path: unknown) {
   return String(path ?? "").trim()
+}
+
+async function submitPreparedResults(job: BatchJob, preparedSubmissions: ClassifiedBatchResult[]) {
+  const urlSubmissions = preparedSubmissions.filter(
+    (entry) => entry.deliveryMode === "magnet" || entry.deliveryMode === "torrent-url"
+  )
+
+  if (urlSubmissions.length) {
+    try {
+      await addUrlsToQb(
+        job.settings,
+        urlSubmissions.map((entry) => entry.submitUrl),
+        job.savePath
+          ? {
+              savePath: job.savePath
+            }
+          : undefined
+      )
+
+      for (const entry of urlSubmissions) {
+        entry.status = "submitted"
+        entry.message =
+          entry.deliveryMode === "magnet"
+            ? "Magnet queued in qBittorrent."
+            : "Torrent URL queued in qBittorrent."
+        job.stats.submitted += 1
+      }
+    } catch (error: unknown) {
+      const failure = error instanceof Error ? error.message : String(error)
+      for (const entry of urlSubmissions) {
+        entry.status = "failed"
+        entry.message = `qBittorrent submission failed: ${failure}`
+        job.stats.failed += 1
+      }
+    }
+  }
+
+  for (const entry of preparedSubmissions) {
+    if (entry.deliveryMode !== "torrent-file") {
+      continue
+    }
+
+    try {
+      const torrent = await fetchTorrentForUpload(entry.submitUrl)
+      await addTorrentFilesToQb(
+        job.settings,
+        [torrent],
+        job.savePath
+          ? {
+              savePath: job.savePath
+            }
+          : undefined
+      )
+
+      entry.status = "submitted"
+      entry.message = "Torrent file uploaded to qBittorrent."
+      job.stats.submitted += 1
+    } catch (error: unknown) {
+      const failure = error instanceof Error ? error.message : String(error)
+      entry.status = "failed"
+      entry.message = `qBittorrent submission failed: ${failure}`
+      job.stats.failed += 1
+    }
+  }
+}
+
+async function fetchTorrentForUpload(torrentUrl: string) {
+  const response = await fetch(torrentUrl, {
+    credentials: "include"
+  })
+
+  if (!response.ok) {
+    throw new Error(`Torrent download failed with HTTP ${response.status}.`)
+  }
+
+  const blob = await response.blob()
+  return {
+    filename: getTorrentFilename(torrentUrl, response.headers.get("content-disposition")),
+    blob
+  }
+}
+
+function getTorrentFilename(torrentUrl: string, contentDisposition: string | null) {
+  const fromHeader = String(contentDisposition ?? "").match(/filename\*?=(?:UTF-8''|")?([^";]+)/i)
+  if (fromHeader?.[1]) {
+    return decodeURIComponent(fromHeader[1].replace(/"/g, "")).trim()
+  }
+
+  try {
+    const pathname = new URL(torrentUrl).pathname
+    const filename = pathname.split("/").pop() || ""
+    if (filename) {
+      return filename
+    }
+  } catch {
+    // Fall back to the generic filename below.
+  }
+
+  return "download.torrent"
 }
 
 export {}
