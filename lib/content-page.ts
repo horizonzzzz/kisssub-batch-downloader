@@ -1,43 +1,46 @@
-import { ENTRY_SELECTOR } from "./constants"
+import { getSourceAdapterForPage } from "./sources"
+import type { SourceAdapter } from "./sources/types"
 import type { BatchItem } from "./types"
 
-export function isListPage(location: Location): boolean {
-  const path = location.pathname
-
-  if (/\/show-[a-f0-9]+\.html$/i.test(path)) {
-    return false
-  }
-
-  if (/\/addon\.php/i.test(path) || /\/user\.php/i.test(path) || /\/public\/html\/start\//i.test(path)) {
-    return false
-  }
-
-  return true
+function toUrl(location: Pick<Location, "href"> | URL): URL {
+  return location instanceof URL ? location : new URL(location.href)
 }
 
-export function getDetailAnchors(root: ParentNode = document): HTMLAnchorElement[] {
-  return Array.from(root.querySelectorAll<HTMLAnchorElement>(ENTRY_SELECTOR)).filter(isValidDetailAnchor)
+export function getSourceAdapterForLocation(location: Pick<Location, "href"> | URL): SourceAdapter | null {
+  return getSourceAdapterForPage(toUrl(location))
 }
 
-export function isValidDetailAnchor(anchor: HTMLAnchorElement): boolean {
+export function isListPage(location: Pick<Location, "href"> | URL): boolean {
+  return getSourceAdapterForLocation(location) !== null
+}
+
+export function getDetailAnchors(
+  source: SourceAdapter,
+  root: ParentNode = document,
+  location: Pick<Location, "href"> | URL = window.location
+): HTMLAnchorElement[] {
+  return source.getDetailAnchors(root, toUrl(location))
+}
+
+export function isValidDetailAnchor(
+  source: SourceAdapter,
+  anchor: HTMLAnchorElement,
+  location: Pick<Location, "href"> | URL = window.location
+): boolean {
   try {
-    const url = new URL(anchor.href, window.location.href)
-    return /\/show-[a-f0-9]+\.html$/i.test(url.pathname)
+    const url = new URL(anchor.getAttribute("href") || anchor.href, toUrl(location).href)
+    return source.matchesDetailUrl(url)
   } catch {
     return false
   }
 }
 
-export function getBatchItemFromAnchor(anchor: HTMLAnchorElement): BatchItem | null {
-  const title = normalizeText(anchor.textContent)
-  if (!title) {
-    return null
-  }
-
-  return {
-    detailUrl: new URL(anchor.href, window.location.href).href,
-    title
-  }
+export function getBatchItemFromAnchor(
+  source: SourceAdapter,
+  anchor: HTMLAnchorElement,
+  location: Pick<Location, "href"> | URL = window.location
+): BatchItem | null {
+  return source.getBatchItemFromAnchor(anchor, toUrl(location))
 }
 
 export function getAnchorMountTarget(anchor: HTMLAnchorElement): Element | null {

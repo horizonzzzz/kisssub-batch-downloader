@@ -1,3 +1,4 @@
+import { getSourceAdapterById } from "./sources"
 import type { BatchItem, BatchStats, ClassifiedBatchResult, ExtractionResult } from "./types"
 
 export function normalizeBatchItems(items: unknown): BatchItem[] {
@@ -5,28 +6,40 @@ export function normalizeBatchItems(items: unknown): BatchItem[] {
   const normalized: BatchItem[] = []
 
   for (const item of Array.isArray(items) ? items : []) {
-    if (!item || typeof item !== "object" || typeof (item as BatchItem).detailUrl !== "string") {
+    if (
+      !item ||
+      typeof item !== "object" ||
+      typeof (item as BatchItem).sourceId !== "string" ||
+      typeof (item as BatchItem).detailUrl !== "string"
+    ) {
+      continue
+    }
+
+    const adapter = getSourceAdapterById((item as BatchItem).sourceId)
+    if (!adapter) {
       continue
     }
 
     let url: URL
     try {
-      url = new URL((item as BatchItem).detailUrl, "http://www.kisssub.org/")
+      url = new URL((item as BatchItem).detailUrl)
     } catch {
       continue
     }
 
-    if (!isKisssubDetailUrl(url)) {
+    if (!adapter.matchesDetailUrl(url)) {
       continue
     }
 
     const detailUrl = url.href
-    if (seen.has(detailUrl)) {
+    const dedupeKey = `${adapter.id}:${detailUrl}`
+    if (seen.has(dedupeKey)) {
       continue
     }
 
-    seen.add(detailUrl)
+    seen.add(dedupeKey)
     normalized.push({
+      sourceId: adapter.id,
       detailUrl,
       title: normalizeTitle((item as BatchItem).title) || detailUrl
     })

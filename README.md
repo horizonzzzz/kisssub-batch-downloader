@@ -1,13 +1,14 @@
 # Kisssub Batch Downloader
 
-Kisssub Batch Downloader is a browser extension for `kisssub` list pages. It injects selection checkboxes into `show-*.html` entries, opens each selected detail page in the background, resolves the real magnet or torrent link, and submits the batch to `qBittorrent WebUI`.
+Kisssub Batch Downloader is a browser extension for supported BT source list pages. It injects selection checkboxes into source-specific detail entries, opens each selected detail page in the background, resolves the real magnet or torrent link, and submits the batch to `qBittorrent WebUI`.
 
 The project is built with `Plasmo + React 19 + TypeScript`, keeps the injected page UI lightweight, and includes automated tests for the extension worker, content script UI, and options page.
 
 ## Features
 
-- Batch-select Kisssub posts directly from list pages
-- Resolve real download links from detail pages through the existing `acgscript` flow
+- Batch-select supported posts directly from list pages
+- Current source support: `kisssub` and `dongmanhuayuan`
+- Resolve real download links from detail pages through source-specific extraction logic
 - Prefer magnet links and fall back to torrent URLs
 - Deduplicate by `btih` hash or URL before submission
 - Send selected items to `qBittorrent WebUI` in one batch
@@ -66,7 +67,7 @@ The floating batch panel includes a manual download path input.
 
 ## Usage
 
-1. Open a Kisssub list page
+1. Open a supported source list page
 2. Select the posts you want
 3. Optionally set a per-batch save path in the floating panel
 4. Click `批量下载`
@@ -98,7 +99,8 @@ pnpm test:all
 - `background.ts`: extension service worker and batch orchestration
 - `contents/`: content script entry and injected CSS
 - `components/`: options page UI and floating batch panel UI
-- `lib/`: settings, qB API helpers and extraction helpers
+- `lib/sources/`: source adapters and detail extraction helpers
+- `lib/`: shared settings, qB API helpers and batch helpers
 - `tests/`: unit, component and Playwright E2E tests
 
 ## Testing
@@ -112,14 +114,16 @@ pnpm test:all
 Current coverage includes:
 
 - settings normalization
+- source registry and source-aware candidate normalization
+- dongmanhuayuan detail parsing behavior
 - qB login and submission behavior
 - batch panel interactions
 - options page save flow
-- extension loading and content script injection through Playwright
+- extension loading and content script injection fixtures through Playwright
 
 ## Known Limitations
 
-- Only supports `kisssub`
+- qBittorrent is still the only downloader
 - No task cancellation
 - No advanced qB parameters such as tags or categories
-- The extraction flow still depends on the current behavior of third-party `acgscript` and related upstream pages
+- `kisssub` extraction still depends on the current behavior of third-party `acgscript` and related upstream pages

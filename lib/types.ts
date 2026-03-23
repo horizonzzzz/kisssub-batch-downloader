@@ -1,3 +1,5 @@
+export type SourceId = "kisssub" | "dongmanhuayuan"
+
 export type BatchEventStage =
   | "started"
   | "progress"
@@ -7,6 +9,7 @@ export type BatchEventStage =
   | "fatal"
 
 export type BatchItem = {
+  sourceId: SourceId
   detailUrl: string
   title: string
 }

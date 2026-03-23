@@ -57,13 +57,13 @@ const compatibilityNote = (
 const advancedCollapseItems = [
   {
     key: "advanced",
-    label: "高级设置",
+    label: "Kisssub 高级设置",
     children: (
       <div className="options-advanced-grid">
-        <Form.Item label="第三方脚本地址" name="remoteScriptUrl">
+        <Form.Item label="Kisssub 辅助脚本地址" name="remoteScriptUrl">
           <Input />
         </Form.Item>
-        <Form.Item label="脚本版本号" name="remoteScriptRevision">
+        <Form.Item label="Kisssub 脚本版本号" name="remoteScriptRevision">
           <Input />
         </Form.Item>
       </div>
@@ -182,17 +182,17 @@ export function OptionsPage({ api }: OptionsPageProps) {
             </Tag>
             <Typography.Title level={1}>设置</Typography.Title>
             <Typography.Paragraph className="options-hero__lead">
-              配置 qBittorrent WebUI、详情页注入节奏和远端脚本参数。界面改造成组件化表单后，保留扩展原有的业务逻辑和设置结构。
+              配置当前 qBittorrent WebUI 连接、通用提取节奏，以及 Kisssub 专用的辅助脚本参数。
             </Typography.Paragraph>
           </div>
           <div className="options-hero__meta">
             <div>
               <span>使用场景</span>
-              <strong>本机 qB WebUI</strong>
+              <strong>多站点插件 / 当前 qB</strong>
             </div>
             <div>
               <span>改造重点</span>
-              <strong>组件化与稳定注入</strong>
+              <strong>来源扩展与稳定提取</strong>
             </div>
           </div>
         </header>
@@ -203,8 +203,8 @@ export function OptionsPage({ api }: OptionsPageProps) {
               <div className="options-section-heading">
                 <Typography.Title level={3}>连接与注入参数</Typography.Title>
                 <Typography.Paragraph>
-                  将常用连接项放在前面，把高级脚本参数折叠起来，并把状态反馈统一收口到一个 live
-                  region。
+                  将通用下载器连接项放在前面，把 Kisssub 专用脚本参数折叠起来，并把状态反馈统一收口到一个
+                  live region。
                 </Typography.Paragraph>
               </div>
 
@@ -253,7 +253,7 @@ export function OptionsPage({ api }: OptionsPageProps) {
                     </div>
                   </Card>
 
-                  <Card variant="borderless" className="options-subcard" title="脚本策略">
+                  <Card variant="borderless" className="options-subcard" title="Kisssub 脚本策略">
                     <Collapse ghost items={advancedCollapseItems} />
                   </Card>
                 </div>
@@ -288,6 +288,7 @@ export function OptionsPage({ api }: OptionsPageProps) {
                 <ul className="options-bullets">
                   <li>配置页使用组件库接管表单、按钮、提示和折叠区。</li>
                   <li>内容脚本浮层继续独立注入样式，不把重型 UI 依赖带进宿主页。</li>
+                  <li>Kisssub 专用辅助脚本参数与通用下载器配置分开展示。</li>
                   <li>状态信息统一显示在操作区上方，减少找反馈的成本。</li>
                 </ul>
               </Space>

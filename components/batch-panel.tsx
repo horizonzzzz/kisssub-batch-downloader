@@ -1,6 +1,7 @@
 import type { BatchLogItem } from "../lib/types"
 
 type BatchPanelProps = {
+  sourceName?: string
   selectedCount: number
   running: boolean
   progressText: string
@@ -17,6 +18,7 @@ type BatchPanelProps = {
 }
 
 export function BatchPanel({
+  sourceName = "当前站点",
   selectedCount,
   running,
   progressText,
@@ -35,11 +37,11 @@ export function BatchPanel({
   const disablePathActions = running
 
   return (
-    <aside className="kisssub-batch-panel" aria-label="Kisssub 批量下载面板">
+    <aside className="kisssub-batch-panel" aria-label="批量下载面板">
       <div className="kisssub-batch-panel__header">
         <div>
-          <p className="kisssub-batch-panel__eyebrow">Kisssub Batch Downloader</p>
-          <strong>Kisssub 批量下载</strong>
+          <p className="kisssub-batch-panel__eyebrow">Batch Downloader</p>
+          <strong>{sourceName} 批量下载</strong>
         </div>
         <span className="kisssub-batch-panel__badge">{running ? "RUNNING" : "READY"}</span>
       </div>
@@ -66,7 +68,7 @@ export function BatchPanel({
       <section className="kisssub-batch-panel__path-card">
         <div className="kisssub-batch-panel__section-head">
           <strong>下载路径</strong>
-          <span>{savePath ? "自定义路径" : "qB 默认目录"}</span>
+          <span>{savePath ? "自定义路径" : "默认目录"}</span>
         </div>
         <label className="kisssub-batch-panel__path-label" htmlFor="kisssub-batch-save-path">
           下载路径
@@ -76,7 +78,7 @@ export function BatchPanel({
           className="kisssub-batch-panel__path-input"
           type="text"
           value={savePath}
-          placeholder="留空则使用 qBittorrent 默认下载目录"
+          placeholder="留空则使用当前下载器默认目录"
           onChange={(event) => {
             onSavePathChange(event.target.value)
           }}
@@ -89,7 +91,7 @@ export function BatchPanel({
         </div>
         <p className="kisssub-batch-panel__path-hint">
           {savePathHint ||
-            "留空则使用 qBittorrent 默认下载目录。远程 qB 请手动输入目标机器可识别的绝对路径。"}
+            "留空则使用当前下载器默认目录。远程下载器请手动输入目标主机可识别的绝对路径。"}
         </p>
       </section>
 

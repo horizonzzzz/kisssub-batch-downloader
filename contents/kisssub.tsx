@@ -9,12 +9,18 @@ import {
   getAnchorMountTarget,
   getBatchItemFromAnchor,
   getDetailAnchors,
-  isListPage
+  getSourceAdapterForLocation
 } from "../lib/content-page"
+import type { SourceAdapter } from "../lib/sources/types"
 import type { BatchEventPayload, BatchItem, BatchLogItem } from "../lib/types"
 
 export const config: PlasmoCSConfig = {
-  matches: ["http://www.kisssub.org/*", "https://www.kisssub.org/*"],
+  matches: [
+    "http://www.kisssub.org/*",
+    "https://www.kisssub.org/*",
+    "http://www.dongmanhuayuan.com/*",
+    "https://www.dongmanhuayuan.com/*"
+  ],
   run_at: "document_idle",
   css: ["./kisssub.css"]
 }
@@ -36,13 +42,15 @@ type PanelSnapshot = {
 }
 
 const DEFAULT_SAVE_PATH_HINT =
-  "留空则使用 qBittorrent 默认下载目录。远程 qB 请手动输入目标机器可识别的绝对路径。"
+  "留空则使用当前下载器默认目录。远程下载器请手动输入目标主机可识别的绝对路径。"
+
+const activeSource = getSourceAdapterForLocation(window.location)
 
 const snapshot: PanelSnapshot = {
   running: false,
   selected: new Map(),
   progressText: "等待操作",
-  statusText: "就绪。先在当前列表页勾选帖子。",
+  statusText: "就绪。先在当前列表页勾选资源。",
   savePath: "",
   savePathHint: DEFAULT_SAVE_PATH_HINT,
   logs: []
@@ -53,10 +61,10 @@ let panelRoot: Root | null = null
 let panelContainer: HTMLDivElement | null = null
 let observer: MutationObserver | null = null
 
-if (isListPage(window.location)) {
+if (activeSource) {
   mountPanel()
   void hydrateSavePath()
-  scanAndDecorate()
+  scanAndDecorate(activeSource)
   if (checkboxRoots.size > 0) {
     observeMutations()
     chrome.runtime.onMessage.addListener((message: { type?: string } & BatchEventPayload) => {
@@ -90,7 +98,9 @@ function observeMutations() {
   observer = new MutationObserver(() => {
     window.clearTimeout(timer)
     timer = window.setTimeout(() => {
-      scanAndDecorate()
+      if (activeSource) {
+        scanAndDecorate(activeSource)
+      }
       renderAll()
     }, 150)
   })
@@ -101,13 +111,15 @@ function observeMutations() {
   })
 }
 
-function scanAndDecorate() {
-  for (const anchor of getDetailAnchors()) {
+function scanAndDecorate(source: SourceAdapter) {
+  const pageUrl = new URL(window.location.href)
+
+  for (const anchor of getDetailAnchors(source, document, pageUrl)) {
     if (anchor.dataset.kisssubBatchDecorated === "1") {
       continue
     }
 
-    const item = getBatchItemFromAnchor(anchor)
+    const item = getBatchItemFromAnchor(source, anchor, pageUrl)
     if (!item) {
       continue
     }
@@ -149,6 +161,7 @@ function renderPanel() {
 
   panelRoot.render(
     <BatchPanel
+      sourceName={activeSource?.displayName}
       selectedCount={snapshot.selected.size}
       running={snapshot.running}
       progressText={snapshot.progressText}
@@ -259,7 +272,7 @@ async function startBatchDownload() {
   const normalizedSavePath = snapshot.savePath.trim()
   snapshot.statusText = normalizedSavePath
     ? `开始处理 ${items.length} 项，后台会逐个打开详情页并提取真实链接，并请求保存到 ${normalizedSavePath}。`
-    : `开始处理 ${items.length} 项，后台会逐个打开详情页并提取真实链接。当前使用 qBittorrent 默认目录。`
+    : `开始处理 ${items.length} 项，后台会逐个打开详情页并提取真实链接。当前使用下载器默认目录。`
   snapshot.logs = []
   renderAll()
 
@@ -300,7 +313,7 @@ function handleBatchEvent(event: BatchEventPayload) {
   }
 
   if (event.stage === "submitting") {
-    snapshot.statusText = event.message || "正在提交到 qBittorrent。"
+    snapshot.statusText = event.message || "正在提交到下载器。"
     renderAll()
     return
   }
@@ -328,6 +341,6 @@ function handleBatchEvent(event: BatchEventPayload) {
 function buildSavePathHint(savePath: string) {
   const normalized = savePath.trim()
   return normalized
-    ? `本次任务将请求 qBittorrent 保存到：${normalized}`
+    ? `本次任务将请求下载器保存到：${normalized}`
     : DEFAULT_SAVE_PATH_HINT
 }

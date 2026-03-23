@@ -110,7 +110,7 @@ async function startBatchDownload(
 ) {
   const sourceTabId = typeof sender.tab?.id === "number" ? sender.tab.id : null
   if (sourceTabId === null) {
-    throw new Error("Batch downloads can only be started from a Kisssub tab.")
+    throw new Error("Batch downloads can only be started from a supported source tab.")
   }
 
   if (activeJobs.has(sourceTabId)) {
@@ -119,7 +119,7 @@ async function startBatchDownload(
 
   const normalizedItems = normalizeBatchItems(items)
   if (!normalizedItems.length) {
-    throw new Error("No valid Kisssub detail posts were selected.")
+    throw new Error("No valid source detail pages were selected.")
   }
 
   const savePath = normalizeSavePath(requestedSavePath)
@@ -159,7 +159,7 @@ async function runBatch(job: BatchJob, items: BatchItem[]) {
     stats: job.stats,
     message: job.savePath
       ? `Preparing ${items.length} selected posts. Requested save path: ${job.savePath}`
-      : `Preparing ${items.length} selected posts. Using qBittorrent default save path.`
+      : `Preparing ${items.length} selected posts. Using the downloader default save path.`
   })
 
   const pending = items.slice()
@@ -184,7 +184,7 @@ async function runBatch(job: BatchJob, items: BatchItem[]) {
     stats: job.stats,
     message: job.savePath
       ? `Submitting ${preparedSubmissions.length} unique link(s) to qBittorrent with save path ${job.savePath}.`
-      : `Submitting ${preparedSubmissions.length} unique link(s) to qBittorrent using the default save path.`
+      : `Submitting ${preparedSubmissions.length} unique link(s) to the downloader using the default save path.`
   })
 
   try {

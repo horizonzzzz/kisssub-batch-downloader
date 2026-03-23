@@ -2,7 +2,7 @@
   "name": "kisssub-batch-downloader",
   "version": "0.1.0",
   "private": true,
-  "description": "Kisssub batch downloader browser extension rebuilt as a Plasmo project.",
+  "description": "Browser extension for batch-selecting supported BT source pages and sending resolved links to qBittorrent.",
   "type": "module",
   "packageManager": "pnpm@10.13.1",
   "scripts": {
@@ -18,7 +18,7 @@
   "manifest": {
     "name": "Kisssub Batch Downloader",
     "version": "0.1.0",
-    "description": "Select multiple Kisssub posts on a list page, resolve real download links by injecting the acgscript helper, and send them to qBittorrent in one batch.",
+    "description": "Select multiple supported BT source posts on a list page, resolve real download links, and send them to qBittorrent in one batch.",
     "minimum_chrome_version": "114",
     "permissions": [
       "storage",
