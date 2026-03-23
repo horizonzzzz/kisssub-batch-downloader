@@ -13,6 +13,7 @@ describe("release workflow", () => {
 
     expect(workflow).toContain("tags:")
     expect(workflow).toContain("- 'v*.*.*'")
+    expect(workflow).toContain("pnpm/action-setup@v4")
     expect(workflow).toContain("pnpm install --frozen-lockfile")
     expect(workflow).toContain("pnpm build")
     expect(workflow).toContain("pnpm package")
