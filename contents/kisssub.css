@@ -80,6 +80,13 @@
   height: 24px;
 }
 
+.kisssub-batch-launcher__brand-icon {
+  display: block;
+  width: 18px;
+  height: 18px;
+  filter: drop-shadow(0 6px 14px rgba(0, 240, 255, 0.14));
+}
+
 .kisssub-batch-launcher__count {
   position: absolute;
   top: -6px;
@@ -131,8 +138,30 @@
   letter-spacing: 0.01em;
 }
 
+.kisssub-batch-panel__brand-lockup {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.kisssub-batch-panel__brand-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+}
+
+.kisssub-batch-panel__brand-icon {
+  display: block;
+  width: 20px;
+  height: 20px;
+  filter: drop-shadow(0 8px 16px rgba(0, 240, 255, 0.12));
+}
+
 .kisssub-batch-panel__eyebrow {
-  margin: 0 0 4px;
+  margin: 0;
   color: rgba(219, 230, 244, 0.72);
   font-size: 10px;
   letter-spacing: 0.16em;

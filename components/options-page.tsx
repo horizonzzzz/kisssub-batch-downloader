@@ -2,7 +2,9 @@ import { useEffect, useMemo, useState } from "react"
 
 import { Alert, Button, Card, Form, Input, InputNumber, Radio, Tag, Typography } from "antd"
 import type { AlertProps } from "antd"
+import { FaGithub } from "react-icons/fa"
 
+import speedlineBrandIcon from "../assets/anime-bt-icon-speedline.svg"
 import { getDeliveryModeLabel, getSupportedDeliveryModes } from "../lib/delivery"
 import { DEFAULT_SETTINGS } from "../lib/settings"
 import type { Settings, SourceId, TestQbConnectionResult } from "../lib/types"
@@ -28,6 +30,7 @@ const statusTypeMap: Record<StatusTone, AlertProps["type"]> = {
 }
 
 const BRAND_NAME = "Anime BT Batch"
+const REPO_URL = "https://github.com/horizonzzzz/anime-bt-batch-downloader"
 
 const viewMeta: Record<
   OptionsViewId,
@@ -264,7 +267,17 @@ export function OptionsPage({ api }: OptionsPageProps) {
         className="options-workbench">
         <aside className="options-sidebar">
           <div className="options-sidebar__brand">
-            <div className="options-sidebar__brand-mark">A</div>
+            <div className="options-sidebar__brand-mark">
+              <img
+                src={speedlineBrandIcon}
+                alt=""
+                loading="eager"
+                decoding="async"
+                data-testid="options-brand-icon"
+                className="options-sidebar__brand-icon"
+                aria-hidden="true"
+              />
+            </div>
             <div>
               <div className="options-sidebar__brand-name">{BRAND_NAME}</div>
               <div className="options-sidebar__brand-subtitle">Extension Settings</div>
@@ -290,8 +303,19 @@ export function OptionsPage({ api }: OptionsPageProps) {
           </div>
 
           <div className="options-sidebar__footer">
-            <span>3 个支持源站</span>
-            <strong>qBittorrent WebUI</strong>
+            <div className="options-sidebar__footer-meta">
+              <span>3 个支持源站</span>
+              <strong>qBittorrent WebUI</strong>
+            </div>
+            <a
+              className="options-sidebar__github-link"
+              href={REPO_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="查看 GitHub 仓库">
+              <FaGithub aria-hidden="true" focusable="false" />
+              <span>查看 GitHub 仓库</span>
+            </a>
           </div>
         </aside>
 

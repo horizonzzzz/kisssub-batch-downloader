@@ -105,6 +105,10 @@ test("options page saves settings through the background worker", async () => {
     await page.goto(`chrome-extension://${extension.extensionId}/options.html`)
 
     await expect(page.getByRole("heading", { name: "连接与基础设置" })).toBeVisible()
+    await expect(page.getByRole("link", { name: "查看 GitHub 仓库" })).toHaveAttribute(
+      "href",
+      "https://github.com/horizonzzzz/anime-bt-batch-downloader"
+    )
     await expect
       .poll(async () => {
         return page.evaluate(() => {

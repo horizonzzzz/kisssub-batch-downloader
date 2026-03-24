@@ -37,6 +37,8 @@ The extension injects selection UI into supported list pages, reuses direct magn
   UI components for the floating batch panel, selection checkbox, and options page.
 - `contents/`
   Content script entry and injected styles for supported source pages.
+- `assets/`
+  Source icon assets for the extension brand. `anime-bt-icon-speedline.svg` is the UI source icon, and `icon.png` is the generated packaging icon consumed by Plasmo for extension icon sizes.
 - `lib/`
   Shared batch helpers, background batch orchestration helpers, extraction helpers, qBittorrent API helpers, settings logic, constants, and shared types.
 - `lib/sources/`
@@ -82,4 +84,5 @@ Commands are defined in `package.json`:
 - Read this file before making changes that touch extension behavior, architecture, or test workflows.
 - Prefer editing the real source files listed above, not generated outputs.
 - If a change adds a new source adapter, changes downloader behavior, alters commands, changes test coverage, moves responsibilities between directories, or changes major runtime flow, update this file in the same change.
+- If a change updates the extension branding or icon pipeline, keep `assets/anime-bt-icon-speedline.svg` and the generated `assets/icon.png` aligned in the same change.
 - If a code change makes any statement in this file stale, update `AGENT.md` before finishing the task.

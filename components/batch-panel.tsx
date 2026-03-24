@@ -1,5 +1,7 @@
 import { useState } from "react"
 
+import speedlineBrandIcon from "../assets/anime-bt-icon-speedline.svg"
+
 type BatchPanelProps = {
   sourceName?: string
   isExpanded: boolean
@@ -17,7 +19,7 @@ type BatchPanelProps = {
   onOpenSettings: () => void
 }
 
-function PanelIcon({ glyph }: { glyph: string }) {
+function GlyphIcon({ glyph }: { glyph: string }) {
   return <span className="kisssub-batch-panel__icon-glyph" aria-hidden="true">{glyph}</span>
 }
 
@@ -53,7 +55,15 @@ export function BatchPanel({
             onToggleExpanded(true)
           }}>
           <span className="kisssub-batch-launcher__icon">
-            <PanelIcon glyph="⇩" />
+            <img
+              src={speedlineBrandIcon}
+              alt=""
+              loading="eager"
+              decoding="async"
+              data-testid="batch-launcher-brand-icon"
+              className="kisssub-batch-launcher__brand-icon"
+              aria-hidden="true"
+            />
             {selectedCount > 0 ? (
               <span className="kisssub-batch-launcher__count" aria-label={`当前已选 ${selectedCount} 项`}>
                 {selectedCount}
@@ -70,7 +80,20 @@ export function BatchPanel({
     <aside className="kisssub-batch-panel" aria-label="批量下载面板">
       <div className="kisssub-batch-panel__header">
         <div className="kisssub-batch-panel__header-copy">
-          <p className="kisssub-batch-panel__eyebrow">Batch Downloader</p>
+          <div className="kisssub-batch-panel__brand-lockup">
+            <span className="kisssub-batch-panel__brand-badge">
+              <img
+                src={speedlineBrandIcon}
+                alt=""
+                loading="eager"
+                decoding="async"
+                data-testid="batch-panel-brand-icon"
+                className="kisssub-batch-panel__brand-icon"
+                aria-hidden="true"
+              />
+            </span>
+            <p className="kisssub-batch-panel__eyebrow">Batch Downloader</p>
+          </div>
           <strong>{sourceName} 批量下载</strong>
         </div>
         <div className="kisssub-batch-panel__header-actions">
@@ -79,7 +102,7 @@ export function BatchPanel({
             className="kisssub-batch-panel__icon-button"
             aria-label="打开设置页"
             onClick={onOpenSettings}>
-            <PanelIcon glyph="⚙" />
+            <GlyphIcon glyph="⚙" />
           </button>
           <button
             type="button"
@@ -88,7 +111,7 @@ export function BatchPanel({
             onClick={() => {
               onToggleExpanded(false)
             }}>
-            <PanelIcon glyph="▾" />
+            <GlyphIcon glyph="▾" />
           </button>
         </div>
       </div>

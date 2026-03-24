@@ -37,9 +37,16 @@ describe("OptionsPage", () => {
 
       expect(await screen.findByDisplayValue("http://127.0.0.1:17474")).toBeInTheDocument()
       expect(screen.getAllByText("Anime BT Batch")).toHaveLength(2)
+      const brandIcon = screen.getByTestId("options-brand-icon")
+      expect(brandIcon.tagName).toBe("IMG")
+      expect(brandIcon).toHaveAttribute("src", expect.stringContaining("data:image/svg+xml"))
       expect(screen.getByText("通用设置")).toBeInTheDocument()
       expect(screen.getByText("站点专属配置")).toBeInTheDocument()
       expect(screen.getByText("关于与支持")).toBeInTheDocument()
+      expect(screen.getByRole("link", { name: "查看 GitHub 仓库" })).toHaveAttribute(
+        "href",
+        "https://github.com/horizonzzzz/anime-bt-batch-downloader"
+      )
       expect(screen.getByRole("heading", { name: "连接与基础设置" })).toBeInTheDocument()
       expect(screen.getByText("qB WebUI 兼容性提示")).toBeInTheDocument()
       expect(screen.queryByLabelText("Kisssub 外部脚本地址")).not.toBeInTheDocument()

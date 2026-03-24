@@ -41,6 +41,12 @@ describe("BatchPanel", () => {
     expect(screen.getByRole("button", { name: "展开批量下载面板" })).toBeInTheDocument()
     expect(screen.getByText("批量下载")).toBeInTheDocument()
     expect(screen.getByText("3")).toBeInTheDocument()
+    const launcherBrandIcon = screen.getByTestId("batch-launcher-brand-icon")
+    expect(launcherBrandIcon.tagName).toBe("IMG")
+    expect(launcherBrandIcon).toHaveAttribute(
+      "src",
+      expect.stringContaining("data:image/svg+xml")
+    )
     expect(screen.queryByRole("button", { name: "批量下载" })).not.toBeInTheDocument()
 
     await user.click(screen.getByRole("button", { name: "展开批量下载面板" }))
@@ -52,6 +58,12 @@ describe("BatchPanel", () => {
     renderBatchPanel()
 
     expect(screen.getByText("Kisssub 批量下载")).toBeInTheDocument()
+    const panelBrandIcon = screen.getByTestId("batch-panel-brand-icon")
+    expect(panelBrandIcon.tagName).toBe("IMG")
+    expect(panelBrandIcon).toHaveAttribute(
+      "src",
+      expect.stringContaining("data:image/svg+xml")
+    )
     expect(screen.getByText("已选资源")).toBeInTheDocument()
     expect(screen.getByText("0")).toBeInTheDocument()
     expect(screen.getByRole("button", { name: "批量下载" })).toBeDisabled()
