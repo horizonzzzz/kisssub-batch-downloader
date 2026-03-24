@@ -7,12 +7,14 @@ import { BatchPanel } from "../../components/batch-panel"
 
 function renderBatchPanel(overrides: Record<string, unknown> = {}) {
   const props = {
+    sourceName: "Kisssub",
+    isExpanded: true,
     selectedCount: 0,
     running: false,
-    progressText: "等待操作",
-    statusText: "就绪。先在当前列表页勾选帖子。",
+    statusText: "就绪。先在当前列表页勾选资源。",
     savePath: "",
-    logs: [],
+    savePathHint: "留空则使用当前下载器默认目录。",
+    onToggleExpanded: vi.fn(),
     onSelectAll: vi.fn(),
     onClear: vi.fn(),
     onSavePathChange: vi.fn(),
@@ -26,60 +28,39 @@ function renderBatchPanel(overrides: Record<string, unknown> = {}) {
 }
 
 describe("BatchPanel", () => {
-  it("shows the selected count and disables download with no items", () => {
+  it("renders a collapsed launcher when minimized", async () => {
+    const user = userEvent.setup()
+    const onToggleExpanded = vi.fn()
+
+    renderBatchPanel({
+      isExpanded: false,
+      selectedCount: 3,
+      onToggleExpanded
+    })
+
+    expect(screen.getByRole("button", { name: "展开批量下载面板" })).toBeInTheDocument()
+    expect(screen.getByText("批量下载")).toBeInTheDocument()
+    expect(screen.getByText("3")).toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: "批量下载" })).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole("button", { name: "展开批量下载面板" }))
+
+    expect(onToggleExpanded).toHaveBeenCalledWith(true)
+  })
+
+  it("shows the expanded workspace with the prominent selected count", () => {
     renderBatchPanel()
 
-    expect(screen.getByText("已选 0 项")).toBeInTheDocument()
+    expect(screen.getByText("Kisssub 批量下载")).toBeInTheDocument()
+    expect(screen.getByText("已选资源")).toBeInTheDocument()
+    expect(screen.getByText("0")).toBeInTheDocument()
     expect(screen.getByRole("button", { name: "批量下载" })).toBeDisabled()
-    expect(screen.getByLabelText("下载路径")).toHaveValue("")
-    expect(screen.queryByRole("button", { name: "选择目录" })).not.toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "全选本页" })).toBeEnabled()
+    expect(screen.queryByText("最近结果")).not.toBeInTheDocument()
+    expect(screen.queryByLabelText("临时下载路径")).not.toBeInTheDocument()
   })
 
-  it("wires button callbacks when items are selected", async () => {
-    const user = userEvent.setup()
-    const onDownload = vi.fn()
-
-    renderBatchPanel({
-      selectedCount: 3,
-      progressText: "总数 3 | 已处理 0 | 已提取 0 | 已提交 0 | 重复 0 | 失败 0",
-      statusText: "准备中",
-      savePath: "D:\\Downloads\\Anime",
-      onDownload
-    })
-
-    await user.click(screen.getByRole("button", { name: "批量下载" }))
-
-    expect(onDownload).toHaveBeenCalledTimes(1)
-  })
-
-  it("renders a recent results section and opens settings from the secondary action", async () => {
-    const user = userEvent.setup()
-    const onOpenSettings = vi.fn()
-
-    renderBatchPanel({
-      selectedCount: 2,
-      progressText: "总数 2 | 已处理 1 | 已提取 1 | 已提交 1 | 重复 0 | 失败 0",
-      statusText: "最近一项已成功提交。",
-      logs: [
-        {
-          title: "示例资源",
-          detailUrl: "https://www.kisssub.org/show-1.html",
-          status: "submitted",
-          message: "已提交到 qBittorrent。"
-        }
-      ],
-      onOpenSettings
-    })
-
-    expect(screen.getByText("最近结果")).toBeInTheDocument()
-    expect(screen.getByText("示例资源")).toBeInTheDocument()
-
-    await user.click(screen.getByRole("button", { name: "设置" }))
-
-    expect(onOpenSettings).toHaveBeenCalledTimes(1)
-  })
-
-  it("allows editing and clearing the batch save path without a picker action", async () => {
+  it("lets the user open advanced options, edit the save path, and clear it", async () => {
     const user = userEvent.setup()
     const onClearSavePath = vi.fn()
 
@@ -89,12 +70,14 @@ describe("BatchPanel", () => {
       return (
         <BatchPanel
           {...({
-            selectedCount: 1,
+            sourceName: "Kisssub",
+            isExpanded: true,
+            selectedCount: 2,
             running: false,
-            progressText: "等待操作",
-            statusText: "就绪。",
+            statusText: "本次将使用自定义路径。",
             savePath,
-            logs: [],
+            savePathHint: "本次任务将请求下载器保存到：D:\\Downloads",
+            onToggleExpanded: vi.fn(),
             onSelectAll: vi.fn(),
             onClear: vi.fn(),
             onSavePathChange: setSavePath,
@@ -111,33 +94,54 @@ describe("BatchPanel", () => {
 
     render(<Harness />)
 
-    const input = screen.getByLabelText("下载路径")
+    await user.click(screen.getByRole("button", { name: "高级选项" }))
+
+    const input = screen.getByLabelText("临时下载路径")
+    expect(input).toHaveValue("D:\\Downloads")
 
     await user.clear(input)
-    await user.type(input, "E:\\BT")
-    await user.click(screen.getByRole("button", { name: "清空路径" }))
+    await user.type(input, "E:\\Anime")
+    expect(input).toHaveValue("E:\\Anime")
 
+    await user.click(screen.getByRole("button", { name: "清空路径" }))
     expect(input).toHaveValue("")
-    expect(screen.queryByRole("button", { name: "选择目录" })).not.toBeInTheDocument()
     expect(onClearSavePath).toHaveBeenCalledTimes(1)
   })
 
-  it("locks interactive controls while a batch is running", () => {
+  it("wires the settings and minimize controls in the header", async () => {
+    const user = userEvent.setup()
+    const onOpenSettings = vi.fn()
+    const onToggleExpanded = vi.fn()
+
+    renderBatchPanel({
+      selectedCount: 1,
+      onOpenSettings,
+      onToggleExpanded
+    })
+
+    await user.click(screen.getByRole("button", { name: "打开设置页" }))
+    await user.click(screen.getByRole("button", { name: "最小化批量下载面板" }))
+
+    expect(onOpenSettings).toHaveBeenCalledTimes(1)
+    expect(onToggleExpanded).toHaveBeenCalledWith(false)
+  })
+
+  it("shows a loading download action and locks editing while the batch is running", async () => {
+    const user = userEvent.setup()
+
     renderBatchPanel({
       selectedCount: 2,
       running: true,
-      progressText: "总数 2 | 已处理 1 | 已提取 1 | 已提交 0 | 重复 0 | 失败 0",
-      statusText: "正在提取详情页。",
-      savePath: "D:\\Downloads\\Anime",
-      savePathHint: "本次任务将请求下载器保存到：D:\\Downloads\\Anime"
+      statusText: "正在提交到 qBittorrent。"
     })
 
-    expect(screen.getByText("RUNNING")).toBeInTheDocument()
+    await user.click(screen.getByRole("button", { name: "高级选项" }))
+
+    expect(screen.getByRole("button", { name: "发送中..." })).toBeDisabled()
     expect(screen.getByRole("button", { name: "全选本页" })).toBeDisabled()
-    expect(screen.getByRole("button", { name: "清空" })).toBeDisabled()
-    expect(screen.getByRole("button", { name: "批量下载" })).toBeDisabled()
+    expect(screen.getByRole("button", { name: "清空选择" })).toBeDisabled()
+    expect(screen.getByLabelText("临时下载路径")).toBeDisabled()
     expect(screen.getByRole("button", { name: "清空路径" })).toBeDisabled()
-    expect(screen.getByLabelText("下载路径")).toBeDisabled()
-    expect(screen.getByText("本次任务将请求下载器保存到：D:\\Downloads\\Anime")).toBeInTheDocument()
+    expect(screen.getByText("正在提交到 qBittorrent。")).toBeInTheDocument()
   })
 })

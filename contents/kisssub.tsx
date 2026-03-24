@@ -12,7 +12,7 @@ import {
   getSourceAdapterForLocation
 } from "../lib/content-page"
 import type { SourceAdapter } from "../lib/sources/types"
-import type { BatchEventPayload, BatchItem, BatchLogItem } from "../lib/types"
+import type { BatchEventPayload, BatchItem } from "../lib/types"
 
 export default function KisssubContentScript() {
   return null
@@ -38,13 +38,12 @@ type CheckboxRoot = {
 }
 
 type PanelSnapshot = {
+  isExpanded: boolean
   running: boolean
   selected: Map<string, BatchItem>
-  progressText: string
   statusText: string
   savePath: string
   savePathHint: string
-  logs: BatchLogItem[]
 }
 
 const DEFAULT_SAVE_PATH_HINT =
@@ -53,13 +52,12 @@ const DEFAULT_SAVE_PATH_HINT =
 const activeSource = getSourceAdapterForLocation(window.location)
 
 const snapshot: PanelSnapshot = {
+  isExpanded: true,
   running: false,
   selected: new Map(),
-  progressText: "等待操作",
   statusText: "就绪。先在当前列表页勾选资源。",
   savePath: "",
-  savePathHint: DEFAULT_SAVE_PATH_HINT,
-  logs: []
+  savePathHint: DEFAULT_SAVE_PATH_HINT
 }
 
 const checkboxRoots = new Map<string, CheckboxRoot>()
@@ -168,13 +166,13 @@ function renderPanel() {
   panelRoot.render(
     <BatchPanel
       sourceName={activeSource?.displayName}
+      isExpanded={snapshot.isExpanded}
       selectedCount={snapshot.selected.size}
       running={snapshot.running}
-      progressText={snapshot.progressText}
       statusText={snapshot.statusText}
       savePath={snapshot.savePath}
       savePathHint={snapshot.savePathHint}
-      logs={snapshot.logs}
+      onToggleExpanded={updateExpanded}
       onSelectAll={selectAllVisible}
       onClear={clearSelection}
       onSavePathChange={updateSavePath}
@@ -209,6 +207,10 @@ function toggleSelection(item: BatchItem, checked: boolean) {
     snapshot.selected.delete(item.detailUrl)
   }
 
+  if (!snapshot.running) {
+    snapshot.statusText = buildSelectionStatus(snapshot.selected.size)
+  }
+
   renderAll()
 }
 
@@ -217,12 +219,18 @@ function selectAllVisible() {
     snapshot.selected.set(item.detailUrl, item)
   }
 
+  snapshot.statusText = buildSelectionStatus(snapshot.selected.size)
   renderAll()
 }
 
 function clearSelection() {
   snapshot.selected.clear()
   snapshot.statusText = "已清空当前选择。"
+  renderAll()
+}
+
+function updateExpanded(expanded: boolean) {
+  snapshot.isExpanded = expanded
   renderAll()
 }
 
@@ -274,12 +282,10 @@ async function startBatchDownload() {
   }
 
   snapshot.running = true
-  snapshot.progressText = "准备中"
   const normalizedSavePath = snapshot.savePath.trim()
   snapshot.statusText = normalizedSavePath
-    ? `开始处理 ${items.length} 项，后台会逐个打开详情页并提取真实链接，并请求保存到 ${normalizedSavePath}。`
-    : `开始处理 ${items.length} 项，后台会逐个打开详情页并提取真实链接。当前使用下载器默认目录。`
-  snapshot.logs = []
+    ? `开始处理 ${items.length} 项，完成后将请求保存到 ${normalizedSavePath}。`
+    : `开始处理 ${items.length} 项，完成后将使用下载器默认目录。`
   renderAll()
 
   const response = await chrome.runtime.sendMessage({
@@ -296,30 +302,27 @@ async function startBatchDownload() {
 }
 
 function handleBatchEvent(event: BatchEventPayload) {
-  if (typeof event.stats?.total === "number") {
-    snapshot.progressText = `总数 ${event.stats.total} | 已处理 ${event.stats.processed || 0} | 已提取 ${
-      event.stats.prepared || 0
-    } | 已提交 ${event.stats.submitted || 0} | 重复 ${event.stats.duplicated || 0} | 失败 ${
-      event.stats.failed || 0
-    }`
-  }
-
   if (event.stage === "started") {
     snapshot.running = true
-    snapshot.statusText = event.message || "批量任务已启动。"
+    const total = event.stats?.total || snapshot.selected.size
+    snapshot.statusText = snapshot.savePath
+      ? `正在整理 ${total} 项资源，稍后将发送到自定义目录。`
+      : `正在整理 ${total} 项资源，稍后将发送到下载器默认目录。`
     renderAll()
     return
   }
 
-  if (event.stage === "progress" && event.item) {
-    snapshot.logs = [event.item, ...snapshot.logs].slice(0, 8)
-    snapshot.statusText = event.item.message || "正在处理下一项。"
+  if (event.stage === "progress") {
+    snapshot.statusText = buildProgressStatus(event)
     renderAll()
     return
   }
 
   if (event.stage === "submitting") {
-    snapshot.statusText = event.message || "正在提交到下载器。"
+    const prepared = event.stats?.prepared || 0
+    snapshot.statusText = prepared
+      ? `正在提交到 qBittorrent，当前共有 ${prepared} 项待发送。`
+      : "正在提交到 qBittorrent。"
     renderAll()
     return
   }
@@ -330,9 +333,6 @@ function handleBatchEvent(event: BatchEventPayload) {
     snapshot.statusText = `完成。成功提交 ${summary.submitted || 0} 项，重复 ${summary.duplicated || 0} 项，失败 ${
       summary.failed || 0
     } 项。`
-    if (Array.isArray(event.results)) {
-      snapshot.logs = event.results.slice(-8).reverse()
-    }
     renderAll()
     return
   }
@@ -349,4 +349,26 @@ function buildSavePathHint(savePath: string) {
   return normalized
     ? `本次任务将请求下载器保存到：${normalized}`
     : DEFAULT_SAVE_PATH_HINT
+}
+
+function buildSelectionStatus(selectedCount: number) {
+  return selectedCount > 0
+    ? `已选 ${selectedCount} 项，可直接发起批量下载。`
+    : "就绪。先在当前列表页勾选资源。"
+}
+
+function buildProgressStatus(event: BatchEventPayload) {
+  const processed = event.stats?.processed || 0
+  const total = event.stats?.total || processed
+  const itemStatus = event.item?.status
+
+  if (itemStatus === "failed") {
+    return `已处理 ${processed}/${total} 项，部分资源提取失败。`
+  }
+
+  if (itemStatus === "duplicate") {
+    return `已处理 ${processed}/${total} 项，检测到重复资源。`
+  }
+
+  return `正在提取真实链接（${processed}/${total}）。`
 }

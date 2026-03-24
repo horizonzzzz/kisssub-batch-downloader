@@ -1,14 +1,14 @@
-import type { BatchLogItem } from "../lib/types"
+import { useState } from "react"
 
 type BatchPanelProps = {
   sourceName?: string
+  isExpanded: boolean
   selectedCount: number
   running: boolean
-  progressText: string
   statusText: string
   savePath: string
   savePathHint?: string
-  logs: BatchLogItem[]
+  onToggleExpanded: (expanded: boolean) => void
   onSelectAll: () => void
   onClear: () => void
   onSavePathChange: (value: string) => void
@@ -17,15 +17,19 @@ type BatchPanelProps = {
   onOpenSettings: () => void
 }
 
+function PanelIcon({ glyph }: { glyph: string }) {
+  return <span className="kisssub-batch-panel__icon-glyph" aria-hidden="true">{glyph}</span>
+}
+
 export function BatchPanel({
   sourceName = "当前站点",
+  isExpanded,
   selectedCount,
   running,
-  progressText,
   statusText,
   savePath,
   savePathHint,
-  logs,
+  onToggleExpanded,
   onSelectAll,
   onClear,
   onSavePathChange,
@@ -33,111 +37,140 @@ export function BatchPanel({
   onDownload,
   onOpenSettings
 }: BatchPanelProps) {
-  const disableSelectionActions = running || selectedCount === 0
+  const [showAdvanced, setShowAdvanced] = useState(false)
   const disablePathActions = running
+  const disableClear = running || selectedCount === 0
+  const disableDownload = running || selectedCount === 0
+
+  if (!isExpanded) {
+    return (
+      <div className="kisssub-batch-launcher">
+        <button
+          type="button"
+          className="kisssub-batch-launcher__button"
+          aria-label="展开批量下载面板"
+          onClick={() => {
+            onToggleExpanded(true)
+          }}>
+          <span className="kisssub-batch-launcher__icon">
+            <PanelIcon glyph="⇩" />
+            {selectedCount > 0 ? (
+              <span className="kisssub-batch-launcher__count" aria-label={`当前已选 ${selectedCount} 项`}>
+                {selectedCount}
+              </span>
+            ) : null}
+          </span>
+          <span className="kisssub-batch-launcher__label">批量下载</span>
+        </button>
+      </div>
+    )
+  }
 
   return (
     <aside className="kisssub-batch-panel" aria-label="批量下载面板">
       <div className="kisssub-batch-panel__header">
-        <div>
+        <div className="kisssub-batch-panel__header-copy">
           <p className="kisssub-batch-panel__eyebrow">Batch Downloader</p>
           <strong>{sourceName} 批量下载</strong>
         </div>
-        <span className="kisssub-batch-panel__badge">{running ? "RUNNING" : "READY"}</span>
-      </div>
-
-      <div className="kisssub-batch-panel__stats">
-        <div className="kisssub-batch-panel__stat-card">
-          <span>已选项目</span>
-          <strong>已选 {selectedCount} 项</strong>
-        </div>
-        <div className="kisssub-batch-panel__stat-card">
-          <span>处理进度</span>
-          <strong>{progressText}</strong>
-        </div>
-      </div>
-
-      <section className="kisssub-batch-panel__status-card">
-        <div className="kisssub-batch-panel__section-head">
-          <strong>任务状态</strong>
-          <span>{running ? "处理中" : "待命"}</span>
-        </div>
-        <p className="kisssub-batch-panel__status">{statusText}</p>
-      </section>
-
-      <section className="kisssub-batch-panel__path-card">
-        <div className="kisssub-batch-panel__section-head">
-          <strong>下载路径</strong>
-          <span>{savePath ? "自定义路径" : "默认目录"}</span>
-        </div>
-        <label className="kisssub-batch-panel__path-label" htmlFor="kisssub-batch-save-path">
-          下载路径
-        </label>
-        <input
-          id="kisssub-batch-save-path"
-          className="kisssub-batch-panel__path-input"
-          type="text"
-          value={savePath}
-          placeholder="留空则使用当前下载器默认目录"
-          onChange={(event) => {
-            onSavePathChange(event.target.value)
-          }}
-          disabled={disablePathActions}
-        />
-        <div className="kisssub-batch-panel__path-actions">
-          <button type="button" onClick={onClearSavePath} disabled={disablePathActions || !savePath}>
-            清空路径
+        <div className="kisssub-batch-panel__header-actions">
+          <button
+            type="button"
+            className="kisssub-batch-panel__icon-button"
+            aria-label="打开设置页"
+            onClick={onOpenSettings}>
+            <PanelIcon glyph="⚙" />
+          </button>
+          <button
+            type="button"
+            className="kisssub-batch-panel__icon-button"
+            aria-label="最小化批量下载面板"
+            onClick={() => {
+              onToggleExpanded(false)
+            }}>
+            <PanelIcon glyph="▾" />
           </button>
         </div>
-        <p className="kisssub-batch-panel__path-hint">
-          {savePathHint ||
-            "留空则使用当前下载器默认目录。远程下载器请手动输入目标主机可识别的绝对路径。"}
-        </p>
-      </section>
+      </div>
 
-      <div className="kisssub-batch-panel__actions kisssub-batch-panel__actions--primary">
-        <button type="button" onClick={onSelectAll} disabled={running}>
-          全选本页
-        </button>
-        <button type="button" onClick={onClear} disabled={disableSelectionActions}>
-          清空
-        </button>
+      <div className="kisssub-batch-panel__body">
+        <section className="kisssub-batch-panel__count-card" aria-live="polite">
+          <span className="kisssub-batch-panel__count-value">{selectedCount}</span>
+          <span className="kisssub-batch-panel__count-label">已选资源</span>
+          <p className="kisssub-batch-panel__status-note">{statusText}</p>
+        </section>
+
+        <section
+          className={
+            showAdvanced
+              ? "kisssub-batch-panel__advanced is-open"
+              : "kisssub-batch-panel__advanced"
+          }>
+          <button
+            type="button"
+            className="kisssub-batch-panel__advanced-toggle"
+            aria-expanded={showAdvanced}
+            aria-controls="kisssub-batch-advanced-options"
+            onClick={() => {
+              setShowAdvanced((open) => !open)
+            }}>
+            <span>高级选项</span>
+            <span className="kisssub-batch-panel__advanced-chevron" aria-hidden="true">
+              {showAdvanced ? "▴" : "▾"}
+            </span>
+          </button>
+
+          {showAdvanced ? (
+            <div className="kisssub-batch-panel__advanced-body" id="kisssub-batch-advanced-options">
+              <label className="kisssub-batch-panel__path-label" htmlFor="kisssub-batch-save-path">
+                临时下载路径
+              </label>
+              <div className="kisssub-batch-panel__path-row">
+                <input
+                  id="kisssub-batch-save-path"
+                  className="kisssub-batch-panel__path-input"
+                  type="text"
+                  value={savePath}
+                  placeholder="留空使用默认目录"
+                  onChange={(event) => {
+                    onSavePathChange(event.target.value)
+                  }}
+                  disabled={disablePathActions}
+                />
+                <button
+                  type="button"
+                  className="kisssub-batch-panel__path-clear"
+                  onClick={onClearSavePath}
+                  disabled={disablePathActions || !savePath}>
+                  清空路径
+                </button>
+              </div>
+              <p className="kisssub-batch-panel__path-hint">
+                {savePathHint ||
+                  "留空则使用当前下载器默认目录。远程下载器请手动输入目标主机可识别的绝对路径。"}
+              </p>
+            </div>
+          ) : null}
+        </section>
+      </div>
+
+      <div className="kisssub-batch-panel__footer">
+        <div className="kisssub-batch-panel__selection-actions">
+          <button type="button" onClick={onSelectAll} disabled={running}>
+            全选本页
+          </button>
+          <button type="button" onClick={onClear} disabled={disableClear}>
+            清空选择
+          </button>
+        </div>
         <button
           type="button"
-          className="primary"
+          className={running ? "kisssub-batch-panel__download is-running" : "kisssub-batch-panel__download"}
           onClick={onDownload}
-          disabled={disableSelectionActions}>
-          批量下载
+          disabled={disableDownload}>
+          {running ? "发送中..." : "批量下载"}
         </button>
       </div>
-
-      <div className="kisssub-batch-panel__actions kisssub-batch-panel__actions--secondary">
-        <button type="button" onClick={onOpenSettings}>
-          设置
-        </button>
-      </div>
-
-      <section className="kisssub-batch-panel__log-section">
-        <div className="kisssub-batch-panel__section-head">
-          <strong>最近结果</strong>
-          <span>{logs.length ? `最新 ${logs.length} 条` : "等待任务输出"}</span>
-        </div>
-        {logs.length ? (
-          <ul className="kisssub-batch-panel__log">
-            {logs.map((log) => (
-              <li
-                key={`${log.detailUrl ?? log.title}-${log.status}-${log.message}`}
-                className={`kisssub-batch-panel__log-item is-${log.status}`}>
-                <strong>{log.title}</strong>
-                <span>{log.status}</span>
-                <p>{log.message}</p>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="kisssub-batch-panel__empty">结果会显示在这里。</p>
-        )}
-      </section>
     </aside>
   )
 }

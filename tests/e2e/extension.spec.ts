@@ -66,22 +66,32 @@ async function assertBatchPanelInjection(
   })
 
   const page = await extension.context.newPage()
-  const popupPromise = extension.context.waitForEvent("page")
-
   await page.goto(options.url)
 
   await expect(page.getByText(options.title)).toBeVisible()
   await expect(page.locator("[data-kisssub-batch-checkbox]")).toHaveCount(2)
-  await expect(page.getByLabel("下载路径")).toBeVisible()
+  await expect(page.getByRole("button", { name: "高级选项" })).toBeVisible()
 
-  await page.getByLabel("下载路径").fill("D:/Anime")
-  await expect(page.getByLabel("下载路径")).toHaveValue("D:/Anime")
+  await page.getByRole("button", { name: "高级选项" }).click()
+  await expect(page.getByLabel("临时下载路径")).toBeVisible()
+
+  await page.getByLabel("临时下载路径").fill("D:/Anime")
+  await expect(page.getByLabel("临时下载路径")).toHaveValue("D:/Anime")
 
   await page.locator("[data-kisssub-batch-checkbox]").first().check()
-  await expect(page.getByText("已选 1 项")).toBeVisible()
-  await expect(page.getByRole("button", { name: "批量下载" })).toBeEnabled()
+  await expect(page.getByText("已选 1 项，可直接发起批量下载。")).toBeVisible()
+  await expect(page.getByRole("button", { name: "批量下载", exact: true })).toBeEnabled()
 
-  await page.getByRole("button", { name: "设置" }).click()
+  await page.getByRole("button", { name: "最小化批量下载面板" }).click()
+  await expect(page.getByRole("button", { name: "展开批量下载面板" })).toBeVisible()
+  await expect(page.getByLabel("当前已选 1 项")).toBeVisible()
+
+  await page.getByRole("button", { name: "展开批量下载面板" }).click()
+  await expect(page.getByText(options.title)).toBeVisible()
+
+  const popupPromise = extension.context.waitForEvent("page")
+
+  await page.getByRole("button", { name: "打开设置页" }).click()
 
   const popup = await popupPromise
   await expect(popup).toHaveURL(/options\.html/)
