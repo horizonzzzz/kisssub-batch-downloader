@@ -106,7 +106,10 @@ describe("BatchPanel", () => {
 
     render(<Harness />)
 
-    await user.click(screen.getByRole("button", { name: "高级选项" }))
+    const advancedToggle = screen.getByRole("button", { name: "高级选项" })
+    expect(advancedToggle.querySelector("svg")).not.toBeNull()
+
+    await user.click(advancedToggle)
 
     const input = screen.getByLabelText("临时下载路径")
     expect(input).toHaveValue("D:\\Downloads")
@@ -131,8 +134,14 @@ describe("BatchPanel", () => {
       onToggleExpanded
     })
 
-    await user.click(screen.getByRole("button", { name: "打开设置页" }))
-    await user.click(screen.getByRole("button", { name: "最小化批量下载面板" }))
+    const openSettingsButton = screen.getByRole("button", { name: "打开设置页" })
+    const minimizeButton = screen.getByRole("button", { name: "最小化批量下载面板" })
+
+    expect(openSettingsButton.querySelector("svg")).not.toBeNull()
+    expect(minimizeButton.querySelector("svg")).not.toBeNull()
+
+    await user.click(openSettingsButton)
+    await user.click(minimizeButton)
 
     expect(onOpenSettings).toHaveBeenCalledTimes(1)
     expect(onToggleExpanded).toHaveBeenCalledWith(false)

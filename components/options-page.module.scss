@@ -376,15 +376,15 @@
 }
 
 .advancedToggleIcon {
-  display: grid;
+  display: inline-flex;
   width: 38px;
   height: 38px;
-  place-items: center;
+  flex: none;
+  align-items: center;
+  justify-content: center;
   border-radius: $radius-sm;
   background: rgba($blue-600, 0.1);
   color: $blue-600;
-  font-size: 20px;
-  font-weight: 700;
 }
 
 .radioGroup {

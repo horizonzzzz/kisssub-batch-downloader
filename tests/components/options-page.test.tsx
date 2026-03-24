@@ -164,4 +164,19 @@ describe("OptionsPage", () => {
     },
     10000
   )
+
+  it("renders an svg icon in the extraction cadence advanced toggle", async () => {
+    const api = {
+      loadSettings: vi.fn().mockResolvedValue(settings),
+      saveSettings: vi.fn(),
+      testConnection: vi.fn()
+    }
+
+    render(<OptionsPage api={api} />)
+
+    expect(await screen.findByDisplayValue("http://127.0.0.1:17474")).toBeInTheDocument()
+
+    const advancedToggle = screen.getByRole("button", { name: /批量提取节奏/ })
+    expect(advancedToggle.querySelector("svg")).not.toBeNull()
+  })
 })

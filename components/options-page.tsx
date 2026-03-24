@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react"
 import { Alert, Button, Card, Form, Input, InputNumber, Radio, Tag, Typography } from "antd"
 import type { AlertProps } from "antd"
 import { FaGithub } from "react-icons/fa"
+import { HiChevronDown, HiChevronUp } from "react-icons/hi2"
 
 import speedlineBrandIcon from "../assets/anime-bt-icon-speedline.svg"
 import { getDeliveryModeLabel, getSupportedDeliveryModes } from "../lib/delivery"
@@ -456,9 +457,19 @@ export function OptionsPage({ api }: OptionsPageProps) {
                           配置并发数、重试次数以及注入和稳定等待时间。
                         </Typography.Paragraph>
                       </div>
-                      <span className={styles.advancedToggleIcon} aria-hidden="true">
-                        {advancedOpen ? "−" : "+"}
-                      </span>
+                      {advancedOpen ? (
+                        <HiChevronUp
+                          className={styles.advancedToggleIcon}
+                          aria-hidden="true"
+                          focusable="false"
+                        />
+                      ) : (
+                        <HiChevronDown
+                          className={styles.advancedToggleIcon}
+                          aria-hidden="true"
+                          focusable="false"
+                        />
+                      )}
                     </button>
 
                     {advancedOpen ? (

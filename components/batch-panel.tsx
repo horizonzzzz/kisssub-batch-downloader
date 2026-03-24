@@ -1,4 +1,9 @@
 import { useState } from "react"
+import {
+  HiChevronDown,
+  HiChevronUp,
+  HiOutlineCog6Tooth
+} from "react-icons/hi2"
 
 import speedlineBrandIcon from "../assets/anime-bt-icon-speedline.svg"
 import styles from "./batch-panel.module.scss"
@@ -18,14 +23,6 @@ type BatchPanelProps = {
   onClearSavePath: () => void
   onDownload: () => void
   onOpenSettings: () => void
-}
-
-function GlyphIcon({ glyph }: { glyph: string }) {
-  return (
-    <span className={styles.iconGlyph} aria-hidden="true">
-      {glyph}
-    </span>
-  )
 }
 
 export function BatchPanel({
@@ -110,7 +107,11 @@ export function BatchPanel({
               className={styles.iconButton}
               aria-label="打开设置页"
               onClick={onOpenSettings}>
-              <GlyphIcon glyph="⚙" />
+              <HiOutlineCog6Tooth
+                className={styles.iconButtonIcon}
+                aria-hidden="true"
+                focusable="false"
+              />
             </button>
             <button
               type="button"
@@ -119,7 +120,11 @@ export function BatchPanel({
               onClick={() => {
                 onToggleExpanded(false)
               }}>
-              <GlyphIcon glyph="▾" />
+              <HiChevronDown
+                className={styles.iconButtonIcon}
+                aria-hidden="true"
+                focusable="false"
+              />
             </button>
           </div>
         </div>
@@ -144,9 +149,19 @@ export function BatchPanel({
                 setShowAdvanced((open) => !open)
               }}>
               <span>高级选项</span>
-              <span className={styles.advancedChevron} aria-hidden="true">
-                {showAdvanced ? "▴" : "▾"}
-              </span>
+              {showAdvanced ? (
+                <HiChevronUp
+                  className={styles.advancedToggleIcon}
+                  aria-hidden="true"
+                  focusable="false"
+                />
+              ) : (
+                <HiChevronDown
+                  className={styles.advancedToggleIcon}
+                  aria-hidden="true"
+                  focusable="false"
+                />
+              )}
             </button>
 
             {showAdvanced ? (
