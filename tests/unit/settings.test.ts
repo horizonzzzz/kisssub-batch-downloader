@@ -44,6 +44,47 @@ describe("sanitizeSettings", () => {
     })
   })
 
+  it("defaults every source to enabled", () => {
+    expect(sanitizeSettings({}).enabledSources).toEqual({
+      kisssub: true,
+      dongmanhuayuan: true,
+      acgrip: true,
+      bangumimoe: true
+    })
+  })
+
+  it("keeps all sources enabled when older settings omit enabledSources", () => {
+    expect(
+      sanitizeSettings({
+        qbBaseUrl: "http://127.0.0.1:17474",
+        qbUsername: "admin"
+      }).enabledSources
+    ).toEqual({
+      kisssub: true,
+      dongmanhuayuan: true,
+      acgrip: true,
+      bangumimoe: true
+    })
+  })
+
+  it("normalizes per-source enablement and falls back to defaults for invalid values", () => {
+    expect(
+      sanitizeSettings({
+        enabledSources: {
+          kisssub: false,
+          dongmanhuayuan: "false",
+          acgrip: null,
+          bangumimoe: true
+        } as never
+      }).enabledSources
+    ).toEqual({
+      kisssub: false,
+      dongmanhuayuan: true,
+      acgrip: true,
+      bangumimoe: true
+    })
+  })
+
   it("clamps numeric settings to the existing limits", () => {
     expect(
       sanitizeSettings({

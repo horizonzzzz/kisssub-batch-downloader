@@ -1,5 +1,6 @@
 import { DEFAULT_SETTINGS } from "./constants"
 import { normalizeSourceDeliveryModes } from "./delivery"
+import { normalizeEnabledSources } from "./source-enablement"
 import type { Settings } from "./types"
 
 type RawSettings = Partial<Settings> & Record<string, unknown>
@@ -22,7 +23,8 @@ export function sanitizeSettings(raw: RawSettings): Settings {
     lastSavePath: normalizeSavePath(raw.lastSavePath ?? DEFAULT_SETTINGS.lastSavePath),
     sourceDeliveryModes: normalizeSourceDeliveryModes(
       raw.sourceDeliveryModes ?? DEFAULT_SETTINGS.sourceDeliveryModes
-    )
+    ),
+    enabledSources: normalizeEnabledSources(raw.enabledSources ?? DEFAULT_SETTINGS.enabledSources)
   }
 }
 

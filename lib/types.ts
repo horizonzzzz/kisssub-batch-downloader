@@ -48,6 +48,7 @@ export type Settings = {
   remoteScriptRevision: string
   lastSavePath: string
   sourceDeliveryModes: Partial<Record<SourceId, DeliveryMode>>
+  enabledSources: Partial<Record<SourceId, boolean>>
 }
 
 export type TestQbConnectionResult = {

@@ -1,6 +1,5 @@
 import type { DeliveryMode, Settings, SourceId } from "./types"
-
-const SOURCE_IDS: SourceId[] = ["kisssub", "dongmanhuayuan", "acgrip", "bangumimoe"]
+import { SOURCE_IDS } from "./source-config"
 
 const SUPPORTED_DELIVERY_MODES: Record<SourceId, readonly DeliveryMode[]> = {
   kisssub: ["magnet", "torrent-url", "torrent-file"],
