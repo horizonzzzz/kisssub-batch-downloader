@@ -103,26 +103,31 @@ const navGroups: Array<{
 const overviewSites: Array<{
   name: string
   url: string
+  summary: string
   accent: OverviewSiteAccent
 }> = [
   {
     name: "Kisssub",
     url: "kisssub.org",
+    summary: "整合番组表与字幕组的动漫资源站",
     accent: "kisssub"
   },
   {
     name: "Dongmanhuayuan",
     url: "dongmanhuayuan.com",
+    summary: "面向动漫爱好者的BT资源交流站",
     accent: "dongmanhuayuan"
   },
   {
     name: "ACG.RIP",
     url: "acg.rip",
+    summary: "分类清晰、以种子直下为主的ACG站",
     accent: "acgrip"
   },
   {
     name: "Bangumi.moe",
     url: "bangumi.moe",
+    summary: "追番日历结合最新种子发布的社区",
     accent: "bangumimoe"
   }
 ]
@@ -604,7 +609,7 @@ export function OptionsPage({ api }: OptionsPageProps) {
                           <span>支持良好</span>
                         </div>
                         <Typography.Title level={3}>{site.name}</Typography.Title>
-                        <Typography.Paragraph>{site.url}</Typography.Paragraph>
+                        <Typography.Paragraph>{site.summary}</Typography.Paragraph>
                         <Button type="default" onClick={() => window.open(`https://${site.url}`, "_blank")}>
                           访问站点
                         </Button>

@@ -82,6 +82,10 @@ describe("OptionsPage", () => {
       await user.click(screen.getByRole("button", { name: "源站概览" }))
       expect(screen.getByRole("heading", { name: "源站概览" })).toBeInTheDocument()
       expect(screen.getAllByRole("button", { name: "访问站点" })).toHaveLength(4)
+      expect(screen.getByText("整合番组表与字幕组的动漫资源站")).toBeInTheDocument()
+      expect(screen.getByText("面向动漫爱好者的BT资源交流站")).toBeInTheDocument()
+      expect(screen.getByText("分类清晰、以种子直下为主的ACG站")).toBeInTheDocument()
+      expect(screen.getByText("追番日历结合最新种子发布的社区")).toBeInTheDocument()
       expect(screen.queryByText("查看当前扩展支持的动漫 BT 站点状态。")).not.toBeInTheDocument()
       expect(screen.queryByText("优先推荐种子下载后上传到 qB。")).not.toBeInTheDocument()
     },

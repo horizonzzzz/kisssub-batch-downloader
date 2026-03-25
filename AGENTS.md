@@ -104,5 +104,6 @@ Commands are defined in `package.json`:
   - `### Refactor`
 - Under each subsection, add concise bullets that summarize the relevant changes and append the associated commit reference for traceability.
 - Omit any empty subsection rather than inserting placeholder text, but keep the subsection heading format exactly as `### Features`, `### Fixes`, and `### Refactor` whenever that category has entries.
+- When creating commits, use standard Conventional Commits style messages such as `feat: ...`, `fix: ...`, `docs: ...`, `refactor: ...`, or `chore: ...`.
 - If a change updates the extension branding or icon pipeline, keep `assets/anime-bt-icon-speedline.svg` and the generated `assets/icon.png` aligned in the same change.
-- If a code change makes any statement in this file stale, update `AGENT.md` before finishing the task.
+- If a code change makes any statement in this file stale, update `AGENTS.md` before finishing the task.
