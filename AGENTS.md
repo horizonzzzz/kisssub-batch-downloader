@@ -45,7 +45,7 @@ The extension injects selection UI into supported list pages, reuses direct magn
 - `assets/`
   Source icon assets for the extension brand. `anime-bt-icon-speedline.svg` is the UI source icon, and `icon.png` is the generated packaging icon consumed by Plasmo for extension icon sizes.
 - `CHANGELOG.md`
-  Canonical release notes for tagged versions. Each GitHub Release page should reuse the matching version section from this file.
+  Canonical release notes for tagged versions. Each GitHub Release page should reuse the matching version section from this file. New release entries must summarize the changes from the previous version tag up to the new release commit.
 - `lib/`
   Shared batch helpers, background batch orchestration helpers, extraction helpers, qBittorrent API helpers, settings logic, constants, and shared types.
 - `.github/workflows/release.yml`
@@ -96,5 +96,13 @@ Commands are defined in `package.json`:
 - Prefer editing the real source files listed above, not generated outputs.
 - If a change adds a new source adapter, changes downloader behavior, alters commands, changes test coverage, moves responsibilities between directories, or changes major runtime flow, update this file in the same change.
 - If a change alters release notes sourcing, tagged asset naming, or GitHub release automation, update `CHANGELOG.md`, `.github/workflows/release.yml`, and this file together.
+- When preparing a version release, `CHANGELOG.md` must be updated before tagging. Treat this as a required release step, not an optional documentation cleanup.
+- Each new `CHANGELOG.md` version section must cover the diff from the previous version tag to the new release commit, rather than only summarizing the final release commit itself.
+- Each new version section must use this structure under `## <version>`:
+  - `### Features`
+  - `### Fixes`
+  - `### Refactor`
+- Under each subsection, add concise bullets that summarize the relevant changes and append the associated commit reference for traceability.
+- Omit any empty subsection rather than inserting placeholder text, but keep the subsection heading format exactly as `### Features`, `### Fixes`, and `### Refactor` whenever that category has entries.
 - If a change updates the extension branding or icon pipeline, keep `assets/anime-bt-icon-speedline.svg` and the generated `assets/icon.png` aligned in the same change.
 - If a code change makes any statement in this file stale, update `AGENT.md` before finishing the task.
