@@ -9,9 +9,17 @@ The extension injects selection UI into supported list pages, reuses direct magn
 ## Current Scope
 
 - Supported source adapters: `kisssub.org`, `dongmanhuayuan.com`, `acg.rip`, `bangumi.moe`
+- Supported source management in the options page:
+  - `连接与基础设置`
+  - `站点配置`
+  - `源站概览`
 - Supported downloader target: `qBittorrent WebUI` only
 - Optional per-batch save path override is supported
 - Magnet links are preferred; torrent URLs are the fallback
+- Each supported source can be enabled or disabled by the user:
+  - disabled sources keep their saved per-site configuration
+  - disabled sources do not inject the batch UI on matching pages
+  - disabled sources are rejected again by the background batch pipeline
 - Releases are published from semantic version tags, with GitHub Release notes sourced from `CHANGELOG.md`
 - Release assets are uploaded as versioned Chrome MV3 zip archives named `anime-bt-batch-downloader-chrome-mv3-v<version>.zip`
 - Known product gaps:
@@ -37,7 +45,7 @@ The extension injects selection UI into supported list pages, reuses direct magn
 - `options.tsx`
   Boots the options page and wires the React UI to background message APIs.
 - `components/`
-  UI components for the floating batch panel, selection checkbox, and options page, plus their colocated `*.module.scss` files.
+  UI components for the floating batch panel, selection checkbox, unified site-management view, and options page shell, plus their colocated `*.module.scss` files.
 - `contents/`
   Content script entry for supported source pages and DOM injection orchestration.
 - `styles/`
@@ -47,7 +55,7 @@ The extension injects selection UI into supported list pages, reuses direct magn
 - `CHANGELOG.md`
   Canonical release notes for tagged versions. Each GitHub Release page should reuse the matching version section from this file. New release entries must summarize the changes from the previous version tag up to the new release commit.
 - `lib/`
-  Shared batch helpers, background batch orchestration helpers, extraction helpers, qBittorrent API helpers, settings logic, constants, and shared types.
+  Shared batch helpers, background batch orchestration helpers, extraction helpers, qBittorrent API helpers, settings logic, per-source configuration metadata, constants, and shared types.
 - `.github/workflows/release.yml`
   Tagged-release automation that validates versions, packages the extension, extracts the matching `CHANGELOG.md` section, renames the packaged archive, and publishes the GitHub Release.
 - `scripts/prepare-release.mjs`
