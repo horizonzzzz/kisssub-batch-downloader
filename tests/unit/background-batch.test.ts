@@ -223,6 +223,36 @@ describe("createBatchDownloadManager", () => {
     })
   })
 
+  it("rejects batch downloads from disabled sources before starting a job", async () => {
+    const { manager, dependencies } = createManager({
+      saveSettings: vi.fn().mockResolvedValue(
+        createSettings({
+          enabledSources: {
+            ...DEFAULT_SETTINGS.enabledSources,
+            acgrip: false
+          }
+        })
+      )
+    })
+
+    await expect(
+      manager.startBatchDownload(
+        15,
+        [
+          {
+            sourceId: "acgrip",
+            detailUrl: "https://acg.rip/t/350361",
+            title: "Hell Mode - 11"
+          }
+        ],
+        ""
+      )
+    ).rejects.toThrow("Batch downloads are disabled for source: acgrip")
+
+    expect(dependencies.sendBatchEvent).not.toHaveBeenCalled()
+    expect(manager.activeJobs.size).toBe(0)
+  })
+
   it("reports fatal errors from the extraction pipeline", async () => {
     const { manager, dependencies } = createManager({
       extractSingleItem: vi.fn().mockRejectedValue(new Error("kaboom"))

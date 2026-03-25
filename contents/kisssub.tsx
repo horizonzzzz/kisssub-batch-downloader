@@ -9,10 +9,11 @@ import {
   getAnchorMountTarget,
   getBatchItemFromAnchor,
   getDetailAnchors,
-  getSourceAdapterForLocation
+  getSourceAdapterForLocation,
+  getEnabledSourceAdapterForLocation
 } from "../lib/content-page"
 import type { SourceAdapter } from "../lib/sources/types"
-import type { BatchEventPayload, BatchItem } from "../lib/types"
+import type { BatchEventPayload, BatchItem, Settings } from "../lib/types"
 
 export default function KisssubContentScript() {
   return null
@@ -50,7 +51,7 @@ type PanelSnapshot = {
 const DEFAULT_SAVE_PATH_HINT =
   "留空则使用当前下载器默认目录。远程下载器请手动输入目标主机可识别的绝对路径。"
 
-const activeSource = getSourceAdapterForLocation(window.location)
+let activeSource: SourceAdapter | null = null
 
 const snapshot: PanelSnapshot = {
   isExpanded: true,
@@ -66,11 +67,33 @@ let panelRoot: Root | null = null
 let panelContainer: HTMLDivElement | null = null
 let observer: MutationObserver | null = null
 
-if (activeSource) {
-  mountPanel()
-  void hydrateSavePath()
-  scanAndDecorate(activeSource)
-  observeMutations()
+void bootstrap()
+
+async function bootstrap() {
+  try {
+    const matchedSource = getSourceAdapterForLocation(window.location)
+    if (!matchedSource) {
+      return
+    }
+
+    const settings = await loadSettingsForContentScript()
+    const source = getEnabledSourceAdapterForLocation(window.location, settings)
+    if (!source) {
+      return
+    }
+
+    activeSource = source
+    mountPanel()
+    hydrateSavePath(settings)
+    scanAndDecorate(source)
+    observeMutations()
+    registerBatchEventListener()
+  } catch (error) {
+    console.error("[Anime BT Batch] Failed to bootstrap content script.", error)
+  }
+}
+
+function registerBatchEventListener() {
   chrome.runtime.onMessage.addListener((message: { type?: string } & BatchEventPayload) => {
     if (!message || message.type !== BATCH_EVENT) {
       return
@@ -78,6 +101,18 @@ if (activeSource) {
 
     handleBatchEvent(message)
   })
+}
+
+async function loadSettingsForContentScript(): Promise<Settings> {
+  const response = await chrome.runtime.sendMessage({
+    type: "GET_SETTINGS"
+  })
+
+  if (!response?.ok || !response.settings) {
+    throw new Error(response?.error ?? "Failed to load settings for the content script.")
+  }
+
+  return response.settings as Settings
 }
 
 function mountPanel() {
@@ -254,27 +289,15 @@ function clearSavePath() {
   renderAll()
 }
 
-async function hydrateSavePath() {
-  try {
-    const response = await chrome.runtime.sendMessage({
-      type: "GET_SETTINGS"
-    })
-
-    if (!response?.ok) {
-      return
-    }
-
-    const loadedPath = String((response.settings as { lastSavePath?: string } | undefined)?.lastSavePath ?? "").trim()
-    if (!loadedPath) {
-      return
-    }
-
-    snapshot.savePath = loadedPath
-    snapshot.savePathHint = `已载入上次使用的路径：${loadedPath}`
-    renderAll()
-  } catch {
-    // Ignore initialization failures and keep the panel usable.
+function hydrateSavePath(settings: Pick<Settings, "lastSavePath">) {
+  const loadedPath = String(settings.lastSavePath ?? "").trim()
+  if (!loadedPath) {
+    return
   }
+
+  snapshot.savePath = loadedPath
+  snapshot.savePathHint = `已载入上次使用的路径：${loadedPath}`
+  renderAll()
 }
 
 async function startBatchDownload() {

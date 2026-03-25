@@ -4,6 +4,7 @@ import {
   createStats,
   normalizeBatchItems
 } from "./batch"
+import { getDisabledSources } from "./source-enablement"
 import type { QbTorrentFile } from "./qb"
 import type {
   BatchEventPayload,
@@ -67,6 +68,14 @@ export function createBatchDownloadManager(dependencies: BackgroundBatchDependen
 
     const savePath = normalizeSavePath(requestedSavePath)
     const settings = await dependencies.saveSettings({ lastSavePath: savePath })
+    const disabledSources = getDisabledSources(
+      Array.from(new Set(normalizedItems.map((item) => item.sourceId))),
+      settings
+    )
+    if (disabledSources.length) {
+      throw new Error(`Batch downloads are disabled for source: ${disabledSources.join(", ")}`)
+    }
+
     const job: BatchJob = {
       sourceTabId,
       stats: createStats(normalizedItems.length),

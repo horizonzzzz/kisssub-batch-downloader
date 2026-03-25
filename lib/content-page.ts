@@ -1,6 +1,7 @@
 import { getSourceAdapterForPage } from "./sources"
 import type { SourceAdapter } from "./sources/types"
-import type { BatchItem } from "./types"
+import { resolveSourceEnabled } from "./source-enablement"
+import type { BatchItem, Settings } from "./types"
 
 function toUrl(location: Pick<Location, "href"> | URL): URL {
   return location instanceof URL ? location : new URL(location.href)
@@ -8,6 +9,18 @@ function toUrl(location: Pick<Location, "href"> | URL): URL {
 
 export function getSourceAdapterForLocation(location: Pick<Location, "href"> | URL): SourceAdapter | null {
   return getSourceAdapterForPage(toUrl(location))
+}
+
+export function getEnabledSourceAdapterForLocation(
+  location: Pick<Location, "href"> | URL,
+  settings: Pick<Settings, "enabledSources">
+): SourceAdapter | null {
+  const source = getSourceAdapterForLocation(location)
+  if (!source) {
+    return null
+  }
+
+  return resolveSourceEnabled(source.id, settings) ? source : null
 }
 
 export function isListPage(location: Pick<Location, "href"> | URL): boolean {
