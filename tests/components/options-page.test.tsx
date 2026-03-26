@@ -99,6 +99,26 @@ describe("OptionsPage", () => {
     10000
   )
 
+  it("renders a real site icon for each site in the site management cards", async () => {
+    const user = userEvent.setup()
+    const api = {
+      loadSettings: vi.fn().mockResolvedValue(settings),
+      saveSettings: vi.fn(),
+      testConnection: vi.fn()
+    }
+
+    render(<OptionsPage api={api} />)
+
+    expect(await screen.findByDisplayValue("http://127.0.0.1:17474")).toBeInTheDocument()
+
+    await user.click(screen.getByRole("button", { name: "站点配置" }))
+
+    expect(screen.getByTestId("site-icon-kisssub").tagName).toBe("IMG")
+    expect(screen.getByTestId("site-icon-dongmanhuayuan").tagName).toBe("IMG")
+    expect(screen.getByTestId("site-icon-acgrip").tagName).toBe("IMG")
+    expect(screen.getByTestId("site-icon-bangumimoe").tagName).toBe("IMG")
+  })
+
   it("falls back to the 7474 default qB address when saved settings are incomplete", async () => {
     const api = {
       loadSettings: vi.fn().mockResolvedValue({}),

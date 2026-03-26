@@ -4,6 +4,10 @@ import { Form, Input, Radio, Switch, Typography } from "antd"
 import type { FormInstance } from "antd"
 import { HiChevronDown, HiChevronUp } from "react-icons/hi2"
 
+import acgripSiteIcon from "../assets/site-icon-acgrip.png"
+import bangumiMoeSiteIcon from "../assets/site-icon-bangumimoe.svg"
+import dongmanhuayuanSiteIcon from "../assets/site-icon-dongmanhuayuan.png"
+import kisssubSiteIcon from "../assets/site-icon-kisssub.png"
 import {
   getDeliveryModeLabel,
   getSupportedDeliveryModes,
@@ -18,11 +22,11 @@ import { normalizeEnabledSources, resolveSourceEnabled } from "../lib/source-ena
 import type { Settings, SourceId } from "../lib/types"
 import styles from "./site-management-view.module.scss"
 
-const SITE_MONOGRAMS: Record<SourceId, string> = {
-  kisssub: "KS",
-  dongmanhuayuan: "DM",
-  acgrip: "AR",
-  bangumimoe: "BM"
+const SITE_ICONS: Record<SourceId, string> = {
+  kisssub: kisssubSiteIcon,
+  dongmanhuayuan: dongmanhuayuanSiteIcon,
+  acgrip: acgripSiteIcon,
+  bangumimoe: bangumiMoeSiteIcon
 }
 
 type SiteManagementViewProps = {
@@ -248,7 +252,14 @@ export function SiteManagementView({ form }: SiteManagementViewProps) {
               <div className={styles.cardHeader}>
                 <div className={styles.cardIdentity}>
                   <div className={styles.siteMark} aria-hidden="true">
-                    {SITE_MONOGRAMS[site.id]}
+                    <img
+                      src={SITE_ICONS[site.id]}
+                      alt=""
+                      loading="eager"
+                      decoding="async"
+                      data-testid={`site-icon-${site.id}`}
+                      className={styles.siteMarkIcon}
+                    />
                   </div>
                   <div className={styles.siteInfo}>
                     <div className={styles.siteTitleRow}>

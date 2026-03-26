@@ -51,7 +51,7 @@ The extension injects selection UI into supported list pages, reuses direct magn
 - `styles/`
   Shared SCSS tokens, mixins, and options-page global styles that are consumed by component-level SCSS modules.
 - `assets/`
-  Source icon assets for the extension brand. `anime-bt-icon-speedline.svg` is the UI source icon, and `icon.png` is the generated packaging icon consumed by Plasmo for extension icon sizes.
+  Static icon assets used by the extension UI. `anime-bt-icon-speedline.svg` is the extension brand icon, packaged site icons for the options-page site-management cards are normalized to local `site-icon-*.(png|svg)` assets, and `icon.png` is the generated packaging icon consumed by Plasmo for extension icon sizes.
 - `CHANGELOG.md`
   Canonical release notes for tagged versions. Each GitHub Release page should reuse the matching version section from this file. New release entries must summarize the changes from the previous version tag up to the new release commit.
 - `lib/`

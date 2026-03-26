@@ -91,8 +91,13 @@
     box-shadow: 0 10px 24px rgba($slate-900, 0.04);
 
     .siteMark {
-      background: linear-gradient(135deg, rgba($slate-300, 0.56), rgba($slate-200, 0.8));
-      color: $slate-500;
+      border-color: rgba($slate-400, 0.18);
+      background: rgba($slate-100, 0.88);
+    }
+
+    .siteMarkIcon {
+      filter: grayscale(1) saturate(0.35);
+      opacity: 0.74;
     }
 
     .siteTitleRow :global(h3.ant-typography) {
@@ -121,14 +126,19 @@
   height: 52px;
   flex: none;
   place-items: center;
+  padding: 6px;
   border-radius: 18px;
-  background: linear-gradient(135deg, rgba($blue-500, 0.18), rgba($cyan-500, 0.2));
-  color: $blue-700;
-  font-family: $font-family-condensed;
-  font-size: 18px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
+  border: 1px solid rgba($blue-500, 0.14);
+  background: rgba($white, 0.94);
   box-shadow: inset 0 1px 0 rgba($white, 0.82);
+}
+
+.siteMarkIcon {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 12px;
+  object-fit: contain;
 }
 
 .siteInfo {
@@ -379,8 +389,12 @@
   .siteMark {
     width: 44px;
     height: 44px;
+    padding: 5px;
     border-radius: 14px;
-    font-size: 15px;
+  }
+
+  .siteMarkIcon {
+    border-radius: 10px;
   }
 
   .switchCluster {
