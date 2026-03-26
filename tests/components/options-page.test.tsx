@@ -235,6 +235,41 @@ describe("OptionsPage", () => {
     20000
   )
 
+  it("disables the save button while persisting settings", async () => {
+    const user = userEvent.setup()
+    let resolveSave:
+      | ((value: typeof settings) => void)
+      | undefined
+    const api = {
+      loadSettings: vi.fn().mockResolvedValue(settings),
+      saveSettings: vi.fn().mockImplementation(
+        () =>
+          new Promise<typeof settings>((resolve) => {
+            resolveSave = resolve
+          })
+      ),
+      testConnection: vi.fn()
+    }
+
+    render(<OptionsPage api={api} />)
+
+    expect(await screen.findByDisplayValue("http://127.0.0.1:17474")).toBeInTheDocument()
+
+    const saveButton = screen.getByRole("button", { name: "保存所有设置" })
+    expect(saveButton).not.toBeDisabled()
+
+    await user.click(saveButton)
+
+    expect(api.saveSettings).toHaveBeenCalledTimes(1)
+    expect(saveButton).toBeDisabled()
+
+    resolveSave?.(settings)
+
+    await waitFor(() => {
+      expect(saveButton).not.toBeDisabled()
+    })
+  })
+
   it(
     "preserves site-specific settings when a site is disabled and then enabled again",
     async () => {

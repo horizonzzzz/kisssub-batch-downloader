@@ -1,5 +1,4 @@
-import { Globe2 } from "lucide-react"
-import { FaGithub } from "react-icons/fa"
+import { ExternalLink, Globe2 } from "lucide-react"
 
 import speedlineBrandIcon from "../../../assets/anime-bt-icon-speedline.svg"
 import { SOURCE_IDS } from "../../../lib/source-config"
@@ -105,7 +104,7 @@ export function OptionsSidebar({
           target="_blank"
           rel="noopener noreferrer"
           aria-label="查看 GitHub 仓库">
-          <FaGithub className="h-4 w-4" aria-hidden="true" />
+          <ExternalLink className="h-4 w-4" aria-hidden="true" />
           <span>查看 GitHub 仓库</span>
         </a>
       </div>

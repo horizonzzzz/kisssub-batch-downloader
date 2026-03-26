@@ -19,7 +19,7 @@ export function OptionsFooter({
           {footerLabel}
         </strong>
       </div>
-      <Button type="submit" size="lg" className="min-w-40">
+      <Button type="submit" size="lg" className="min-w-40" disabled={saving}>
         {saving ? <LoaderCircle className="h-4 w-4 animate-spin" aria-hidden="true" /> : null}
         <span>保存所有设置</span>
       </Button>
