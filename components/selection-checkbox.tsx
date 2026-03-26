@@ -22,7 +22,7 @@ export function SelectionCheckbox({ checked, onChange }: SelectionCheckboxProps)
       <input
         type="checkbox"
         className={styles.input}
-        data-kisssub-batch-checkbox="1"
+        data-anime-bt-batch-checkbox="1"
         aria-label="选择这条帖子进行批量下载"
         checked={checked}
         onChange={(event) => onChange(event.currentTarget.checked)}

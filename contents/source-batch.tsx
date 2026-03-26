@@ -15,7 +15,7 @@ import {
 import type { SourceAdapter } from "../lib/sources/types"
 import type { BatchEventPayload, BatchItem, Settings } from "../lib/types"
 
-export default function KisssubContentScript() {
+export default function SourceBatchContentScript() {
   return null
 }
 
@@ -121,7 +121,7 @@ function mountPanel() {
   }
 
   panelContainer = document.createElement("div")
-  panelContainer.dataset.kisssubBatchPanelRoot = "1"
+  panelContainer.dataset.animeBtBatchPanelRoot = "1"
   document.body.appendChild(panelContainer)
   panelRoot = createRoot(panelContainer)
   renderAll()
@@ -162,7 +162,7 @@ function scanAndDecorate(source: SourceAdapter) {
   const pageUrl = new URL(window.location.href)
 
   for (const anchor of getDetailAnchors(source, document, pageUrl)) {
-    if (anchor.dataset.kisssubBatchDecorated === "1") {
+    if (anchor.dataset.animeBtBatchDecorated === "1") {
       continue
     }
 
@@ -177,7 +177,7 @@ function scanAndDecorate(source: SourceAdapter) {
     }
 
     const container = document.createElement("span")
-    container.dataset.kisssubBatchCheckboxRoot = "1"
+    container.dataset.animeBtBatchCheckboxRoot = "1"
 
     if (targetCell.firstChild) {
       targetCell.insertBefore(container, targetCell.firstChild)
@@ -192,7 +192,7 @@ function scanAndDecorate(source: SourceAdapter) {
       item
     })
 
-    anchor.dataset.kisssubBatchDecorated = "1"
+    anchor.dataset.animeBtBatchDecorated = "1"
   }
 }
 

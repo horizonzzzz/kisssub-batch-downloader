@@ -41,6 +41,8 @@ export function BatchPanel({
   onDownload,
   onOpenSettings
 }: BatchPanelProps) {
+  const advancedOptionsId = "anime-bt-batch-advanced-options"
+  const savePathInputId = "anime-bt-batch-save-path"
   const [showAdvanced, setShowAdvanced] = useState(false)
   const disablePathActions = running
   const disableClear = running || selectedCount === 0
@@ -144,7 +146,7 @@ export function BatchPanel({
               type="button"
               className={styles.advancedToggle}
               aria-expanded={showAdvanced}
-              aria-controls="kisssub-batch-advanced-options"
+              aria-controls={advancedOptionsId}
               onClick={() => {
                 setShowAdvanced((open) => !open)
               }}>
@@ -165,13 +167,13 @@ export function BatchPanel({
             </button>
 
             {showAdvanced ? (
-              <div className={styles.advancedBody} id="kisssub-batch-advanced-options">
-                <label className={styles.pathLabel} htmlFor="kisssub-batch-save-path">
+              <div className={styles.advancedBody} id={advancedOptionsId}>
+                <label className={styles.pathLabel} htmlFor={savePathInputId}>
                   临时下载路径
                 </label>
                 <div className={styles.pathRow}>
                   <input
-                    id="kisssub-batch-save-path"
+                    id={savePathInputId}
                     className={styles.pathInput}
                     type="text"
                     value={savePath}

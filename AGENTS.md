@@ -35,7 +35,7 @@ The extension injects selection UI into supported list pages, reuses direct magn
 - `SCSS Modules` for extension-owned styling, with a small shared SCSS token/mixin layer
 - Browser-extension runtime with:
   - a background service worker in `background.ts`
-  - a content script entry in `contents/kisssub.tsx`
+  - a content script entry in `contents/source-batch.tsx`
   - an options page entry in `options.tsx`
 
 ## Source Of Truth Files

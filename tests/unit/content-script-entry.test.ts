@@ -58,7 +58,7 @@ describe("content script entry", () => {
   })
 
   it("provides a default export for the Plasmo content-script wrapper", async () => {
-    const module = (await import("../../contents/kisssub")) as Record<string, unknown>
+    const module = (await import("../../contents/source-batch")) as Record<string, unknown>
 
     expect(module.default).toBeTypeOf("function")
   })
@@ -78,7 +78,7 @@ describe("content script entry", () => {
     })
     getEnabledSourceAdapterForLocation.mockReturnValueOnce(null)
 
-    await import("../../contents/kisssub")
+    await import("../../contents/source-batch")
 
     await vi.waitFor(() => {
       expect(runtimeSendMessage).toHaveBeenCalledWith({
@@ -89,7 +89,7 @@ describe("content script entry", () => {
     expect(getEnabledSourceAdapterForLocation).toHaveBeenCalledTimes(1)
     expect(createRoot).not.toHaveBeenCalled()
     expect(runtimeAddListener).not.toHaveBeenCalled()
-    expect(document.querySelector("[data-kisssub-batch-panel-root]")).toBeNull()
+    expect(document.querySelector("[data-anime-bt-batch-panel-root]")).toBeNull()
   })
 
   it("does not inject UI when loading settings fails", async () => {
@@ -99,7 +99,7 @@ describe("content script entry", () => {
     })
     runtimeSendMessage.mockRejectedValueOnce(new Error("settings unavailable"))
 
-    await import("../../contents/kisssub")
+    await import("../../contents/source-batch")
 
     await vi.waitFor(() => {
       expect(runtimeSendMessage).toHaveBeenCalledWith({
@@ -110,6 +110,6 @@ describe("content script entry", () => {
     expect(getEnabledSourceAdapterForLocation).not.toHaveBeenCalled()
     expect(createRoot).not.toHaveBeenCalled()
     expect(runtimeAddListener).not.toHaveBeenCalled()
-    expect(document.querySelector("[data-kisssub-batch-panel-root]")).toBeNull()
+    expect(document.querySelector("[data-anime-bt-batch-panel-root]")).toBeNull()
   })
 })
