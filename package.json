@@ -1,7 +1,7 @@
 {
   "name": "anime-bt-batch-downloader",
   "displayName": "Anime BT Batch",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "private": true,
   "license": "MIT",
   "description": "Browser extension for batching downloads from supported anime BT source pages into qBittorrent.",
@@ -19,7 +19,7 @@
   },
   "manifest": {
     "name": "Anime BT Batch",
-    "version": "1.2.0",
+    "version": "1.3.0",
     "description": "Select posts from supported anime BT source pages, resolve real download links, and send them to qBittorrent in one batch.",
     "minimum_chrome_version": "114",
     "permissions": [

@@ -2,6 +2,23 @@
 
 All notable release changes for `Anime BT Batch Downloader` are tracked here. GitHub Release pages should reuse the matching version section from this file.
 
+## 1.3.0
+
+### Features
+
+- Added per-source enablement controls across the options workspace and runtime batch pipeline so disabled sites retain their saved configuration while batch UI injection and background processing stay blocked until re-enabled. (`dfb862d`, `28c573d`, `97094e9`, `bdb2d0c`, `fac700a`)
+- Added a source overview summary and packaged site icons so the unified site-management view is easier to scan at a glance. (`b2ec69d`, `7806fd1`)
+- Refined the extraction cadence settings panel so source-specific extraction behavior is clearer to configure. (`d98ffe7`)
+
+### Fixes
+
+- Fixed site-management state handling so source toggles refresh immediately and source metadata coverage stays aligned with the settings UI. (`6dc88ad`, `59be70a`, `da750e5`)
+
+### Refactor
+
+- Simplified the options workspace by removing legacy summary cards, streamlining site-configuration copy, and switching navigation to hash-routed `general`, `sites`, and `overview` views. (`6fba3e3`, `f60cb33`, `3dfff97`, `4be59b8`)
+- Renamed the shared multi-source content script entry to the `source-batch` entrypoint so the runtime structure better reflects its responsibility. (`ea5a386`)
+
 ## 1.2.0
 
 ### Added
