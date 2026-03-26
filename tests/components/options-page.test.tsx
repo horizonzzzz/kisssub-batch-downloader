@@ -1,6 +1,6 @@
 import { render, screen, waitFor, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
-import { describe, expect, it, vi } from "vitest"
+import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import { OptionsPage } from "../../components/options-page"
 
@@ -30,6 +30,31 @@ const settings = {
 }
 
 describe("OptionsPage", () => {
+  beforeEach(() => {
+    window.location.hash = ""
+  })
+
+  it("redirects empty and invalid hashes to the default general route", async () => {
+    const api = {
+      loadSettings: vi.fn().mockResolvedValue(settings),
+      saveSettings: vi.fn(),
+      testConnection: vi.fn()
+    }
+
+    window.location.hash = ""
+    const firstRender = render(<OptionsPage api={api} />)
+
+    expect(await screen.findByRole("heading", { name: "连接与基础设置" })).toBeInTheDocument()
+    expect(window.location.hash).toBe("#/general")
+
+    firstRender.unmount()
+    window.location.hash = "#/unknown"
+    render(<OptionsPage api={api} />)
+
+    expect(await screen.findByRole("heading", { name: "连接与基础设置" })).toBeInTheDocument()
+    expect(window.location.hash).toBe("#/general")
+  })
+
   it(
     "renders the redesigned settings workspace and switches between the new views",
     async () => {
@@ -40,9 +65,11 @@ describe("OptionsPage", () => {
         testConnection: vi.fn()
       }
 
+      window.location.hash = ""
       render(<OptionsPage api={api} />)
 
       expect(await screen.findByDisplayValue("http://127.0.0.1:17474")).toBeInTheDocument()
+      expect(window.location.hash).toBe("#/general")
       expect(screen.getAllByText("Anime BT Batch")).toHaveLength(2)
       const sidebarNav = screen.getByTestId("options-sidebar-groups")
       expect(within(sidebarNav).getAllByRole("button")).toHaveLength(3)
@@ -61,6 +88,7 @@ describe("OptionsPage", () => {
 
       await user.click(screen.getByRole("button", { name: "站点配置" }))
 
+      expect(window.location.hash).toBe("#/sites")
       expect(screen.getByRole("heading", { name: "站点配置" })).toBeInTheDocument()
       expect(screen.getByText("统一管理 4 个站点的启用状态和专属配置。")).toBeInTheDocument()
       expect(screen.queryByRole("heading", { name: "BT 站点配置" })).not.toBeInTheDocument()
@@ -91,6 +119,7 @@ describe("OptionsPage", () => {
 
       await user.click(screen.getByRole("button", { name: "源站概览" }))
 
+      expect(window.location.hash).toBe("#/overview")
       expect(screen.getByRole("heading", { name: "源站概览" })).toBeInTheDocument()
       expect(screen.getAllByRole("button", { name: "访问站点" })).toHaveLength(4)
       expect(screen.getByText("整合番组表与字幕组的动漫资源站")).toBeInTheDocument()
@@ -100,6 +129,27 @@ describe("OptionsPage", () => {
     },
     10000
   )
+
+  it("renders the matching page when opened from a direct route hash", async () => {
+    const api = {
+      loadSettings: vi.fn().mockResolvedValue(settings),
+      saveSettings: vi.fn(),
+      testConnection: vi.fn()
+    }
+
+    window.location.hash = "#/sites"
+    const firstRender = render(<OptionsPage api={api} />)
+
+    expect(await screen.findByRole("heading", { name: "站点配置" })).toBeInTheDocument()
+    expect(screen.getByText("当前已启用站点")).toBeInTheDocument()
+
+    firstRender.unmount()
+    window.location.hash = "#/overview"
+    render(<OptionsPage api={api} />)
+
+    expect(await screen.findByRole("heading", { name: "源站概览" })).toBeInTheDocument()
+    expect(screen.getAllByRole("button", { name: "访问站点" })).toHaveLength(4)
+  })
 
   it("renders a real site icon for each site in the site management cards", async () => {
     const user = userEvent.setup()

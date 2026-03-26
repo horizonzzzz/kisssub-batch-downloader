@@ -13,6 +13,10 @@ The extension injects selection UI into supported list pages, reuses direct magn
   - `连接与基础设置`
   - `站点配置`
   - `源站概览`
+  - the options workspace uses hash-routed navigation with:
+    - `options.html#/general`
+    - `options.html#/sites`
+    - `options.html#/overview`
 - Supported downloader target: `qBittorrent WebUI` only
 - Optional per-batch save path override is supported
 - Magnet links are preferred; torrent URLs are the fallback
@@ -43,7 +47,7 @@ The extension injects selection UI into supported list pages, reuses direct magn
 - `background.ts`
   Handles runtime message registration, settings access, qBittorrent connection tests, and delegates batch orchestration to shared helpers in `lib/background-batch.ts`.
 - `options.tsx`
-  Boots the options page and wires the React UI to background message APIs.
+  Boots the hash-routed options page and wires the React UI to background message APIs.
 - `components/`
   UI components for the floating batch panel, selection checkbox, unified site-management view, and options page shell, plus their colocated `*.module.scss` files.
 - `contents/`

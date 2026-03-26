@@ -94,15 +94,23 @@ async function assertBatchPanelInjection(
   await page.getByRole("button", { name: "打开设置页" }).click()
 
   const popup = await popupPromise
-  await expect(popup).toHaveURL(/options\.html/)
+  await expect(popup).toHaveURL(/options\.html#\/general$/)
 }
 
 async function openOptionsPage(
-  extension: Awaited<ReturnType<typeof launchExtensionContext>>
+  extension: Awaited<ReturnType<typeof launchExtensionContext>>,
+  options?: {
+    route?: "/general" | "/sites" | "/overview"
+    heading?: string
+  }
 ) {
+  const route = options?.route ?? ""
+  const expectedRoute = options?.route ?? "/general"
+  const expectedHeading = options?.heading ?? "连接与基础设置"
   const page = await extension.context.newPage()
-  await page.goto(`chrome-extension://${extension.extensionId}/options.html`)
-  await expect(page.getByRole("heading", { name: "连接与基础设置" })).toBeVisible()
+  await page.goto(`chrome-extension://${extension.extensionId}/options.html${route ? `#${route}` : ""}`)
+  await expect(page).toHaveURL(new RegExp(`options\\.html#${expectedRoute.replace("/", "\\/")}$`))
+  await expect(page.getByRole("heading", { name: expectedHeading })).toBeVisible()
   return page
 }
 
@@ -110,10 +118,7 @@ test("options page saves settings through the background worker", async () => {
   const extension = await launchExtensionContext()
 
   try {
-    const page = await extension.context.newPage()
-    await page.goto(`chrome-extension://${extension.extensionId}/options.html`)
-
-    await expect(page.getByRole("heading", { name: "连接与基础设置" })).toBeVisible()
+    const page = await openOptionsPage(extension)
     await expect(page.getByRole("link", { name: "查看 GitHub 仓库" })).toHaveAttribute(
       "href",
       "https://github.com/horizonzzzz/anime-bt-batch-downloader"
@@ -278,9 +283,10 @@ test("disabling a source stops injection until it is enabled again", async () =>
       })
     })
 
-    const optionsPage = await openOptionsPage(extension)
-    await optionsPage.getByRole("button", { name: "站点配置" }).click()
-    await expect(optionsPage.getByRole("heading", { name: "站点配置" })).toBeVisible()
+    const optionsPage = await openOptionsPage(extension, {
+      route: "/sites",
+      heading: "站点配置"
+    })
 
     const acgripSwitch = optionsPage.getByRole("switch", { name: "ACG.RIP 启用开关" })
     await expect(acgripSwitch).toHaveAttribute("aria-checked", "true")
@@ -294,8 +300,10 @@ test("disabling a source stops injection until it is enabled again", async () =>
     await expect(disabledPage.locator("[data-anime-bt-batch-checkbox]")).toHaveCount(0)
     await expect(disabledPage.getByText("ACG.RIP 批量下载")).toHaveCount(0)
 
-    const reopenOptionsPage = await openOptionsPage(extension)
-    await reopenOptionsPage.getByRole("button", { name: "站点配置" }).click()
+    const reopenOptionsPage = await openOptionsPage(extension, {
+      route: "/sites",
+      heading: "站点配置"
+    })
 
     const reenabledSwitch = reopenOptionsPage.getByRole("switch", { name: "ACG.RIP 启用开关" })
     await expect(reenabledSwitch).toHaveAttribute("aria-checked", "false")
