@@ -1,0 +1,520 @@
+.anime-bt-content-root {
+  --anime-bt-white: #ffffff;
+  --anime-bt-slate-950: #020617;
+  --anime-bt-slate-900: #0f172a;
+  --anime-bt-blue-700: #1d4ed8;
+  --anime-bt-blue-600: #2563eb;
+  --anime-bt-blue-500: #3b82f6;
+  --anime-bt-font-panel: "Trebuchet MS", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --anime-bt-font-condensed: "Bahnschrift", "Aptos Narrow", "Arial Narrow", sans-serif;
+  --anime-bt-radius-lg: 20px;
+  --anime-bt-radius-xl: 24px;
+  --anime-bt-radius-pill: 999px;
+  --anime-bt-shadow-floating:
+    0 30px 80px rgba(2, 6, 23, 0.24),
+    0 8px 18px rgba(2, 6, 23, 0.12);
+  --anime-bt-transition-fast: 0.18s ease;
+
+  color: #182636;
+  font: 13px/1.45 var(--anime-bt-font-panel);
+  letter-spacing: normal;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+.anime-bt-content-root,
+.anime-bt-content-root *,
+.anime-bt-content-root *::before,
+.anime-bt-content-root *::after {
+  box-sizing: border-box;
+}
+
+.anime-bt-content-root :where(button),
+.anime-bt-content-root :where(input) {
+  margin: 0;
+  font: inherit;
+}
+
+.anime-bt-content-root :where(button) {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+}
+
+.anime-bt-content-root :where(button:not(:disabled)) {
+  cursor: pointer;
+}
+
+.anime-bt-content-root :where(input:not([type="checkbox"])) {
+  appearance: none;
+  outline: none;
+}
+
+.anime-bt-content-root ::selection {
+  background: rgba(59, 130, 246, 0.22);
+}
+
+.anime-bt-batch-panel {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 2147483647;
+}
+
+.anime-bt-batch-panel__launcher {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.anime-bt-batch-panel__launcher-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border: 1px solid rgba(24, 36, 52, 0.14);
+  border-radius: var(--anime-bt-radius-pill);
+  background: linear-gradient(135deg, #111a24 0%, #1b2d43 100%);
+  box-shadow: 0 18px 36px rgba(2, 6, 23, 0.28);
+  color: #f4f7fb;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1;
+  transition:
+    transform var(--anime-bt-transition-fast),
+    box-shadow var(--anime-bt-transition-fast),
+    background var(--anime-bt-transition-fast);
+}
+
+.anime-bt-batch-panel__launcher-button:hover {
+  transform: translateY(-1px) scale(1.01);
+  box-shadow: 0 22px 42px rgba(2, 6, 23, 0.34);
+}
+
+.anime-bt-batch-panel__launcher-button:active {
+  transform: scale(0.98);
+}
+
+.anime-bt-batch-panel__launcher-icon {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+}
+
+.anime-bt-batch-panel__launcher-brand-icon {
+  display: block;
+  width: 18px;
+  height: 18px;
+  filter: drop-shadow(0 6px 14px rgba(0, 240, 255, 0.14));
+}
+
+.anime-bt-batch-panel__launcher-count {
+  position: absolute;
+  top: -6px;
+  right: -8px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: var(--anime-bt-radius-pill);
+  background: linear-gradient(180deg, #2a8fff 0%, #1364d9 100%);
+  box-shadow: 0 8px 16px rgba(19, 100, 217, 0.4);
+  color: var(--anime-bt-white);
+  font: 700 10px/18px var(--anime-bt-font-condensed);
+  text-align: center;
+}
+
+.anime-bt-batch-panel__launcher-label {
+  letter-spacing: 0.02em;
+}
+
+.anime-bt-batch-panel__surface {
+  width: min(336px, calc(100vw - 24px));
+  overflow: hidden;
+  border: 1px solid rgba(135, 151, 173, 0.24);
+  border-radius: var(--anime-bt-radius-xl);
+  background: linear-gradient(180deg, rgba(252, 253, 255, 0.98) 0%, rgba(243, 247, 252, 0.98) 100%);
+  box-shadow: var(--anime-bt-shadow-floating);
+  color: #182636;
+  backdrop-filter: blur(18px);
+}
+
+.anime-bt-batch-panel__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 18px;
+  background:
+    radial-gradient(circle at top right, rgba(50, 144, 255, 0.28), transparent 42%),
+    linear-gradient(135deg, #0f1720 0%, #192838 55%, #25394d 100%);
+  color: #f8fbff;
+}
+
+.anime-bt-batch-panel__header-copy strong {
+  display: block;
+  font-size: 14px;
+  letter-spacing: 0.01em;
+}
+
+.anime-bt-batch-panel__brand-lockup {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.anime-bt-batch-panel__brand-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+}
+
+.anime-bt-batch-panel__brand-icon {
+  display: block;
+  width: 20px;
+  height: 20px;
+  filter: drop-shadow(0 8px 16px rgba(0, 240, 255, 0.12));
+}
+
+.anime-bt-batch-panel__eyebrow {
+  margin: 0;
+  color: rgba(219, 230, 244, 0.72);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.anime-bt-batch-panel__header-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.anime-bt-batch-panel__icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(245, 249, 255, 0.8);
+  transition:
+    background var(--anime-bt-transition-fast),
+    color var(--anime-bt-transition-fast),
+    transform var(--anime-bt-transition-fast);
+}
+
+.anime-bt-batch-panel__icon-button:hover {
+  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.14);
+  color: var(--anime-bt-white);
+}
+
+.anime-bt-batch-panel__icon-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.56;
+  transform: none;
+  box-shadow: none;
+}
+
+.anime-bt-batch-panel__icon-button-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.anime-bt-batch-panel__body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 18px;
+}
+
+.anime-bt-batch-panel__count-card {
+  display: flex;
+  min-height: 152px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 18px 20px;
+  border: 1px solid rgba(214, 223, 234, 0.92);
+  border-radius: var(--anime-bt-radius-lg);
+  background:
+    linear-gradient(180deg, rgba(246, 249, 253, 0.96), rgba(239, 244, 250, 0.96)),
+    linear-gradient(135deg, rgba(42, 143, 255, 0.08), rgba(17, 26, 36, 0));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.78),
+    0 12px 28px rgba(15, 23, 42, 0.06);
+  text-align: center;
+}
+
+.anime-bt-batch-panel__count-value {
+  display: block;
+  color: #142131;
+  font: 300 52px/1 var(--anime-bt-font-condensed);
+}
+
+.anime-bt-batch-panel__count-label {
+  display: block;
+  margin-top: 6px;
+  color: #687586;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.anime-bt-batch-panel__status-note {
+  margin: 12px 0 0;
+  color: #4d5d70;
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.anime-bt-batch-panel__advanced {
+  overflow: hidden;
+  border: 1px solid rgba(210, 220, 232, 0.96);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.78);
+}
+
+.anime-bt-batch-panel__advanced.is-open {
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
+}
+
+.anime-bt-batch-panel__advanced-toggle {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  background: rgba(244, 248, 252, 0.96);
+  color: #546273;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transition: background var(--anime-bt-transition-fast);
+}
+
+.anime-bt-batch-panel__advanced-toggle:hover {
+  background: #eef4fa;
+}
+
+.anime-bt-batch-panel__advanced-toggle-icon {
+  width: 14px;
+  height: 14px;
+  flex: none;
+}
+
+.anime-bt-batch-panel__advanced-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px;
+  border-top: 1px solid rgba(221, 229, 239, 0.9);
+}
+
+.anime-bt-batch-panel__path-label {
+  color: #4e5f71;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.anime-bt-batch-panel__path-row {
+  display: flex;
+  gap: 8px;
+}
+
+.anime-bt-batch-panel__path-input {
+  min-width: 0;
+  flex: 1;
+  padding: 10px 12px;
+  border: 1px solid rgba(188, 200, 214, 0.92);
+  border-radius: 14px;
+  background: #fbfdff;
+  color: #182636;
+  transition:
+    border-color var(--anime-bt-transition-fast),
+    box-shadow var(--anime-bt-transition-fast),
+    background var(--anime-bt-transition-fast);
+}
+
+.anime-bt-batch-panel__path-input::placeholder {
+  color: #8a98a8;
+}
+
+.anime-bt-batch-panel__path-input:focus {
+  border-color: rgba(20, 100, 217, 0.56);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.18);
+}
+
+.anime-bt-batch-panel__path-input:disabled {
+  cursor: not-allowed;
+  opacity: 0.68;
+  background: #f1f4f8;
+}
+
+.anime-bt-batch-panel__button,
+.anime-bt-batch-panel__download {
+  min-height: 42px;
+  border: 1px solid rgba(188, 200, 214, 0.92);
+  border-radius: 14px;
+  transition:
+    transform var(--anime-bt-transition-fast),
+    background var(--anime-bt-transition-fast),
+    border-color var(--anime-bt-transition-fast),
+    box-shadow var(--anime-bt-transition-fast);
+}
+
+.anime-bt-batch-panel__button {
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.anime-bt-batch-panel__path-clear {
+  flex: 0 0 auto;
+  padding: 10px 12px;
+  background: #f4f7fb;
+  color: #324356;
+}
+
+.anime-bt-batch-panel__path-clear:hover:not(:disabled),
+.anime-bt-batch-panel__selection-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  border-color: rgba(121, 139, 160, 0.86);
+  background: var(--anime-bt-white);
+}
+
+.anime-bt-batch-panel__button:disabled,
+.anime-bt-batch-panel__download:disabled {
+  cursor: not-allowed;
+  opacity: 0.56;
+  transform: none;
+  box-shadow: none;
+}
+
+.anime-bt-batch-panel__path-hint {
+  margin: 0;
+  color: #677586;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.anime-bt-batch-panel__footer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 18px 18px;
+  border-top: 1px solid rgba(218, 227, 238, 0.94);
+  background: linear-gradient(180deg, rgba(246, 249, 252, 0.98) 0%, rgba(239, 244, 250, 0.98) 100%);
+}
+
+.anime-bt-batch-panel__selection-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.anime-bt-batch-panel__selection-button {
+  padding: 0 12px;
+  background: rgba(255, 255, 255, 0.92);
+  color: #415264;
+}
+
+.anime-bt-batch-panel__download {
+  display: inline-flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  padding: 0 16px;
+  border-color: rgba(16, 82, 183, 0.92);
+  background: linear-gradient(180deg, #2585ff 0%, #1464d9 100%);
+  box-shadow: 0 10px 24px rgba(20, 100, 217, 0.24);
+  color: var(--anime-bt-white);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.anime-bt-batch-panel__download:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 30px rgba(20, 100, 217, 0.3);
+}
+
+.anime-bt-batch-panel__download.is-running {
+  background: linear-gradient(180deg, #4b97f6 0%, #2d78e8 100%);
+}
+
+.anime-bt-selection-checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-right: 8px;
+  padding: 3px 8px;
+  border: 1px solid rgba(72, 94, 117, 0.22);
+  border-radius: var(--anime-bt-radius-pill);
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08);
+  color: #294457;
+  font-size: 12px;
+  line-height: 1;
+  vertical-align: middle;
+  white-space: nowrap;
+  backdrop-filter: blur(8px);
+}
+
+.anime-bt-selection-checkbox__input {
+  margin: 0;
+  flex: none;
+  -webkit-appearance: checkbox;
+  appearance: auto;
+  accent-color: var(--anime-bt-blue-600);
+}
+
+.anime-bt-selection-checkbox__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--anime-bt-radius-pill);
+  background: linear-gradient(180deg, #d87938, #bb5b23);
+  box-shadow: 0 0 0 3px rgba(216, 111, 46, 0.14);
+}
+
+@media (max-width: 680px) {
+  .anime-bt-batch-panel {
+    right: 12px;
+    bottom: 12px;
+    left: 12px;
+  }
+
+  .anime-bt-batch-panel__launcher {
+    justify-content: stretch;
+  }
+
+  .anime-bt-batch-panel__launcher-button,
+  .anime-bt-batch-panel__surface {
+    width: 100%;
+  }
+
+  .anime-bt-batch-panel__footer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .anime-bt-batch-panel__selection-actions {
+    width: 100%;
+  }
+
+  .anime-bt-batch-panel__selection-button {
+    flex: 1;
+  }
+
+  .anime-bt-batch-panel__path-row {
+    flex-direction: column;
+  }
+}

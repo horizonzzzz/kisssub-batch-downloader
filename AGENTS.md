@@ -41,7 +41,8 @@ The extension injects selection UI into supported list pages, reuses direct magn
   - project-owned UI outside `components/ui/` should use `react-icons`
   - `components/ui/` primitives that come from the project's `shadcn/ui` pattern may keep `lucide-react` icons when introduced by shadcn
 - `React Hook Form` + `zod` for the options settings form model and validation
-- `SCSS Modules` for extension-owned injected UI such as the floating batch panel, with a small shared SCSS token/mixin layer still used outside the options page
+- content-script UI mounts inside `Shadow Root` hosts so the injected batch panel and selection checkbox stay isolated from host-page styles while still using React roots
+- injected contents UI styling is provided by dedicated CSS text from `styles/content.css`, injected into each shadow root at runtime
 - Browser-extension runtime with:
   - a background service worker in `background.ts`
   - a content script entry in `contents/source-batch.tsx`
@@ -54,15 +55,15 @@ The extension injects selection UI into supported list pages, reuses direct magn
 - `options.tsx`
   Boots the hash-routed options page, loads `styles/options.css`, and wires the React options UI to background message APIs.
 - `components/`
-  UI components for the floating batch panel and selection checkbox, plus the options workspace under `components/options/` and shared option-page primitives under `components/ui/`. Remaining colocated `*.module.scss` files cover the injected extension UI rather than the options page.
+  UI components for the floating batch panel and selection checkbox, plus the options workspace under `components/options/` and shared option-page primitives under `components/ui/`.
 - `components/options/`
   Source of truth for the options workspace shell, hash-route config, form hooks/schema, and the `general` / `sites` / `overview` page implementations.
 - `components/ui/`
   Tailwind-first primitive components used by the options workspace, including buttons, inputs, cards, badges, alerts, switches, and radio groups.
 - `contents/`
-  Content script entry for supported source pages and DOM injection orchestration.
+  Content script entry for supported source pages, Shadow Root host orchestration, and injected React UI mounting.
 - `styles/`
-  Shared SCSS tokens and mixins for extension-owned SCSS modules, plus `styles/options.css` as the Tailwind entry and base theme layer for the options page.
+  `styles/options.css` is the Tailwind entry for the options page, while `styles/content.css` is the dedicated shadow-root CSS source for injected content UI.
 - `assets/`
   Static icon assets used by the extension UI. `anime-bt-icon-speedline.svg` is the extension brand icon, packaged site icons for the options-page site-management cards are normalized to local `site-icon-*.(png|svg)` assets, and `icon.png` is the generated packaging icon consumed by Plasmo for extension icon sizes.
 - `CHANGELOG.md`

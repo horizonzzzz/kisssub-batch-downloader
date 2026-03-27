@@ -1,12 +1,8 @@
 import { useState } from "react"
-import {
-  HiChevronDown,
-  HiChevronUp,
-  HiOutlineCog6Tooth
-} from "react-icons/hi2"
+import { HiChevronDown, HiChevronUp, HiOutlineCog6Tooth } from "react-icons/hi2"
 
 import speedlineBrandIcon from "../assets/anime-bt-icon-speedline.svg"
-import styles from "./batch-panel.module.scss"
+import { cn } from "../lib/utils"
 
 type BatchPanelProps = {
   sourceName?: string
@@ -50,32 +46,32 @@ export function BatchPanel({
 
   if (!isExpanded) {
     return (
-      <div className={styles.root}>
-        <div className={styles.launcher}>
+      <div className="anime-bt-content-root anime-bt-batch-panel">
+        <div className="anime-bt-batch-panel__launcher">
           <button
             type="button"
-            className={styles.launcherButton}
+            className="anime-bt-batch-panel__launcher-button"
             aria-label="展开批量下载面板"
             onClick={() => {
               onToggleExpanded(true)
             }}>
-            <span className={styles.launcherIcon}>
+            <span className="anime-bt-batch-panel__launcher-icon">
               <img
                 src={speedlineBrandIcon}
                 alt=""
                 loading="eager"
                 decoding="async"
                 data-testid="batch-launcher-brand-icon"
-                className={styles.launcherBrandIcon}
+                className="anime-bt-batch-panel__launcher-brand-icon"
                 aria-hidden="true"
               />
               {selectedCount > 0 ? (
-                <span className={styles.launcherCount} aria-label={`当前已选 ${selectedCount} 项`}>
+                <span className="anime-bt-batch-panel__launcher-count" aria-label={`当前已选 ${selectedCount} 项`}>
                   {selectedCount}
                 </span>
               ) : null}
             </span>
-            <span className={styles.launcherLabel}>批量下载</span>
+            <span className="anime-bt-batch-panel__launcher-label">批量下载</span>
           </button>
         </div>
       </div>
@@ -83,47 +79,48 @@ export function BatchPanel({
   }
 
   return (
-    <div className={styles.root}>
-      <aside className={styles.panel} aria-label="批量下载面板">
-        <div className={styles.header}>
-          <div className={styles.headerCopy}>
-            <div className={styles.brandLockup}>
-              <span className={styles.brandBadge}>
+    <div className="anime-bt-content-root anime-bt-batch-panel">
+      <aside className="anime-bt-batch-panel__surface" aria-label="批量下载面板">
+        <div className="anime-bt-batch-panel__header">
+          <div className="anime-bt-batch-panel__header-copy">
+            <div className="anime-bt-batch-panel__brand-lockup">
+              <span className="anime-bt-batch-panel__brand-badge">
                 <img
                   src={speedlineBrandIcon}
                   alt=""
                   loading="eager"
                   decoding="async"
                   data-testid="batch-panel-brand-icon"
-                  className={styles.brandIcon}
+                  className="anime-bt-batch-panel__brand-icon"
                   aria-hidden="true"
                 />
               </span>
-              <p className={styles.eyebrow}>Batch Downloader</p>
+              <p className="anime-bt-batch-panel__eyebrow">Batch Downloader</p>
             </div>
             <strong>{sourceName} 批量下载</strong>
           </div>
-          <div className={styles.headerActions}>
+
+          <div className="anime-bt-batch-panel__header-actions">
             <button
               type="button"
-              className={styles.iconButton}
+              className="anime-bt-batch-panel__icon-button"
               aria-label="打开设置页"
               onClick={onOpenSettings}>
               <HiOutlineCog6Tooth
-                className={styles.iconButtonIcon}
+                className="anime-bt-batch-panel__icon-button-icon"
                 aria-hidden="true"
                 focusable="false"
               />
             </button>
             <button
               type="button"
-              className={styles.iconButton}
+              className="anime-bt-batch-panel__icon-button"
               aria-label="最小化批量下载面板"
               onClick={() => {
                 onToggleExpanded(false)
               }}>
               <HiChevronDown
-                className={styles.iconButtonIcon}
+                className="anime-bt-batch-panel__icon-button-icon"
                 aria-hidden="true"
                 focusable="false"
               />
@@ -131,20 +128,18 @@ export function BatchPanel({
           </div>
         </div>
 
-        <div className={styles.body}>
-          <section className={styles.countCard} aria-live="polite">
-            <span className={styles.countValue}>{selectedCount}</span>
-            <span className={styles.countLabel}>已选资源</span>
-            <p className={styles.statusNote}>{statusText}</p>
+        <div className="anime-bt-batch-panel__body">
+          <section className="anime-bt-batch-panel__count-card" aria-live="polite">
+            <span className="anime-bt-batch-panel__count-value">{selectedCount}</span>
+            <span className="anime-bt-batch-panel__count-label">已选资源</span>
+            <p className="anime-bt-batch-panel__status-note">{statusText}</p>
           </section>
 
           <section
-            className={
-              showAdvanced ? `${styles.advanced} ${styles.isOpen}` : styles.advanced
-            }>
+            className={cn("anime-bt-batch-panel__advanced", showAdvanced && "is-open")}>
             <button
               type="button"
-              className={styles.advancedToggle}
+              className="anime-bt-batch-panel__advanced-toggle"
               aria-expanded={showAdvanced}
               aria-controls={advancedOptionsId}
               onClick={() => {
@@ -153,13 +148,13 @@ export function BatchPanel({
               <span>高级选项</span>
               {showAdvanced ? (
                 <HiChevronUp
-                  className={styles.advancedToggleIcon}
+                  className="anime-bt-batch-panel__advanced-toggle-icon"
                   aria-hidden="true"
                   focusable="false"
                 />
               ) : (
                 <HiChevronDown
-                  className={styles.advancedToggleIcon}
+                  className="anime-bt-batch-panel__advanced-toggle-icon"
                   aria-hidden="true"
                   focusable="false"
                 />
@@ -167,14 +162,14 @@ export function BatchPanel({
             </button>
 
             {showAdvanced ? (
-              <div className={styles.advancedBody} id={advancedOptionsId}>
-                <label className={styles.pathLabel} htmlFor={savePathInputId}>
+              <div className="anime-bt-batch-panel__advanced-body" id={advancedOptionsId}>
+                <label className="anime-bt-batch-panel__path-label" htmlFor={savePathInputId}>
                   临时下载路径
                 </label>
-                <div className={styles.pathRow}>
+                <div className="anime-bt-batch-panel__path-row">
                   <input
                     id={savePathInputId}
-                    className={styles.pathInput}
+                    className="anime-bt-batch-panel__path-input"
                     type="text"
                     value={savePath}
                     placeholder="留空使用默认目录"
@@ -185,13 +180,13 @@ export function BatchPanel({
                   />
                   <button
                     type="button"
-                    className={styles.pathClear}
+                    className="anime-bt-batch-panel__button anime-bt-batch-panel__path-clear"
                     onClick={onClearSavePath}
                     disabled={disablePathActions || !savePath}>
                     清空路径
                   </button>
                 </div>
-                <p className={styles.pathHint}>
+                <p className="anime-bt-batch-panel__path-hint">
                   {savePathHint ||
                     "留空则使用当前下载器默认目录。远程下载器请手动输入目标主机可识别的绝对路径。"}
                 </p>
@@ -200,18 +195,18 @@ export function BatchPanel({
           </section>
         </div>
 
-        <div className={styles.footer}>
-          <div className={styles.selectionActions}>
+        <div className="anime-bt-batch-panel__footer">
+          <div className="anime-bt-batch-panel__selection-actions">
             <button
               type="button"
-              className={styles.selectionButton}
+              className="anime-bt-batch-panel__button anime-bt-batch-panel__selection-button"
               onClick={onSelectAll}
               disabled={running}>
               全选本页
             </button>
             <button
               type="button"
-              className={styles.selectionButton}
+              className="anime-bt-batch-panel__button anime-bt-batch-panel__selection-button"
               onClick={onClear}
               disabled={disableClear}>
               清空选择
@@ -219,7 +214,7 @@ export function BatchPanel({
           </div>
           <button
             type="button"
-            className={running ? `${styles.download} ${styles.isRunning}` : styles.download}
+            className={cn("anime-bt-batch-panel__download", running && "is-running")}
             onClick={onDownload}
             disabled={disableDownload}>
             {running ? "发送中..." : "批量下载"}

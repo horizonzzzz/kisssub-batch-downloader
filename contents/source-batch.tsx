@@ -12,8 +12,13 @@ import {
   getSourceAdapterForLocation,
   getEnabledSourceAdapterForLocation
 } from "../lib/content-page"
+import {
+  createShadowMountHost,
+  ensureShadowStyle
+} from "../lib/shadow-root"
 import type { SourceAdapter } from "../lib/sources/types"
 import type { BatchEventPayload, BatchItem, Settings } from "../lib/types"
+import contentStyleText from "../styles/content-style-text"
 
 export default function SourceBatchContentScript() {
   return null
@@ -34,7 +39,7 @@ export const config: PlasmoCSConfig = {
 }
 
 type CheckboxRoot = {
-  container: HTMLSpanElement
+  host: HTMLSpanElement
   root: Root
   item: BatchItem
 }
@@ -64,7 +69,7 @@ const snapshot: PanelSnapshot = {
 
 const checkboxRoots = new Map<string, CheckboxRoot>()
 let panelRoot: Root | null = null
-let panelContainer: HTMLDivElement | null = null
+let panelHost: HTMLDivElement | null = null
 let observer: MutationObserver | null = null
 
 void bootstrap()
@@ -86,6 +91,7 @@ async function bootstrap() {
     mountPanel()
     hydrateSavePath(settings)
     scanAndDecorate(source)
+    renderAll()
     observeMutations()
     registerBatchEventListener()
   } catch (error) {
@@ -120,10 +126,17 @@ function mountPanel() {
     return
   }
 
-  panelContainer = document.createElement("div")
-  panelContainer.dataset.animeBtBatchPanelRoot = "1"
-  document.body.appendChild(panelContainer)
-  panelRoot = createRoot(panelContainer)
+  const mount = createShadowMountHost({
+    hostTagName: "div",
+    dataset: {
+      animeBtBatchPanelRoot: "1"
+    },
+    parent: document.body
+  })
+
+  panelHost = mount.host
+  panelRoot = createRoot(mount.container)
+  ensureMountedUiStyles()
   renderAll()
 }
 
@@ -132,19 +145,22 @@ function unmountPanel() {
     panelRoot.unmount()
   }
 
-  if (panelContainer) {
-    panelContainer.remove()
+  if (panelHost) {
+    panelHost.remove()
   }
 
-  panelContainer = null
+  panelHost = null
   panelRoot = null
 }
 
 function observeMutations() {
-  let timer = 0
+  let timer: ReturnType<typeof globalThis.setTimeout> | null = null
   observer = new MutationObserver(() => {
-    window.clearTimeout(timer)
-    timer = window.setTimeout(() => {
+    if (timer !== null) {
+      globalThis.clearTimeout(timer)
+    }
+
+    timer = globalThis.setTimeout(() => {
       if (activeSource) {
         scanAndDecorate(activeSource)
       }
@@ -176,29 +192,44 @@ function scanAndDecorate(source: SourceAdapter) {
       continue
     }
 
-    const container = document.createElement("span")
-    container.dataset.animeBtBatchCheckboxRoot = "1"
+    const mount = createShadowMountHost({
+      hostTagName: "span",
+      containerTagName: "span",
+      dataset: {
+        animeBtBatchCheckboxRoot: "1"
+      },
+      parent: targetCell,
+      before: targetCell.firstChild
+    })
 
-    if (targetCell.firstChild) {
-      targetCell.insertBefore(container, targetCell.firstChild)
-    } else {
-      targetCell.appendChild(container)
-    }
-
-    const root = createRoot(container)
+    const root = createRoot(mount.container)
     checkboxRoots.set(item.detailUrl, {
-      container,
+      host: mount.host,
       root,
       item
     })
+    ensureMountedUiStyles()
 
     anchor.dataset.animeBtBatchDecorated = "1"
   }
 }
 
 function renderAll() {
+  ensureMountedUiStyles()
   renderPanel()
   renderCheckboxes()
+}
+
+function ensureMountedUiStyles() {
+  if (panelHost?.shadowRoot) {
+    ensureShadowStyle(panelHost.shadowRoot, "content-ui", contentStyleText)
+  }
+
+  for (const { host } of checkboxRoots.values()) {
+    if (host.shadowRoot) {
+      ensureShadowStyle(host.shadowRoot, "content-ui", contentStyleText)
+    }
+  }
 }
 
 function renderPanel() {

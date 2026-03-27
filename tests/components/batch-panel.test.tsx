@@ -54,6 +54,52 @@ describe("BatchPanel", () => {
     expect(onToggleExpanded).toHaveBeenCalledWith(true)
   })
 
+  it("exposes contents-specific styling hooks for the launcher and expanded panel", async () => {
+    const user = userEvent.setup()
+
+    const { rerender } = renderBatchPanel({
+      isExpanded: false,
+      selectedCount: 2
+    })
+
+    expect(screen.getByRole("button", { name: "展开批量下载面板" })).toHaveClass(
+      "anime-bt-batch-panel__launcher-button"
+    )
+
+    rerender(
+      <BatchPanel
+        {...({
+          sourceName: "Kisssub",
+          isExpanded: true,
+          selectedCount: 2,
+          running: false,
+          statusText: "本次将使用自定义路径。",
+          savePath: "D:\\Downloads",
+          savePathHint: "本次任务将请求下载器保存到：D:\\Downloads",
+          onToggleExpanded: vi.fn(),
+          onSelectAll: vi.fn(),
+          onClear: vi.fn(),
+          onSavePathChange: vi.fn(),
+          onClearSavePath: vi.fn(),
+          onDownload: vi.fn(),
+          onOpenSettings: vi.fn()
+        } as any)}
+      />
+    )
+
+    expect(screen.getByLabelText("批量下载面板")).toHaveClass("anime-bt-batch-panel__surface")
+    expect(screen.getByRole("button", { name: "批量下载" })).toHaveClass(
+      "anime-bt-batch-panel__download"
+    )
+
+    await user.click(screen.getByRole("button", { name: "高级选项" }))
+
+    expect(screen.getByLabelText("临时下载路径")).toHaveClass("anime-bt-batch-panel__path-input")
+    expect(screen.getByRole("button", { name: "清空路径" })).toHaveClass(
+      "anime-bt-batch-panel__button"
+    )
+  })
+
   it("shows the expanded workspace with the prominent selected count", () => {
     renderBatchPanel()
 

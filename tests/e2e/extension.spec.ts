@@ -69,7 +69,23 @@ async function assertBatchPanelInjection(
   await page.goto(options.url)
 
   await expect(page.getByText(options.title)).toBeVisible()
-  await expect(page.locator("[data-anime-bt-batch-checkbox]")).toHaveCount(2)
+  await expect(page.locator("[data-anime-bt-batch-panel-root]")).toHaveCount(1)
+  await expect(page.locator("[data-anime-bt-batch-checkbox-root]")).toHaveCount(2)
+  await expect
+    .poll(async () => {
+      return page.locator("[data-anime-bt-batch-panel-root]").evaluate((host) => {
+        return Boolean((host as HTMLElement).shadowRoot)
+      })
+    })
+    .toBe(true)
+  await expect
+    .poll(async () => {
+      return page.locator("[data-anime-bt-batch-checkbox-root]").first().evaluate((host) => {
+        return Boolean((host as HTMLElement).shadowRoot)
+      })
+    })
+    .toBe(true)
+  await expect.poll(() => countInjectedCheckboxes(page)).toBe(2)
   await expect(page.getByRole("button", { name: "高级选项" })).toBeVisible()
 
   await page.getByRole("button", { name: "高级选项" }).click()
@@ -78,7 +94,7 @@ async function assertBatchPanelInjection(
   await page.getByLabel("临时下载路径").fill("D:/Anime")
   await expect(page.getByLabel("临时下载路径")).toHaveValue("D:/Anime")
 
-  await page.locator("[data-anime-bt-batch-checkbox]").first().check()
+  await clickInjectedCheckbox(page, 0)
   await expect(page.getByText("已选 1 项，可直接发起批量下载。")).toBeVisible()
   await expect(page.getByRole("button", { name: "批量下载", exact: true })).toBeEnabled()
 
@@ -95,6 +111,29 @@ async function assertBatchPanelInjection(
 
   const popup = await popupPromise
   await expect(popup).toHaveURL(/options\.html#\/general$/)
+}
+
+async function countInjectedCheckboxes(page: import("@playwright/test").Page) {
+  return page.locator("[data-anime-bt-batch-checkbox-root]").evaluateAll((hosts) => {
+    return hosts.reduce((count, host) => {
+      return (
+        count +
+        ((host as HTMLElement).shadowRoot?.querySelectorAll("[data-anime-bt-batch-checkbox]")
+          .length ?? 0)
+      )
+    }, 0)
+  })
+}
+
+async function clickInjectedCheckbox(page: import("@playwright/test").Page, index: number) {
+  await page.locator("[data-anime-bt-batch-checkbox-root]").nth(index).evaluate((host) => {
+    const label = (host as HTMLElement).shadowRoot?.querySelector<HTMLElement>("label")
+    if (!label) {
+      throw new Error("Injected checkbox label was not found inside the shadow root.")
+    }
+
+    label.click()
+  })
 }
 
 async function openOptionsPage(
@@ -222,9 +261,9 @@ test("clicking the Bangumi.moe batch checkbox does not trigger the host detail d
     await page.goto("https://bangumi.moe/")
 
     await expect(page.getByText("Bangumi.moe 批量下载")).toBeVisible()
-    await expect(page.locator("[data-anime-bt-batch-checkbox]")).toHaveCount(2)
+    await expect.poll(() => countInjectedCheckboxes(page)).toBe(2)
 
-    await page.getByTitle("选择这条帖子进行批量下载").first().click()
+    await clickInjectedCheckbox(page, 0)
 
     await expect(page.getByRole("dialog", { name: "Bangumi.moe 站内详情" })).toBeHidden()
     await expect(page.getByText("已选 1 项，可直接发起批量下载。")).toBeVisible()
@@ -262,9 +301,9 @@ test("content script keeps watching a Bangumi.moe search page until results appe
     await page.goto("https://bangumi.moe/search/index")
 
     await expect(page.getByText("Bangumi.moe 批量下载")).toBeVisible()
-    await expect(page.locator("[data-anime-bt-batch-checkbox]")).toHaveCount(2, {
+    await expect.poll(() => countInjectedCheckboxes(page), {
       timeout: 5000
-    })
+    }).toBe(2)
   } finally {
     await extension.close()
   }
@@ -297,7 +336,7 @@ test("disabling a source stops injection until it is enabled again", async () =>
 
     const disabledPage = await extension.context.newPage()
     await disabledPage.goto("https://acg.rip/")
-    await expect(disabledPage.locator("[data-anime-bt-batch-checkbox]")).toHaveCount(0)
+    await expect.poll(() => countInjectedCheckboxes(disabledPage)).toBe(0)
     await expect(disabledPage.getByText("ACG.RIP 批量下载")).toHaveCount(0)
 
     const reopenOptionsPage = await openOptionsPage(extension, {
@@ -315,7 +354,7 @@ test("disabling a source stops injection until it is enabled again", async () =>
     const reenabledPage = await extension.context.newPage()
     await reenabledPage.goto("https://acg.rip/")
     await expect(reenabledPage.getByText("ACG.RIP 批量下载")).toBeVisible()
-    await expect(reenabledPage.locator("[data-anime-bt-batch-checkbox]")).toHaveCount(2)
+    await expect.poll(() => countInjectedCheckboxes(reenabledPage)).toBe(2)
   } finally {
     await extension.close()
   }

@@ -17,6 +17,19 @@ describe("SelectionCheckbox", () => {
     expect(onChange).toHaveBeenCalledWith(true)
   })
 
+  it("renders contents-specific styling hooks for the checkbox pill", () => {
+    render(<SelectionCheckbox checked={true} onChange={vi.fn()} />)
+
+    const checkbox = screen.getByRole("checkbox", { name: "选择这条帖子进行批量下载" })
+    const label = screen.getByTitle("选择这条帖子进行批量下载")
+    const dot = label.querySelector("span")
+
+    expect(label).toHaveClass("anime-bt-selection-checkbox")
+    expect(label).toHaveClass("is-checked")
+    expect(checkbox).toHaveClass("anime-bt-selection-checkbox__input")
+    expect(dot).toHaveClass("anime-bt-selection-checkbox__dot")
+  })
+
   it("does not bubble pointer or click events to a clickable parent row", async () => {
     const user = userEvent.setup()
     const onChange = vi.fn()

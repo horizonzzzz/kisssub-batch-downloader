@@ -13,4 +13,10 @@ declare module "*.module.scss" {
   export default classes
 }
 
+declare module "data-text:*" {
+  const content: string
+  export default content
+}
+
+
 declare module "*.scss"
