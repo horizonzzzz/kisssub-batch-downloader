@@ -37,6 +37,9 @@ The extension injects selection UI into supported list pages, reuses direct magn
 - `TypeScript`
 - `Tailwind CSS` for the options UI layout and visual styling
 - lightweight `shadcn/ui`-style primitives built in-repo with `Radix UI`
+- icon-library policy:
+  - project-owned UI outside `components/ui/` should use `react-icons`
+  - `components/ui/` primitives that come from the project's `shadcn/ui` pattern may keep `lucide-react` icons when introduced by shadcn
 - `React Hook Form` + `zod` for the options settings form model and validation
 - `SCSS Modules` for extension-owned injected UI such as the floating batch panel, with a small shared SCSS token/mixin layer still used outside the options page
 - Browser-extension runtime with:
@@ -124,5 +127,6 @@ Commands are defined in `package.json`:
 - Omit any empty subsection rather than inserting placeholder text, but keep the subsection heading format exactly as `### Features`, `### Fixes`, and `### Refactor` whenever that category has entries.
 - When creating commits, use standard Conventional Commits style messages such as `feat: ...`, `fix: ...`, `docs: ...`, `refactor: ...`, or `chore: ...`.
 - If options-page work needs an additional `shadcn/ui` component, add the component directly in the project’s existing `shadcn/ui` pattern instead of hand-rolling a bespoke replacement.
+- Do not migrate `lucide-react` icons that are introduced by `shadcn/ui` inside `components/ui/` only for icon-library consistency. Outside `components/ui/`, prefer `react-icons` for project-owned UI.
 - If a change updates the extension branding or icon pipeline, keep `assets/anime-bt-icon-speedline.svg` and the generated `assets/icon.png` aligned in the same change.
 - If a code change makes any statement in this file stale, update `AGENTS.md` before finishing the task.
