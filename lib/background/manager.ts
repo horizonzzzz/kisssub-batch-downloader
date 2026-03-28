@@ -1,4 +1,5 @@
 import { getDisabledSources, normalizeSavePath } from "../settings"
+import type { StartBatchDownloadSuccessResponse } from "../shared/messages"
 import type { BatchItem, ClassifiedBatchResult } from "../shared/types"
 import { createBatchJob, recordBatchResult, summarizeBatchResults } from "./job-state"
 import { getBatchStartedMessage, getBatchSubmittingMessage } from "./messages"
@@ -13,7 +14,7 @@ export function createBatchDownloadManager(dependencies: BackgroundBatchDependen
     sourceTabId: number | null,
     items: BatchItem[],
     requestedSavePath?: string
-  ) {
+  ): Promise<StartBatchDownloadSuccessResponse> {
     if (sourceTabId === null) {
       throw new Error("Batch downloads can only be started from a supported source tab.")
     }

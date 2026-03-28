@@ -4,7 +4,7 @@ import type { PlasmoCSConfig } from "plasmo"
 
 import { BatchPanel } from "../components/batch-panel"
 import { SelectionCheckbox } from "../components/selection-checkbox"
-import { BATCH_EVENT } from "../lib/shared/messages"
+import { BATCH_EVENT, sendRuntimeRequest } from "../lib/shared/messages"
 import {
   getAnchorMountTarget,
   getBatchItemFromAnchor,
@@ -107,15 +107,15 @@ function registerBatchEventListener() {
 }
 
 async function loadSettingsForContentScript(): Promise<Settings> {
-  const response = await chrome.runtime.sendMessage({
+  const response = await sendRuntimeRequest({
     type: "GET_SETTINGS"
   })
 
-  if (!response?.ok || !response.settings) {
-    throw new Error(response?.error ?? "Failed to load settings for the content script.")
+  if (!response.ok) {
+    throw new Error(response.error || "Failed to load settings for the content script.")
   }
 
-  return response.settings as Settings
+  return response.settings
 }
 
 function mountPanel() {
@@ -252,7 +252,7 @@ function renderPanel() {
         void startBatchDownload()
       }}
       onOpenSettings={() => {
-        void chrome.runtime.sendMessage({ type: "OPEN_OPTIONS_PAGE" })
+        void sendRuntimeRequest({ type: "OPEN_OPTIONS_PAGE" })
       }}
     />
   )
@@ -347,15 +347,15 @@ async function startBatchDownload() {
     : `开始处理 ${items.length} 项，完成后将使用下载器默认目录。`
   renderAll()
 
-  const response = await chrome.runtime.sendMessage({
+  const response = await sendRuntimeRequest({
     type: "START_BATCH_DOWNLOAD",
     items,
     savePath: normalizedSavePath
   })
 
-  if (!response?.ok) {
+  if (!response.ok) {
     snapshot.running = false
-    snapshot.statusText = response?.error ?? "无法启动批量下载任务。"
+    snapshot.statusText = response.error || "无法启动批量下载任务。"
     renderAll()
   }
 }

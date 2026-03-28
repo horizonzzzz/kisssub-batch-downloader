@@ -1,7 +1,12 @@
 import { createBatchDownloadManager, testQbConnection } from "./lib/background"
 import { addTorrentFilesToQb, addUrlsToQb, loginQb } from "./lib/downloader/qb"
 import { ensureSettings, getSettings, saveSettings } from "./lib/settings"
-import { BATCH_EVENT, type RuntimeRequest } from "./lib/shared/messages"
+import {
+  BATCH_EVENT,
+  createRuntimeErrorResponse,
+  createRuntimeSuccessResponse,
+  type RuntimeRequest
+} from "./lib/shared/messages"
 import type { BatchEventPayload } from "./lib/shared/types"
 import { extractSingleItem } from "./lib/sources/extraction"
 
@@ -27,23 +32,29 @@ chrome.runtime.onMessage.addListener((message: RuntimeRequest, sender, sendRespo
     try {
       switch (message.type) {
         case "GET_SETTINGS":
-          sendResponse({ ok: true, settings: await getSettings() })
+          sendResponse(
+            createRuntimeSuccessResponse("GET_SETTINGS", {
+              settings: await getSettings()
+            })
+          )
           return
         case "SAVE_SETTINGS":
-          sendResponse({
-            ok: true,
-            settings: await saveSettings(message.settings ?? {})
-          })
+          sendResponse(
+            createRuntimeSuccessResponse("SAVE_SETTINGS", {
+              settings: await saveSettings(message.settings ?? {})
+            })
+          )
           return
         case "TEST_QB_CONNECTION":
-          sendResponse({
-            ok: true,
-            result: await testQbConnection(message.settings ?? null)
-          })
+          sendResponse(
+            createRuntimeSuccessResponse("TEST_QB_CONNECTION", {
+              result: await testQbConnection(message.settings ?? null)
+            })
+          )
           return
         case "OPEN_OPTIONS_PAGE":
           await chrome.runtime.openOptionsPage()
-          sendResponse({ ok: true })
+          sendResponse(createRuntimeSuccessResponse("OPEN_OPTIONS_PAGE", {}))
           return
         case "START_BATCH_DOWNLOAD":
           sendResponse(
@@ -55,16 +66,14 @@ chrome.runtime.onMessage.addListener((message: RuntimeRequest, sender, sendRespo
           )
           return
         default:
-          sendResponse({
-            ok: false,
-            error: `Unsupported message type: ${String((message as { type: string }).type)}`
-          })
+          sendResponse(
+            createRuntimeErrorResponse(
+              `Unsupported message type: ${String((message as { type: string }).type)}`
+            )
+          )
       }
     } catch (error) {
-      sendResponse({
-        ok: false,
-        error: error instanceof Error ? error.message : String(error)
-      })
+      sendResponse(createRuntimeErrorResponse(error instanceof Error ? error.message : String(error)))
     }
   })()
 
