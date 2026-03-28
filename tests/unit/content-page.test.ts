@@ -4,6 +4,7 @@ import {
   getAnchorMountTarget,
   getBatchItemFromAnchor,
   getDetailAnchors,
+  getEnabledSourceAdapterForLocation,
   getSourceAdapterForLocation,
   isListPage,
   isValidDetailAnchor,
@@ -220,25 +221,51 @@ describe("content page helpers", () => {
     expect(isValidDetailAnchor(source!, anchor, location)).toBe(false)
   })
 
+  it("respects source enablement when resolving the active adapter for a page", () => {
+    const location = new URL("https://acg.rip/")
+    const enabledSettings = {
+      enabledSources: {
+        kisssub: true,
+        dongmanhuayuan: true,
+        acgrip: true,
+        bangumimoe: true
+      }
+    }
+    const disabledSettings = {
+      enabledSources: {
+        kisssub: true,
+        dongmanhuayuan: true,
+        acgrip: false,
+        bangumimoe: true
+      }
+    }
+
+    expect(getEnabledSourceAdapterForLocation(location, enabledSettings)?.id).toBe("acgrip")
+    expect(getEnabledSourceAdapterForLocation(location, disabledSettings)).toBeNull()
+    expect(getEnabledSourceAdapterForLocation(new URL("https://example.com/list.html"), enabledSettings)).toBeNull()
+  })
+
   it("finds the nearest mount target for supported anchors", () => {
     document.body.innerHTML = `
       <table>
         <tbody>
           <tr>
-            <td><a href="/show-deadbeef.html">Episode 01</a></td>
+            <td id="table-cell"><a href="/show-deadbeef.html">Episode 01</a></td>
           </tr>
         </tbody>
       </table>
-      <section>
+      <section id="section-wrapper">
         <a id="lonely" href="/show-feedface.html">Episode 02</a>
       </section>
     `
 
     const firstAnchor = document.querySelector("td a") as HTMLAnchorElement
     const secondAnchor = document.getElementById("lonely") as HTMLAnchorElement
+    const tableCell = document.getElementById("table-cell")
+    const sectionWrapper = document.getElementById("section-wrapper")
 
-    expect(getAnchorMountTarget(firstAnchor)?.tagName).toBe("TD")
-    expect(getAnchorMountTarget(secondAnchor)?.tagName).toBe("SECTION")
+    expect(getAnchorMountTarget(firstAnchor)).toBe(tableCell)
+    expect(getAnchorMountTarget(secondAnchor)).toBe(sectionWrapper)
   })
 
   it("normalizes display text before adapters consume it", () => {

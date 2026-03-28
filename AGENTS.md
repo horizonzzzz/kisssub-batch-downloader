@@ -67,7 +67,7 @@ The extension injects selection UI into supported list pages, reuses direct magn
 - `contents/`
   Content script entry for supported source pages, Shadow Root host orchestration, and injected React UI mounting.
 - `styles/`
-  `styles/options.css` is the Tailwind entry for the options page, while `styles/content.css` is the root-scoped Tailwind components/utilities entry for injected content UI tokens, reset rules, and shadow-root CSS-text injection.
+  `styles/options.css` is the Tailwind entry for the options page, while `styles/content.css` is the root-scoped Tailwind components/utilities entry for injected content UI tokens, reset rules, and shadow-root CSS-text injection. Contents styling should continue to be injected from bundled CSS text into each shadow root, not re-read from page stylesheets.
 - `assets/`
   Static icon assets used by the extension UI. `anime-bt-icon-speedline.svg` is the extension brand icon, packaged site icons for the options-page site-management cards are normalized to local `site-icon-*.(png|svg)` assets, and `icon.png` is the generated packaging icon consumed by Plasmo for extension icon sizes.
 - `CHANGELOG.md`
@@ -114,7 +114,7 @@ Use this section as the shortest runtime-oriented guide to the current code layo
 - `lib/background/`
   Background-only orchestration, job state, and service helpers.
 - `lib/content/`
-  Content-script page matching, anchor extraction, and Shadow Root host/style utilities.
+  Content-script page matching, anchor extraction, and Shadow Root host/style utilities. Keep `shadow-root.ts` focused on host creation plus direct style injection into shadow roots; do not reintroduce document stylesheet readback as a runtime dependency.
 - `lib/sources/`
   Source registry, site adapters, site metadata, and source delivery-mode capabilities.
 - `lib/settings/`

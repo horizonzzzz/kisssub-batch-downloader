@@ -12,7 +12,6 @@ type ShadowMountHost<TagName extends keyof HTMLElementTagNameMap> = {
   container: HTMLElement
 }
 
-const stylesheetTextCache = new Map<string, string>()
 const constructedStylesheetCache = new Map<string, CSSStyleSheet | null>()
 
 export function createShadowMountHost<TagName extends keyof HTMLElementTagNameMap>({
@@ -53,9 +52,11 @@ export function ensureShadowStyle(
   }
 
   const constructedStylesheet = getConstructedStylesheet(styleId, styleText)
-  if (constructedStylesheet) {
-    if (!shadowRoot.adoptedStyleSheets.includes(constructedStylesheet)) {
-      shadowRoot.adoptedStyleSheets = [...shadowRoot.adoptedStyleSheets, constructedStylesheet]
+  const adoptedStyleSheets = shadowRoot.adoptedStyleSheets
+
+  if (constructedStylesheet && Array.isArray(adoptedStyleSheets)) {
+    if (!adoptedStyleSheets.includes(constructedStylesheet)) {
+      shadowRoot.adoptedStyleSheets = [...adoptedStyleSheets, constructedStylesheet]
     }
 
     return constructedStylesheet
@@ -73,46 +74,6 @@ export function ensureShadowStyle(
   shadowRoot.prepend(style)
   return style
 }
-
-export function getDocumentStylesheetText(
-  cacheKey: string,
-  sentinel: string,
-  options: {
-    removeOwnerNode?: boolean
-  } = {}
-) {
-  const cached = stylesheetTextCache.get(cacheKey)
-  if (cached !== undefined) {
-    return cached
-  }
-
-  for (const sheet of Array.from(document.styleSheets)) {
-    const styleText = readStylesheetText(sheet)
-    if (!styleText || !styleText.includes(sentinel)) {
-      continue
-    }
-
-    if (options.removeOwnerNode) {
-      removeStylesheetOwnerNode(sheet)
-    }
-
-    stylesheetTextCache.set(cacheKey, styleText)
-    return styleText
-  }
-
-  return ""
-}
-
-function readStylesheetText(sheet: CSSStyleSheet) {
-  try {
-    return Array.from(sheet.cssRules)
-      .map((rule) => rule.cssText)
-      .join("\n")
-  } catch {
-    return ""
-  }
-}
-
 function getConstructedStylesheet(cacheKey: string, styleText: string) {
   const cached = constructedStylesheetCache.get(cacheKey)
   if (cached !== undefined) {
@@ -131,11 +92,4 @@ function getConstructedStylesheet(cacheKey: string, styleText: string) {
   stylesheet.replaceSync(styleText)
   constructedStylesheetCache.set(cacheKey, stylesheet)
   return stylesheet
-}
-
-function removeStylesheetOwnerNode(sheet: CSSStyleSheet) {
-  const ownerNode = sheet.ownerNode
-  if (ownerNode instanceof HTMLStyleElement || ownerNode instanceof HTMLLinkElement) {
-    ownerNode.remove()
-  }
 }

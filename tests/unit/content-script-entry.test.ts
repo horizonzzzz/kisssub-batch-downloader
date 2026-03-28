@@ -27,9 +27,6 @@ const getEnabledSourceAdapterForLocation = vi.fn((): MockSource | null => null)
 const getAnchorMountTarget = vi.fn()
 const getBatchItemFromAnchor = vi.fn()
 const getDetailAnchors = vi.fn((): HTMLAnchorElement[] => [])
-const getDocumentStylesheetText = vi.fn()
-
-let documentStyleText = ".anime-bt-content-root { color: rgb(37, 99, 235); }"
 let bundledContentStyleText = ".anime-bt-content-root { color: rgb(37, 99, 235); }"
 
 vi.mock("react-dom/client", () => ({
@@ -79,8 +76,7 @@ vi.mock("../../lib/content/shadow-root", async () => {
       style.textContent = styleText
       shadowRoot.prepend(style)
       return style
-    },
-    getDocumentStylesheetText
+    }
   }
 })
 
@@ -104,9 +100,7 @@ describe("content script entry", () => {
     vi.clearAllMocks()
     createdRoots.length = 0
     document.body.innerHTML = ""
-    documentStyleText = ".anime-bt-content-root { color: rgb(37, 99, 235); }"
     bundledContentStyleText = ".anime-bt-content-root { color: rgb(37, 99, 235); }"
-    getDocumentStylesheetText.mockImplementation(() => documentStyleText)
     installChromeMock()
   })
 
@@ -216,7 +210,7 @@ describe("content script entry", () => {
     expect(runtimeAddListener).toHaveBeenCalledTimes(1)
   })
 
-  it("injects styles into shadow roots without relying on document stylesheets", async () => {
+  it("injects the bundled contents stylesheet into both shadow roots", async () => {
     const anchorCell = document.createElement("td")
     const anchor = document.createElement("a")
     anchor.href = "https://acg.rip/t/1"
@@ -229,7 +223,6 @@ describe("content script entry", () => {
       displayName: "ACG.RIP"
     }
 
-    documentStyleText = ""
     bundledContentStyleText = ".anime-bt-content-root { color: rgb(37, 99, 235); }"
 
     getSourceAdapterForLocation.mockReturnValueOnce(source)
@@ -264,5 +257,7 @@ describe("content script entry", () => {
     expect(
       checkboxHost?.shadowRoot?.querySelector("[data-anime-bt-batch-shadow-style='content-ui']")
     ).not.toBeNull()
+    expect(panelHost?.shadowRoot?.textContent).toContain(".anime-bt-content-root")
+    expect(checkboxHost?.shadowRoot?.textContent).toContain(".anime-bt-content-root")
   })
 })
