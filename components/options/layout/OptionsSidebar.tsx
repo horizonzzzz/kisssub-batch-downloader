@@ -2,8 +2,8 @@ import { FaGithub } from "react-icons/fa6"
 import { HiOutlineGlobeAlt } from "react-icons/hi2"
 
 import speedlineBrandIcon from "../../../assets/anime-bt-icon-speedline.svg"
-import { SOURCE_IDS } from "../../../lib/source-config"
-import { cn } from "../../../lib/utils"
+import { SOURCE_IDS } from "../../../lib/sources/catalog"
+import { cn } from "../../../lib/shared/cn"
 import type { OptionsRouteMeta } from "../config/routes"
 
 const BRAND_NAME = "Anime BT Batch"

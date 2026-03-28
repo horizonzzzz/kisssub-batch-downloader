@@ -8,7 +8,7 @@ describe("shadow-root helpers", () => {
   })
 
   it("does not permanently cache a stylesheet miss before the stylesheet exists", async () => {
-    const { getDocumentStylesheetText } = await import("../../lib/shadow-root")
+    const { getDocumentStylesheetText } = await import("../../lib/content/shadow-root")
 
     expect(getDocumentStylesheetText("content-ui", "anime-bt-content-root")).toBe("")
 

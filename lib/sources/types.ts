@@ -1,4 +1,4 @@
-import type { BatchItem, DeliveryMode, ExtractionResult, Settings, SourceId } from "../types"
+import type { BatchItem, DeliveryMode, ExtractionResult, Settings, SourceId } from "../shared/types"
 
 export type SourceAdapter = {
   id: SourceId

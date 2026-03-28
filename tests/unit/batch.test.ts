@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import * as batchModule from "../../lib/batch"
+import * as batchModule from "../../lib/background/preparation"
 import { DEFAULT_SETTINGS } from "../../lib/settings"
 
 const { classifyExtractionResult } = batchModule

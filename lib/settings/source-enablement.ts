@@ -1,5 +1,12 @@
-import { DEFAULT_ENABLED_SOURCES, SOURCE_IDS } from "./source-config"
-import type { Settings, SourceId } from "./types"
+import { SOURCE_IDS } from "../sources/catalog"
+import type { Settings, SourceId } from "../shared/types"
+
+export const DEFAULT_ENABLED_SOURCES: Record<SourceId, boolean> = Object.freeze({
+  kisssub: true,
+  dongmanhuayuan: true,
+  acgrip: true,
+  bangumimoe: true
+})
 
 export function normalizeEnabledSources(raw: unknown): Settings["enabledSources"] {
   const record = typeof raw === "object" && raw ? (raw as Record<string, unknown>) : {}

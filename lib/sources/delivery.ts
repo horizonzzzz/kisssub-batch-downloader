@@ -1,5 +1,5 @@
-import type { DeliveryMode, Settings, SourceId } from "./types"
-import { SOURCE_IDS } from "./source-config"
+import { SOURCE_IDS } from "./catalog"
+import type { DeliveryMode, Settings, SourceId } from "../shared/types"
 
 const SUPPORTED_DELIVERY_MODES: Record<SourceId, readonly DeliveryMode[]> = {
   kisssub: ["magnet", "torrent-url", "torrent-file"],

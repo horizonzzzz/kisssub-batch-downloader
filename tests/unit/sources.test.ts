@@ -1,9 +1,10 @@
 import { describe, expect, it } from "vitest"
 
 import { getSourceAdapterById, getSourceAdapterForPage } from "../../lib/sources"
-import { normalizeBatchItems } from "../../lib/batch"
-import { DEFAULT_SOURCE_DELIVERY_MODES, getSupportedDeliveryModes } from "../../lib/delivery"
-import { SITE_CONFIG_META, SOURCE_IDS } from "../../lib/source-config"
+import { normalizeBatchItems } from "../../lib/background/preparation"
+import { DEFAULT_SOURCE_DELIVERY_MODES, getSupportedDeliveryModes } from "../../lib/sources/delivery"
+import { SOURCE_IDS } from "../../lib/sources/catalog"
+import { SITE_CONFIG_META } from "../../lib/sources/site-meta"
 
 describe("source registry", () => {
   it("resolves the source adapter for supported list pages", () => {

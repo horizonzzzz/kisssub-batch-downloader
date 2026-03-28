@@ -1,10 +1,10 @@
 import { HiChevronDown, HiChevronUp } from "react-icons/hi2"
 import { useFormContext } from "react-hook-form"
 
-import { getDeliveryModeLabel, getSupportedDeliveryModes } from "../../../../lib/delivery"
-import type { SiteConfigMeta } from "../../../../lib/source-config"
-import type { DeliveryMode, SourceId } from "../../../../lib/types"
-import { cn } from "../../../../lib/utils"
+import { getDeliveryModeLabel, getSupportedDeliveryModes } from "../../../../lib/sources/delivery"
+import type { SiteConfigMeta } from "../../../../lib/sources/site-meta"
+import type { DeliveryMode, SourceId } from "../../../../lib/shared/types"
+import { cn } from "../../../../lib/shared/cn"
 import {
   Badge,
   Card,

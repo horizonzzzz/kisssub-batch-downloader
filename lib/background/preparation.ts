@@ -1,6 +1,12 @@
-import { getDeliveryModePriority } from "./delivery"
-import { getSourceAdapterById } from "./sources"
-import type { BatchItem, BatchStats, ClassifiedBatchResult, ExtractionResult, Settings, SourceId } from "./types"
+import { getSourceAdapterById } from "../sources"
+import { getDeliveryModePriority } from "../sources/delivery"
+import type {
+  BatchItem,
+  ClassifiedBatchResult,
+  ExtractionResult,
+  Settings,
+  SourceId
+} from "../shared/types"
 
 export function normalizeBatchItems(items: unknown): BatchItem[] {
   const seen = new Set<string>()
@@ -56,25 +62,10 @@ export function normalizeBatchItems(items: unknown): BatchItem[] {
   return normalized
 }
 
-export function isKisssubDetailUrl(url: URL): boolean {
-  return /(^|\.)kisssub\.org$/i.test(url.hostname) && /\/show-[a-f0-9]+\.html$/i.test(url.pathname)
-}
-
 export function normalizeTitle(title: unknown): string {
   return String(title ?? "")
     .replace(/\s+/g, " ")
     .trim()
-}
-
-export function createStats(total: number): BatchStats {
-  return {
-    total,
-    processed: 0,
-    prepared: 0,
-    submitted: 0,
-    duplicated: 0,
-    failed: 0
-  }
 }
 
 export function classifyPreparedBatchItem(
@@ -130,20 +121,6 @@ export function classifyExtractionResult(
   }
 
   return classifyCandidateUrls(sourceId, classified, settings, seenHashes, seenUrls)
-}
-
-export function extractMagnetHash(magnetUrl: string): string {
-  const match = decodeURIComponent(String(magnetUrl || "")).match(/btih:([a-z0-9]+)/i)
-  return match ? match[1].toLowerCase() : ""
-}
-
-export function normalizeComparableUrl(url: string): string {
-  return String(url || "").trim()
-}
-
-export function extractDetailHash(url: string): string {
-  const match = String(url).match(/show-([a-f0-9]+)\.html/i)
-  return match ? match[1].toLowerCase() : ""
 }
 
 function classifyCandidateUrls(
@@ -212,6 +189,20 @@ function classifyCandidateUrls(
 
   classified.message = "No supported delivery mode was available for this source."
   return classified
+}
+
+export function extractMagnetHash(magnetUrl: string): string {
+  const match = decodeURIComponent(String(magnetUrl || "")).match(/btih:([a-z0-9]+)/i)
+  return match ? match[1].toLowerCase() : ""
+}
+
+export function extractDetailHash(url: string): string {
+  const match = String(url).match(/show-([a-f0-9]+)\.html/i)
+  return match ? match[1].toLowerCase() : ""
+}
+
+function normalizeComparableUrl(url: string): string {
+  return String(url || "").trim()
 }
 
 function normalizePreparedCandidates(

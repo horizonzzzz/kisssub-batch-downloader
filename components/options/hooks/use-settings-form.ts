@@ -3,7 +3,7 @@ import { useEffect, useState } from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 
-import type { TestQbConnectionResult } from "../../../lib/types"
+import type { TestQbConnectionResult } from "../../../lib/shared/types"
 import type { OptionsApi } from "../OptionsPage"
 import {
   createSettingsFormDefaults,

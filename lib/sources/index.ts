@@ -1,4 +1,4 @@
-import type { SourceId } from "../types"
+import type { SourceId } from "../shared/types"
 import { acgRipSourceAdapter } from "./acgrip"
 import { bangumiMoeSourceAdapter } from "./bangumimoe"
 import { dongmanhuayuanSourceAdapter } from "./dongmanhuayuan"

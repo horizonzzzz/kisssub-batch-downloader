@@ -6,14 +6,14 @@ import acgripSiteIcon from "../../../../assets/site-icon-acgrip.png"
 import bangumiMoeSiteIcon from "../../../../assets/site-icon-bangumimoe.svg"
 import dongmanhuayuanSiteIcon from "../../../../assets/site-icon-dongmanhuayuan.png"
 import kisssubSiteIcon from "../../../../assets/site-icon-kisssub.png"
-import { resolveSourceDeliveryMode } from "../../../../lib/delivery"
+import { resolveSourceDeliveryMode } from "../../../../lib/sources/delivery"
 import {
   SITE_CONFIG_META,
-  SOURCE_IDS,
   type SiteConfigMeta
-} from "../../../../lib/source-config"
-import { normalizeEnabledSources, resolveSourceEnabled } from "../../../../lib/source-enablement"
-import type { SourceId } from "../../../../lib/types"
+} from "../../../../lib/sources/site-meta"
+import { SOURCE_IDS } from "../../../../lib/sources/catalog"
+import { normalizeEnabledSources, resolveSourceEnabled } from "../../../../lib/settings"
+import type { SourceId } from "../../../../lib/shared/types"
 import type {
   SettingsFormInput,
   SettingsFormValues

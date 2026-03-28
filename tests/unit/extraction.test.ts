@@ -14,7 +14,7 @@ describe("extractSingleItem", () => {
   it("returns an actionable failure for unsupported sources", async () => {
     getSourceAdapterById.mockReturnValue(null)
 
-    const { extractSingleItem } = await import("../../lib/extraction")
+    const { extractSingleItem } = await import("../../lib/sources/extraction")
 
     await expect(
       extractSingleItem(
@@ -50,7 +50,7 @@ describe("extractSingleItem", () => {
       extractSingleItem: extract
     })
 
-    const { extractSingleItem } = await import("../../lib/extraction")
+    const { extractSingleItem } = await import("../../lib/sources/extraction")
     const settings = { retryCount: 1 } as never
     const item = {
       sourceId: "kisssub" as const,

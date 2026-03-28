@@ -4,20 +4,17 @@ import type { PlasmoCSConfig } from "plasmo"
 
 import { BatchPanel } from "../components/batch-panel"
 import { SelectionCheckbox } from "../components/selection-checkbox"
-import { BATCH_EVENT } from "../lib/constants"
+import { BATCH_EVENT } from "../lib/shared/messages"
 import {
   getAnchorMountTarget,
   getBatchItemFromAnchor,
   getDetailAnchors,
   getSourceAdapterForLocation,
   getEnabledSourceAdapterForLocation
-} from "../lib/content-page"
-import {
-  createShadowMountHost,
-  ensureShadowStyle
-} from "../lib/shadow-root"
+} from "../lib/content/page"
+import { createShadowMountHost, ensureShadowStyle } from "../lib/content/shadow-root"
 import type { SourceAdapter } from "../lib/sources/types"
-import type { BatchEventPayload, BatchItem, Settings } from "../lib/types"
+import type { BatchEventPayload, BatchItem, Settings } from "../lib/shared/types"
 import contentStyleText from "../styles/content-style-text"
 
 export default function SourceBatchContentScript() {

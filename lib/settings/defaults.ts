@@ -1,9 +1,6 @@
-import { DEFAULT_SOURCE_DELIVERY_MODES } from "./delivery"
-import { DEFAULT_ENABLED_SOURCES } from "./source-config"
-import type { Settings } from "./types"
-
-export const BATCH_EVENT = "KISSSUB_BATCH_EVENT"
-export const ENTRY_SELECTOR = 'a[href*="show-"][href$=".html"]'
+import { DEFAULT_SOURCE_DELIVERY_MODES } from "../sources/delivery"
+import type { Settings } from "../shared/types"
+import { DEFAULT_ENABLED_SOURCES } from "./source-enablement"
 
 export const DEFAULT_SETTINGS: Settings = Object.freeze({
   qbBaseUrl: "http://127.0.0.1:7474",

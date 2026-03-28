@@ -1,6 +1,6 @@
-import { extractMagnetHash, normalizeTitle } from "../batch"
-import { DEFAULT_SOURCE_DELIVERY_MODES, getSupportedDeliveryModes } from "../delivery"
-import type { BatchItem, ExtractionResult, Settings } from "../types"
+import { extractMagnetHash, normalizeTitle } from "../background/preparation"
+import { DEFAULT_SOURCE_DELIVERY_MODES, getSupportedDeliveryModes } from "./delivery"
+import type { BatchItem, ExtractionResult, Settings } from "../shared/types"
 import { withDetailTab } from "./detail-tab"
 import type { SourceAdapter } from "./types"
 

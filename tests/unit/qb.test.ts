@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest"
 
-import { addTorrentFilesToQb, addUrlsToQb, getQbLoginErrorMessage } from "../../lib/qb"
+import { addTorrentFilesToQb, addUrlsToQb, getQbLoginErrorMessage } from "../../lib/downloader/qb"
 import { DEFAULT_SETTINGS } from "../../lib/settings"
 
 const qbSettings = {

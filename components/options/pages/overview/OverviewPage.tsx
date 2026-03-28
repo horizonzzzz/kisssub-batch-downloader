@@ -1,6 +1,7 @@
 import { HiOutlineArrowTopRightOnSquare } from "react-icons/hi2"
 
-import { SITE_CONFIG_META, SOURCE_IDS } from "../../../../lib/source-config"
+import { SOURCE_IDS } from "../../../../lib/sources/catalog"
+import { SITE_CONFIG_META } from "../../../../lib/sources/site-meta"
 import { Button, Card } from "../../../ui"
 
 const accentClassNames: Record<"default" | "emerald" | "cyan", string> = {

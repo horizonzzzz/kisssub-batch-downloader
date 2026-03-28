@@ -2,7 +2,7 @@ import "./styles/options.css"
 
 import { OptionsPage, type OptionsApi } from "./components/options-page"
 import { DEFAULT_SETTINGS } from "./lib/settings"
-import type { Settings } from "./lib/types"
+import type { Settings } from "./lib/shared/types"
 
 const api: OptionsApi = {
   async loadSettings() {

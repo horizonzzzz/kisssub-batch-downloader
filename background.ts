@@ -1,16 +1,9 @@
-import { BATCH_EVENT } from "./lib/constants"
-import { createBatchDownloadManager } from "./lib/background-batch"
-import { extractSingleItem } from "./lib/extraction"
-import { addTorrentFilesToQb, addUrlsToQb, loginQb, qbFetchText } from "./lib/qb"
-import { ensureSettings, getSettings, sanitizeSettings, saveSettings } from "./lib/settings"
-import type { BatchEventPayload, BatchItem, Settings } from "./lib/types"
-
-type RuntimeRequest =
-  | { type: "GET_SETTINGS" }
-  | { type: "SAVE_SETTINGS"; settings?: Partial<Settings> }
-  | { type: "TEST_QB_CONNECTION"; settings?: Partial<Settings> | null }
-  | { type: "OPEN_OPTIONS_PAGE" }
-  | { type: "START_BATCH_DOWNLOAD"; items?: BatchItem[]; savePath?: string }
+import { createBatchDownloadManager, testQbConnection } from "./lib/background"
+import { addTorrentFilesToQb, addUrlsToQb, loginQb } from "./lib/downloader/qb"
+import { ensureSettings, getSettings, saveSettings } from "./lib/settings"
+import { BATCH_EVENT, type RuntimeRequest } from "./lib/shared/messages"
+import type { BatchEventPayload } from "./lib/shared/types"
+import { extractSingleItem } from "./lib/sources/extraction"
 
 const batchDownloadManager = createBatchDownloadManager({
   saveSettings,
@@ -77,21 +70,6 @@ chrome.runtime.onMessage.addListener((message: RuntimeRequest, sender, sendRespo
 
   return true
 })
-
-async function testQbConnection(overrideSettings: Partial<Settings> | null) {
-  const settings = sanitizeSettings({
-    ...(await getSettings()),
-    ...(overrideSettings ?? {})
-  })
-
-  await loginQb(settings)
-  const version = await qbFetchText(settings, "/api/v2/app/version", { method: "GET" })
-
-  return {
-    baseUrl: settings.qbBaseUrl,
-    version: version.trim() || "unknown"
-  }
-}
 
 async function sendBatchEvent(tabId: number, payload: BatchEventPayload) {
   try {

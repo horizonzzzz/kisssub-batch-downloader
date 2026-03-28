@@ -1,5 +1,5 @@
-import { getSourceAdapterById } from "./sources"
-import type { BatchItem, ExtractionResult, Settings } from "./types"
+import { getSourceAdapterById } from "."
+import type { BatchItem, ExtractionResult, Settings } from "../shared/types"
 
 export async function extractSingleItem(item: BatchItem, settings: Settings): Promise<ExtractionResult> {
   const adapter = getSourceAdapterById(item.sourceId)

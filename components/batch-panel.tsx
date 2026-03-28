@@ -4,7 +4,7 @@ import { HiChevronDown, HiChevronUp, HiOutlineCog6Tooth } from "react-icons/hi2"
 import speedlineBrandIcon from "../assets/anime-bt-icon-speedline.svg"
 import { ContentButton } from "./content-ui/button"
 import { ContentInput } from "./content-ui/input"
-import { cn } from "../lib/utils"
+import { cn } from "../lib/shared/cn"
 
 type BatchPanelProps = {
   sourceName?: string

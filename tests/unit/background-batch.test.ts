@@ -7,12 +7,12 @@ import type {
   ClassifiedBatchResult,
   ExtractionResult,
   Settings
-} from "../../lib/types"
+} from "../../lib/shared/types"
 import {
   createBatchDownloadManager,
   fetchTorrentForUpload,
   getTorrentFilename
-} from "../../lib/background-batch"
+} from "../../lib/background"
 
 function createSettings(overrides: Partial<Settings> = {}): Settings {
   return {

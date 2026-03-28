@@ -44,7 +44,7 @@ vi.mock("../../components/selection-checkbox", () => ({
   SelectionCheckbox: () => null
 }))
 
-vi.mock("../../lib/content-page", () => ({
+vi.mock("../../lib/content/page", () => ({
   getAnchorMountTarget,
   getBatchItemFromAnchor,
   getDetailAnchors,
@@ -56,9 +56,9 @@ vi.mock("../../styles/content-style-text", () => ({
   default: bundledContentStyleText
 }))
 
-vi.mock("../../lib/shadow-root", async () => {
-  const actual = await vi.importActual<typeof import("../../lib/shadow-root")>(
-    "../../lib/shadow-root"
+vi.mock("../../lib/content/shadow-root", async () => {
+  const actual = await vi.importActual<typeof import("../../lib/content/shadow-root")>(
+    "../../lib/content/shadow-root"
   )
 
   return {

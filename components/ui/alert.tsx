@@ -6,7 +6,7 @@ import {
   HiOutlineXCircle
 } from "react-icons/hi2"
 
-import { cn } from "../../lib/utils"
+import { cn } from "../../lib/shared/cn"
 
 const iconByTone = {
   info: HiOutlineInformationCircle,

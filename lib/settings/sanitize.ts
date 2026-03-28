@@ -1,11 +1,9 @@
-import { DEFAULT_SETTINGS } from "./constants"
-import { normalizeSourceDeliveryModes } from "./delivery"
+import { normalizeSourceDeliveryModes } from "../sources/delivery"
+import type { Settings } from "../shared/types"
+import { DEFAULT_SETTINGS } from "./defaults"
 import { normalizeEnabledSources } from "./source-enablement"
-import type { Settings } from "./types"
 
 type RawSettings = Partial<Settings> & Record<string, unknown>
-
-export { DEFAULT_SETTINGS } from "./constants"
 
 export function sanitizeSettings(raw: RawSettings): Settings {
   return {
@@ -28,30 +26,8 @@ export function sanitizeSettings(raw: RawSettings): Settings {
   }
 }
 
-export async function ensureSettings(): Promise<void> {
-  const stored = await chrome.storage.local.get("settings")
-  if (!stored.settings) {
-    await chrome.storage.local.set({ settings: DEFAULT_SETTINGS })
-  }
-}
-
-export async function getSettings(): Promise<Settings> {
-  await ensureSettings()
-  const stored = await chrome.storage.local.get("settings")
-  return sanitizeSettings({
-    ...DEFAULT_SETTINGS,
-    ...(stored.settings ?? {})
-  })
-}
-
-export async function saveSettings(partialSettings: RawSettings): Promise<Settings> {
-  const merged = sanitizeSettings({
-    ...(await getSettings()),
-    ...(partialSettings ?? {})
-  })
-
-  await chrome.storage.local.set({ settings: merged })
-  return merged
+export function normalizeSavePath(path: unknown): string {
+  return String(path ?? "").trim()
 }
 
 function clampInteger(value: unknown, min: number, max: number, fallback: number): number {
@@ -74,8 +50,4 @@ function normalizeBaseUrl(url: unknown): string {
 function normalizeRemoteScriptUrl(url: unknown): string {
   const normalized = String(url ?? "").trim()
   return normalized || DEFAULT_SETTINGS.remoteScriptUrl
-}
-
-function normalizeSavePath(path: unknown): string {
-  return String(path ?? "").trim()
 }

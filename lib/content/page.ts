@@ -1,7 +1,7 @@
-import { getSourceAdapterForPage } from "./sources"
-import type { SourceAdapter } from "./sources/types"
-import { resolveSourceEnabled } from "./source-enablement"
-import type { BatchItem, Settings } from "./types"
+import { getSourceAdapterForPage } from "../sources"
+import type { SourceAdapter } from "../sources/types"
+import { resolveSourceEnabled } from "../settings"
+import type { BatchItem, Settings } from "../shared/types"
 
 function toUrl(location: Pick<Location, "href"> | URL): URL {
   return location instanceof URL ? location : new URL(location.href)

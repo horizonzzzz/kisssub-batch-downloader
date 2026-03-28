@@ -51,7 +51,7 @@ The extension injects selection UI into supported list pages, reuses direct magn
 ## Source Of Truth Files
 
 - `background.ts`
-  Handles runtime message registration, settings access, qBittorrent connection tests, and delegates batch orchestration to shared helpers in `lib/background-batch.ts`.
+  Handles runtime message registration and delegates batch orchestration plus qBittorrent connection tests to `lib/background/`.
 - `options.tsx`
   Boots the hash-routed options page, loads `styles/options.css`, and wires the React options UI to background message APIs.
 - `components/`
@@ -71,15 +71,65 @@ The extension injects selection UI into supported list pages, reuses direct magn
 - `CHANGELOG.md`
   Canonical release notes for tagged versions. Each GitHub Release page should reuse the matching version section from this file. New release entries must summarize the changes from the previous version tag up to the new release commit.
 - `lib/`
-  Shared batch helpers, background batch orchestration helpers, extraction helpers, qBittorrent API helpers, settings logic, per-source configuration metadata, constants, and shared types.
+  Domain-organized shared logic:
+  - `lib/background/` for batch orchestration, job-state helpers, and background-only services
+  - `lib/content/` for source-page matching helpers and Shadow Root host/style orchestration
+  - `lib/downloader/qb/` for qBittorrent WebUI client helpers and submission APIs
+  - `lib/settings/` for defaults, sanitization, storage access, and source enablement helpers
+  - `lib/shared/` for cross-runtime messages, shared types, and Tailwind utility helpers
 - `.github/workflows/release.yml`
   Tagged-release automation that validates versions, packages the extension, extracts the matching `CHANGELOG.md` section, renames the packaged archive, and publishes the GitHub Release.
 - `scripts/prepare-release.mjs`
   Release helper script that extracts version notes from `CHANGELOG.md`, renames the packaged zip artifact, and exposes the prepared paths to the workflow.
 - `lib/sources/`
-  Source adapter registry plus site-specific page matching and extraction logic.
+  Source adapter registry plus site-specific page matching and extraction logic, source delivery-mode capability helpers, and options-page site metadata.
 - `tests/`
   Unit, component, and Playwright end-to-end coverage.
+
+## Module Map
+
+Use this section as the shortest runtime-oriented guide to the current code layout.
+
+### Background Batch Request Flow
+
+1. `contents/source-batch.tsx`
+   Collects selected source-page items and sends `START_BATCH_DOWNLOAD`.
+2. `background.ts`
+   Routes the runtime message and injects concrete dependencies into `lib/background/`.
+3. `lib/background/manager.ts`
+   Validates the request, creates the batch job, coordinates concurrent preparation, and drives final submission.
+4. `lib/background/preparation.ts`
+   Normalizes selected items, classifies prepared links, and deduplicates extracted results before submission.
+5. `lib/sources/extraction.ts`
+   Delegates per-item detail-page extraction to the matched source adapter in `lib/sources/`.
+6. `lib/downloader/qb/`
+   Logs into qBittorrent, submits magnet or torrent URLs, and uploads torrent files when required.
+7. `lib/background/job-state.ts`
+   Tracks per-job stats, accumulates results, and produces the completion summary payload sent back to the content script.
+
+### Runtime Ownership
+
+- `lib/background/`
+  Background-only orchestration, job state, and service helpers.
+- `lib/content/`
+  Content-script page matching, anchor extraction, and Shadow Root host/style utilities.
+- `lib/sources/`
+  Source registry, site adapters, site metadata, and source delivery-mode capabilities.
+- `lib/settings/`
+  Default settings, sanitization, storage access, and source enablement resolution.
+- `lib/downloader/qb/`
+  qBittorrent WebUI client and submission APIs.
+- `lib/shared/`
+  Cross-runtime message contracts, shared types, and utility helpers used by multiple domains.
+
+### Boundary Rules
+
+- Runtime protocol constants and shared message/request types belong in `lib/shared/`.
+- Source-specific parsing, page matching, and capability defaults belong in `lib/sources/`.
+- Batch orchestration belongs in `lib/background/`; source adapters should not take over job-level concerns.
+- `lib/settings/` may normalize or persist settings, but qB/network behavior belongs outside it.
+- `lib/content/` may help mount and scan pages, but downloader submission must stay out of content-side helpers.
+- During development, prefer splitting code by responsibility instead of letting a single file keep growing; when a file starts carrying multiple concerns or becomes hard to hold in context, extract focused modules before adding more logic.
 
 ## Generated Or Derived Directories
 

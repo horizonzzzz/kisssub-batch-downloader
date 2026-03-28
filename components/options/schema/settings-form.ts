@@ -1,7 +1,7 @@
 import { z } from "zod"
 
 import { DEFAULT_SETTINGS, sanitizeSettings } from "../../../lib/settings"
-import type { DeliveryMode, Settings } from "../../../lib/types"
+import type { DeliveryMode, Settings } from "../../../lib/shared/types"
 
 const deliveryModeSchema = z.enum([
   "magnet",

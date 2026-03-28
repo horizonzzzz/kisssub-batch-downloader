@@ -1,13 +1,4 @@
-import type { SourceId } from "./types"
-
-export const SOURCE_IDS: SourceId[] = ["kisssub", "dongmanhuayuan", "acgrip", "bangumimoe"]
-
-export const DEFAULT_ENABLED_SOURCES: Record<SourceId, boolean> = Object.freeze({
-  kisssub: true,
-  dongmanhuayuan: true,
-  acgrip: true,
-  bangumimoe: true
-})
+import type { SourceId } from "../shared/types"
 
 export type SiteConfigMeta = {
   id: SourceId

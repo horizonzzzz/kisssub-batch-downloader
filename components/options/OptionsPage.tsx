@@ -10,7 +10,7 @@ import {
   useNavigate
 } from "react-router-dom"
 
-import type { Settings, TestQbConnectionResult } from "../../lib/types"
+import type { Settings, TestQbConnectionResult } from "../../lib/shared/types"
 import {
   DEFAULT_OPTIONS_ROUTE,
   OPTIONS_ROUTES,
