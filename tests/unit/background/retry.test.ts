@@ -193,6 +193,33 @@ describe("retryFailedItems", () => {
       expect(updatedRecord.items[0].failure?.retryCount).toBe(1)
       expect(updatedRecord.items[0].failure?.lastRetryAt).toBeDefined()
     })
+
+    it("handles mixed results - some success, some failure", async () => {
+      const failed1 = createFailedItem("item-1", "Failed 1", "magnet:?xt=1")
+      const failed2 = createFailedItem("item-2", "Failed 2", "magnet:?xt=2")
+      const record = createMockRecord("batch-1", [failed1, failed2])
+
+      let callCount = 0
+      deps.getHistoryRecord = vi.fn(async () => record)
+      deps.addUrlsToQb = vi.fn(async () => {
+        callCount++
+        if (callCount === 2) {
+          throw new Error("HTTP 500")
+        }
+      })
+
+      const request: RetryRequest = { recordId: "batch-1" }
+      const result = await retryFailedItems(request, deps)
+
+      expect(result.successCount).toBe(1)
+      expect(result.failedCount).toBe(1)
+      expect(deps.addUrlsToQb).toHaveBeenCalledTimes(2)
+
+      const updatedRecord = (deps.updateHistoryRecord as Mock).mock.calls[0][0]
+      expect(updatedRecord.items[0].status).toBe("success")
+      expect(updatedRecord.items[1].status).toBe("failed")
+      expect(updatedRecord.status).toBe("partial_failure")
+    })
   })
 
   describe("item filtering", () => {

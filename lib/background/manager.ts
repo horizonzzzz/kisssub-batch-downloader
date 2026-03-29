@@ -104,7 +104,9 @@ export function createBatchDownloadManager(dependencies: BackgroundBatchDependen
 
     await finalizeBatch(job, null)
     const sourceId = items[0]?.sourceId ?? "kisssub"
-    saveTaskHistory(buildHistoryRecord(job, sourceId)).catch(() => {})
+    saveTaskHistory(buildHistoryRecord(job, sourceId)).catch((err) =>
+      console.warn("Failed to save task history:", err)
+    )
   }
 
   async function processQueue(

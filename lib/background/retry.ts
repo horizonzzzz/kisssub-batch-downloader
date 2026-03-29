@@ -111,22 +111,18 @@ export async function retryFailedItems(
   })
 
   if (itemsWithUrls.length > 0) {
-    const urls = itemsWithUrls.map(i => i.url)
     const savePathOption = record.savePath ? { savePath: record.savePath } : undefined
 
-    try {
-      await deps.addUrlsToQb(settings, urls, savePathOption)
-
-      for (const { item } of itemsWithUrls) {
+    for (const { item, url } of itemsWithUrls) {
+      try {
+        await deps.addUrlsToQb(settings, [url], savePathOption)
         const index = updatedItems.findIndex(i => i.id === item.id)
         if (index !== -1) {
           updatedItems[index] = updateItemAfterSuccess(item)
         }
         successCount++
-      }
-    } catch (error) {
-      const message = `qBittorrent 提交失败: ${error instanceof Error ? error.message : String(error)}`
-      for (const { item } of itemsWithUrls) {
+      } catch (error) {
+        const message = `qBittorrent 提交失败: ${error instanceof Error ? error.message : String(error)}`
         const index = updatedItems.findIndex(i => i.id === item.id)
         if (index !== -1) {
           updatedItems[index] = updateItemAfterFailure(item, message)
