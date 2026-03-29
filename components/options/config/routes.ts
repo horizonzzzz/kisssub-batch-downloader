@@ -1,4 +1,4 @@
-export type OptionsRouteId = "general" | "sites" | "overview"
+export type OptionsRouteId = "general" | "sites" | "history" | "overview"
 
 export type OptionsRouteMeta = {
   id: OptionsRouteId
@@ -27,6 +27,14 @@ export const OPTIONS_ROUTES: OptionsRouteMeta[] = [
     title: "站点配置",
     description: "统一管理 4 个站点的启用状态和专属配置。",
     footerLabel: "正在编辑站点配置"
+  },
+  {
+    id: "history",
+    path: "/history",
+    label: "批次历史",
+    title: "批次历史",
+    description: "查看历史批量提交记录，追溯下载状态和失败原因。",
+    footerLabel: "正在查看批次历史"
   },
   {
     id: "overview",

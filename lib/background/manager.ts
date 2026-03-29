@@ -1,6 +1,13 @@
 import { getDisabledSources, normalizeSavePath } from "../settings"
+import {
+  createHistoryItemId,
+  createHistoryRecordId,
+  saveTaskHistory
+} from "../history/storage"
+import { HISTORY_RECORD_VERSION, type TaskHistoryRecord } from "../history/types"
 import type { StartBatchDownloadSuccessResponse } from "../shared/messages"
-import type { BatchItem, ClassifiedBatchResult } from "../shared/types"
+import type { BatchItem, ClassifiedBatchResult, SourceId } from "../shared/types"
+import { SITE_CONFIG_META } from "../sources/site-meta"
 import { createBatchJob, recordBatchResult, summarizeBatchResults } from "./job-state"
 import { getBatchStartedMessage, getBatchSubmittingMessage } from "./messages"
 import { classifyExtractionResult, classifyPreparedBatchItem, normalizeBatchItems } from "./preparation"
@@ -96,6 +103,8 @@ export function createBatchDownloadManager(dependencies: BackgroundBatchDependen
     }
 
     await finalizeBatch(job, null)
+    const sourceId = items[0]?.sourceId ?? "kisssub"
+    saveTaskHistory(buildHistoryRecord(job, sourceId)).catch(() => {})
   }
 
   async function processQueue(
@@ -258,5 +267,58 @@ function getSavePathOption(savePath: string): { savePath?: string } | undefined 
 
   return {
     savePath
+  }
+}
+
+function classifyFailureReason(message: string): string {
+  const lower = message.toLowerCase()
+  if (lower.includes("timeout") || lower.includes("超时")) return "timeout"
+  if (lower.includes("parse") || lower.includes("解析")) return "parse_error"
+  if (lower.includes("qb") || lower.includes("qbittorrent") || lower.includes("403")) return "qb_error"
+  if (lower.includes("network") || lower.includes("网络") || lower.includes("fetch")) return "network_error"
+  return "unknown"
+}
+
+function buildHistoryRecord(
+  job: BatchJob,
+  sourceId: SourceId
+): TaskHistoryRecord {
+  const siteName = SITE_CONFIG_META[sourceId]?.displayName ?? sourceId
+  const dateStr = new Date().toISOString().split("T")[0]
+  const recordId = createHistoryRecordId()
+  
+  const items = job.results.map((result, index) => ({
+    id: createHistoryItemId(recordId, index),
+    title: result.title,
+    detailUrl: result.detailUrl,
+    sourceId,
+    magnetUrl: result.magnetUrl,
+    torrentUrl: result.torrentUrl,
+    hash: result.hash,
+    status: (result.status === "submitted" ? "success" : result.status === "duplicate" ? "duplicate" : "failed") as "success" | "duplicate" | "failed",
+    failure: result.status === "failed" ? {
+      reason: classifyFailureReason(result.message) as "parse_error" | "timeout" | "qb_error" | "network_error" | "unknown",
+      message: result.message,
+      retryable: true,
+      retryCount: 0
+    } : undefined,
+    deliveryMode: result.deliveryMode || "magnet"
+  }))
+
+  return {
+    id: recordId,
+    name: `${siteName} 批量提取 (${dateStr})`,
+    sourceId,
+    status: job.stats.failed > 0 ? "partial_failure" : "completed",
+    createdAt: new Date().toISOString(),
+    stats: {
+      total: job.stats.total,
+      success: job.stats.submitted,
+      duplicated: job.stats.duplicated,
+      failed: job.stats.failed
+    },
+    items,
+    savePath: job.savePath || undefined,
+    version: HISTORY_RECORD_VERSION
   }
 }

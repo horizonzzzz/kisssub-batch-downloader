@@ -1,5 +1,6 @@
 import { createBatchDownloadManager, testQbConnection } from "./lib/background"
 import { addTorrentFilesToQb, addUrlsToQb, loginQb } from "./lib/downloader/qb"
+import { getHistoryRecords, clearHistory } from "./lib/history/storage"
 import { ensureSettings, getSettings, saveSettings } from "./lib/settings"
 import {
   BATCH_EVENT,
@@ -65,6 +66,16 @@ chrome.runtime.onMessage.addListener((message: RuntimeRequest, sender, sendRespo
             )
           )
           return
+        case "GET_HISTORY": {
+          const records = await getHistoryRecords()
+          sendResponse(createRuntimeSuccessResponse("GET_HISTORY", { records }))
+          return
+        }
+        case "CLEAR_HISTORY": {
+          await clearHistory()
+          sendResponse(createRuntimeSuccessResponse("CLEAR_HISTORY", {}))
+          return
+        }
         default:
           sendResponse(
             createRuntimeErrorResponse(

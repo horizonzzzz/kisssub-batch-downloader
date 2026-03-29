@@ -17,8 +17,11 @@ import {
   getOptionsRouteMeta
 } from "./config/routes"
 import { useSettingsForm } from "./hooks/use-settings-form"
+import { HistoryShell } from "./layout/HistoryShell"
 import { OptionsShell } from "./layout/OptionsShell"
+import { OptionsSidebar } from "./layout/OptionsSidebar"
 import { GeneralSettingsPage } from "./pages/general/GeneralSettingsPage"
+import { HistoryPage } from "./pages/history/HistoryPage"
 import { OverviewPage } from "./pages/overview/OverviewPage"
 import { SitesPage } from "./pages/sites/SitesPage"
 
@@ -50,35 +53,50 @@ function OptionsWorkspace({ api }: OptionsPageProps) {
     handleTestConnection
   } = useSettingsForm(api)
 
+  const isHistoryRoute = location.pathname === "/history"
+
   return (
-    <FormProvider {...form}>
-      <OptionsShell
+    <div className="min-h-screen bg-zinc-50 text-zinc-900 lg:flex lg:items-start">
+      <OptionsSidebar
         routes={OPTIONS_ROUTES}
-        activeMeta={activeMeta}
         activePath={activeMeta.path}
         onNavigate={navigate}
-        status={status}
-        saving={saving}
-        onSubmit={handleSave}>
-        <Routes>
-          <Route path="/" element={<Navigate to={DEFAULT_OPTIONS_ROUTE} replace />} />
-          <Route
-            path="/general"
-            element={
-              <GeneralSettingsPage
-                connectionMessage={connectionMessage}
-                connectionState={connectionState}
-                testing={testing}
-                onTestConnection={handleTestConnection}
+      />
+
+      {isHistoryRoute ? (
+        <HistoryShell>
+          <Routes>
+            <Route path="/history" element={<HistoryPage />} />
+          </Routes>
+        </HistoryShell>
+      ) : (
+        <FormProvider {...form}>
+          <OptionsShell
+            activeMeta={activeMeta}
+            status={status}
+            saving={saving}
+            onSubmit={handleSave}>
+            <Routes>
+              <Route path="/" element={<Navigate to={DEFAULT_OPTIONS_ROUTE} replace />} />
+              <Route
+                path="/general"
+                element={
+                  <GeneralSettingsPage
+                    connectionMessage={connectionMessage}
+                    connectionState={connectionState}
+                    testing={testing}
+                    onTestConnection={handleTestConnection}
+                  />
+                }
               />
-            }
-          />
-          <Route path="/sites" element={<SitesPage />} />
-          <Route path="/overview" element={<OverviewPage />} />
-          <Route path="*" element={<Navigate to={DEFAULT_OPTIONS_ROUTE} replace />} />
-        </Routes>
-      </OptionsShell>
-    </FormProvider>
+              <Route path="/sites" element={<SitesPage />} />
+              <Route path="/overview" element={<OverviewPage />} />
+              <Route path="*" element={<Navigate to={DEFAULT_OPTIONS_ROUTE} replace />} />
+            </Routes>
+          </OptionsShell>
+        </FormProvider>
+      )}
+    </div>
   )
 }
 

@@ -1,8 +1,11 @@
 import type { BatchItem, Settings, TestQbConnectionResult } from "./types"
+import type { TaskHistoryRecord } from "../history/types"
 
 export const BATCH_EVENT = "ANIME_BT_BATCH_EVENT"
 
 export type RuntimeRequest =
+  | { type: "GET_HISTORY" }
+  | { type: "CLEAR_HISTORY" }
   | { type: "GET_SETTINGS" }
   | { type: "SAVE_SETTINGS"; settings?: Partial<Settings> }
   | { type: "TEST_QB_CONNECTION"; settings?: Partial<Settings> | null }
@@ -40,7 +43,18 @@ export type StartBatchDownloadSuccessResponse = {
   total: number
 }
 
+export type GetHistorySuccessResponse = {
+  ok: true
+  records: TaskHistoryRecord[]
+}
+
+export type ClearHistorySuccessResponse = {
+  ok: true
+}
+
 export type RuntimeSuccessResponseMap = {
+  GET_HISTORY: GetHistorySuccessResponse
+  CLEAR_HISTORY: ClearHistorySuccessResponse
   GET_SETTINGS: GetSettingsSuccessResponse
   SAVE_SETTINGS: SaveSettingsSuccessResponse
   TEST_QB_CONNECTION: TestQbConnectionSuccessResponse
@@ -60,6 +74,8 @@ export type SaveSettingsResponse = RuntimeResponseFor<"SAVE_SETTINGS">
 export type TestQbConnectionResponse = RuntimeResponseFor<"TEST_QB_CONNECTION">
 export type OpenOptionsPageResponse = RuntimeResponseFor<"OPEN_OPTIONS_PAGE">
 export type StartBatchDownloadResponse = RuntimeResponseFor<"START_BATCH_DOWNLOAD">
+export type GetHistoryResponse = RuntimeResponseFor<"GET_HISTORY">
+export type ClearHistoryResponse = RuntimeResponseFor<"CLEAR_HISTORY">
 export type RuntimeResponse = RuntimeResponseFor<RuntimeRequestType>
 
 export function createRuntimeSuccessResponse<TType extends RuntimeRequestType>(

@@ -74,9 +74,10 @@ describe("OptionsPage", () => {
     expect(screen.getAllByText("Anime BT Batch")).toHaveLength(1)
 
     const sidebarNav = screen.getByTestId("options-sidebar-groups")
-    expect(within(sidebarNav).getAllByRole("button")).toHaveLength(3)
+    expect(within(sidebarNav).getAllByRole("button")).toHaveLength(4)
     expect(screen.getByRole("button", { name: "连接与基础设置" })).toBeInTheDocument()
     expect(screen.getByRole("button", { name: "站点配置" })).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "批次历史" })).toBeInTheDocument()
     expect(screen.getByRole("button", { name: "源站概览" })).toBeInTheDocument()
     expect(screen.getByRole("heading", { name: "连接与基础设置" })).toBeInTheDocument()
     expect(screen.getByText("qB WebUI 兼容性提示")).toBeInTheDocument()

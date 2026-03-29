@@ -12,6 +12,7 @@ The extension injects selection UI into supported list pages, reuses direct magn
 - Supported source management in the options page:
   - `连接与基础设置`
   - `站点配置`
+  - `批次历史`
   - `源站概览`
   - the options workspace uses hash-routed navigation with:
     - `options.html#/general`
@@ -87,6 +88,10 @@ The extension injects selection UI into supported list pages, reuses direct magn
   Source adapter registry plus site-specific page matching and extraction logic, source delivery-mode capability helpers, and options-page site metadata.
 - `tests/`
   Unit, component, and Playwright end-to-end coverage.
+- `lib/history/`
+  任务历史持久化模块，包括类型定义、存储读写、自动清理逻辑。批次完成时由后台自动保存。
+- `components/options/pages/history/`
+  批次历史页面组件，包括列表视图、详情视图和失败原因说明。
 
 ## Module Map
 
@@ -123,6 +128,8 @@ Use this section as the shortest runtime-oriented guide to the current code layo
   qBittorrent WebUI client and submission APIs.
 - `lib/shared/`
   Cross-runtime message contracts, shared types, and utility helpers used by multiple domains.
+- `lib/history/`
+  任务历史持久化，类型定义和存储逻辑，后台批次完成时自动保存。
 
 ### Boundary Rules
 
