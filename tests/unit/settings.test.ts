@@ -94,7 +94,7 @@ describe("sanitizeSettings", () => {
         retryCount: -5
       })
     ).toMatchObject({
-      concurrency: 3,
+      concurrency: 5,
       injectTimeoutMs: 3000,
       domSettleMs: 10000,
       retryCount: 0

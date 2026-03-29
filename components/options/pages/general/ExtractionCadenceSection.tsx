@@ -59,10 +59,10 @@ export function ExtractionCadenceSection({
         <Collapsible.Content>
           <CardContent className="grid gap-5 border-t border-zinc-100 bg-zinc-50/50 md:grid-cols-2">
             <FormField label="并发数" htmlFor="concurrency" error={errors.concurrency?.message}>
-              <Input id="concurrency" type="number" min={1} max={3} {...register("concurrency")} />
+              <Input id="concurrency" type="number" {...register("concurrency")} />
             </FormField>
             <FormField label="重试次数" htmlFor="retryCount" error={errors.retryCount?.message}>
-              <Input id="retryCount" type="number" min={0} max={3} {...register("retryCount")} />
+              <Input id="retryCount" type="number" {...register("retryCount")} />
             </FormField>
             <FormField
               label="注入超时(ms)"

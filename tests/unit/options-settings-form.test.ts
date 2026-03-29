@@ -19,7 +19,7 @@ describe("options settings form helpers", () => {
       })
     ).toMatchObject({
       qbBaseUrl: "http://127.0.0.1:17474",
-      concurrency: 3,
+      concurrency: 5,
       enabledSources: {
         kisssub: false,
         dongmanhuayuan: true,

@@ -10,10 +10,10 @@ export function sanitizeSettings(raw: RawSettings): Settings {
     qbBaseUrl: normalizeBaseUrl(raw.qbBaseUrl ?? DEFAULT_SETTINGS.qbBaseUrl),
     qbUsername: String(raw.qbUsername ?? "").trim(),
     qbPassword: String(raw.qbPassword ?? ""),
-    concurrency: clampInteger(raw.concurrency, 1, 3, DEFAULT_SETTINGS.concurrency),
+    concurrency: clampInteger(raw.concurrency, 1, 5, DEFAULT_SETTINGS.concurrency),
     injectTimeoutMs: clampInteger(raw.injectTimeoutMs, 3000, 60000, DEFAULT_SETTINGS.injectTimeoutMs),
     domSettleMs: clampInteger(raw.domSettleMs, 200, 10000, DEFAULT_SETTINGS.domSettleMs),
-    retryCount: clampInteger(raw.retryCount, 0, 3, DEFAULT_SETTINGS.retryCount),
+    retryCount: clampInteger(raw.retryCount, 0, 5, DEFAULT_SETTINGS.retryCount),
     remoteScriptUrl: normalizeRemoteScriptUrl(raw.remoteScriptUrl ?? DEFAULT_SETTINGS.remoteScriptUrl),
     remoteScriptRevision:
       String(raw.remoteScriptRevision ?? DEFAULT_SETTINGS.remoteScriptRevision).trim() ||
