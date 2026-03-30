@@ -89,6 +89,11 @@ export function HistoryDetailView({ record, onBack, onRecordChanged }: HistoryDe
   const failures = aggregateFailures(record.items)
   const hasFailures = record.stats.failed > 0
 
+  const handleDeleted = () => {
+    onRecordChanged()
+    onBack()
+  }
+
   return (
     <div className="grid gap-4">
       <div className="flex items-center gap-3">
@@ -101,7 +106,7 @@ export function HistoryDetailView({ record, onBack, onRecordChanged }: HistoryDe
         <DeleteRecordButton
           recordId={record.id}
           recordName={record.name}
-          onDeleted={onBack}
+          onDeleted={handleDeleted}
           variant="button"
         />
         <div className="flex items-center gap-1.5 text-sm text-zinc-500 ml-auto">

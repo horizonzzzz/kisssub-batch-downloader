@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi, type Mock } from "vitest"
 import { retryFailedItems, type RetryDependencies, type RetryRequest } from "../../../lib/background/retry"
 import type { Settings } from "../../../lib/shared/types"
 import type { TaskHistoryItem, TaskHistoryRecord } from "../../../lib/history/types"
+import type { QbTorrentFile } from "../../../lib/downloader/qb"
 
 function createMockRecord(id: string, items: TaskHistoryItem[]): TaskHistoryRecord {
   return {
@@ -39,6 +40,24 @@ function createFailedItem(id: string, title: string, magnetUrl?: string): TaskHi
   }
 }
 
+function createFailedTorrentFileItem(id: string, title: string, torrentUrl: string): TaskHistoryItem {
+  return {
+    id,
+    title,
+    detailUrl: `https://example.com/${id}`,
+    sourceId: "acgrip",
+    torrentUrl,
+    status: "failed",
+    failure: {
+      reason: "qb_error",
+      message: "qBittorrent rejected",
+      retryable: true,
+      retryCount: 0
+    },
+    deliveryMode: "torrent-file"
+  }
+}
+
 function createSuccessItem(id: string, title: string): TaskHistoryItem {
   return {
     id,
@@ -73,6 +92,11 @@ function createMockDeps(
     updateHistoryRecord: vi.fn(async () => {}),
     loginQb: vi.fn(async () => {}),
     addUrlsToQb: vi.fn(async () => {}),
+    fetchTorrentForUpload: vi.fn(async () => ({
+      filename: "test.torrent",
+      blob: new Blob(["test"], { type: "application/x-bittorrent" })
+    })),
+    addTorrentFilesToQb: vi.fn(async () => {}),
     ...overrides
   }
 }
@@ -258,6 +282,64 @@ describe("retryFailedItems", () => {
       expect(result.updatedRecord.stats.success).toBe(2)
       expect(result.updatedRecord.stats.failed).toBe(0)
       expect(result.updatedRecord.status).toBe("completed")
+    })
+  })
+
+  describe("torrent-file delivery mode", () => {
+    it("uses fetch-and-upload for torrent-file items instead of URL submission", async () => {
+      const failedTorrentItem = createFailedTorrentFileItem("item-1", "Failed Torrent", "https://acg.rip/test.torrent")
+      const record = createMockRecord("batch-1", [failedTorrentItem])
+      record.sourceId = "acgrip" as const
+      deps.getHistoryRecord = vi.fn(async () => record)
+
+      const request: RetryRequest = { recordId: "batch-1" }
+      const result = await retryFailedItems(request, deps)
+
+      expect(result.successCount).toBe(1)
+      expect(deps.fetchTorrentForUpload).toHaveBeenCalledWith("https://acg.rip/test.torrent")
+      expect(deps.addTorrentFilesToQb).toHaveBeenCalledWith(
+        expect.anything(),
+        [{ filename: "test.torrent", blob: expect.any(Blob) }],
+        undefined
+      )
+      expect(deps.addUrlsToQb).not.toHaveBeenCalled()
+    })
+
+    it("uses savePath for torrent-file uploads", async () => {
+      const failedTorrentItem = createFailedTorrentFileItem("item-1", "Failed Torrent", "https://acg.rip/test.torrent")
+      const record = {
+        ...createMockRecord("batch-1", [failedTorrentItem]),
+        sourceId: "acgrip" as const,
+        savePath: "/downloads/anime"
+      }
+      deps.getHistoryRecord = vi.fn(async () => record)
+
+      const request: RetryRequest = { recordId: "batch-1" }
+      await retryFailedItems(request, deps)
+
+      expect(deps.addTorrentFilesToQb).toHaveBeenCalledWith(
+        expect.anything(),
+        [{ filename: "test.torrent", blob: expect.any(Blob) }],
+        { savePath: "/downloads/anime" }
+      )
+    })
+
+    it("marks torrent-file item failed when fetch fails", async () => {
+      const failedTorrentItem = createFailedTorrentFileItem("item-1", "Failed Torrent", "https://acg.rip/test.torrent")
+      const record = createMockRecord("batch-1", [failedTorrentItem])
+      record.sourceId = "acgrip" as const
+      deps.getHistoryRecord = vi.fn(async () => record)
+      deps.fetchTorrentForUpload = vi.fn(async () => { throw new Error("HTTP 404") })
+
+      const request: RetryRequest = { recordId: "batch-1" }
+      const result = await retryFailedItems(request, deps)
+
+      expect(result.successCount).toBe(0)
+      expect(result.failedCount).toBe(1)
+      expect(deps.addTorrentFilesToQb).not.toHaveBeenCalled()
+      const updatedRecord = (deps.updateHistoryRecord as Mock).mock.calls[0][0]
+      expect(updatedRecord.items[0].status).toBe("failed")
+      expect(updatedRecord.items[0].failure?.message).toContain("HTTP 404")
     })
   })
 })

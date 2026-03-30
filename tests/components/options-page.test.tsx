@@ -360,4 +360,35 @@ describe("OptionsPage", () => {
     expect(advancedToggle).toHaveAttribute("aria-expanded", "true")
     expect(screen.getByLabelText("并发数")).toBeInTheDocument()
   })
+
+  it(
+    "preserves form edits when navigating to history and back to general",
+    async () => {
+      const user = userEvent.setup()
+      const api = createOptionsApi()
+
+      render(<OptionsPage api={api} />)
+
+      expect(await screen.findByDisplayValue("http://127.0.0.1:17474")).toBeInTheDocument()
+
+      const usernameField = screen.getByLabelText("用户名")
+      await user.clear(usernameField)
+      await user.type(usernameField, "testuser")
+
+      expect(usernameField).toHaveValue("testuser")
+
+      await user.click(screen.getByRole("button", { name: "批次历史" }))
+
+      expect(window.location.hash).toBe("#/history")
+      await waitFor(() => {
+        expect(screen.queryByLabelText("用户名")).not.toBeInTheDocument()
+      })
+
+      await user.click(screen.getByRole("button", { name: "连接与基础设置" }))
+
+      expect(window.location.hash).toBe("#/general")
+      expect(await screen.findByLabelText("用户名")).toHaveValue("testuser")
+    },
+    15000
+  )
 })

@@ -219,20 +219,26 @@ describe("HistoryPage", () => {
     vi.clearAllMocks()
     const runtimeMock = mockChromeRuntime()
     
+    const records = [
+      createMockRecord("batch-1", { status: "completed" }),
+      createMockRecord("batch-2", { status: "partial_failure" })
+    ]
+    const deletedIds = new Set<string>()
+    
     runtimeMock.addListener(async (message: unknown) => {
       const msg = message as { type: string; recordId?: string; itemIds?: string[] }
       
       if (msg.type === "GET_HISTORY") {
         return {
           ok: true,
-          records: [
-            createMockRecord("batch-1", { status: "completed" }),
-            createMockRecord("batch-2", { status: "partial_failure" })
-          ]
+          records: records.filter(r => !deletedIds.has(r.id))
         }
       }
       
       if (msg.type === "DELETE_HISTORY_RECORD") {
+        if (msg.recordId) {
+          deletedIds.add(msg.recordId)
+        }
         return { ok: true }
       }
       
@@ -278,5 +284,37 @@ describe("HistoryPage", () => {
     await waitFor(() => {
       expect(screen.getByRole("button", { name: "返回" })).toBeInTheDocument()
     })
+  })
+
+  it("refreshes history list after deleting from detail view", async () => {
+    const user = userEvent.setup()
+    render(<HistoryPage />)
+    
+    await waitFor(() => {
+      expect(screen.getByText("Test Batch batch-1")).toBeInTheDocument()
+    })
+    
+    await user.click(screen.getAllByRole("button", { name: "详情" })[0])
+    
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "返回" })).toBeInTheDocument()
+    })
+    
+    expect(screen.getByText("Test Batch batch-1")).toBeInTheDocument()
+    
+    await user.click(screen.getByRole("button", { name: "删除记录" }))
+    
+    await waitFor(() => {
+      expect(screen.getByText("确定删除\"Test Batch batch-1\"吗？此操作不可恢复。")).toBeInTheDocument()
+    })
+    
+    await user.click(screen.getByRole("button", { name: "删除" }))
+    
+    await waitFor(() => {
+      expect(screen.queryByRole("button", { name: "返回" })).not.toBeInTheDocument()
+    })
+    
+    expect(screen.queryByText("Test Batch batch-1")).not.toBeInTheDocument()
+    expect(screen.getByText("Test Batch batch-2")).toBeInTheDocument()
   })
 })

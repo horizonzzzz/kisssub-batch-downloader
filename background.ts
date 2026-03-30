@@ -1,4 +1,4 @@
-import { createBatchDownloadManager, retryFailedItems, testQbConnection } from "./lib/background"
+import { createBatchDownloadManager, fetchTorrentForUpload, retryFailedItems, testQbConnection } from "./lib/background"
 import { addTorrentFilesToQb, addUrlsToQb, loginQb } from "./lib/downloader/qb"
 import {
   clearHistory,
@@ -96,7 +96,9 @@ chrome.runtime.onMessage.addListener((message: RuntimeRequest, sender, sendRespo
                 getHistoryRecord,
                 updateHistoryRecord,
                 loginQb,
-                addUrlsToQb
+                addUrlsToQb,
+                fetchTorrentForUpload,
+                addTorrentFilesToQb
               }
             )
             sendResponse(

@@ -1,5 +1,6 @@
-import type { Settings } from "../shared/types"
+import type { QbTorrentFile } from "../downloader/qb"
 import type { TaskHistoryItem, TaskHistoryRecord } from "../history/types"
+import type { Settings } from "../shared/types"
 
 export type RetryRequest = {
   recordId: string
@@ -18,12 +19,18 @@ export type RetryDependencies = {
   updateHistoryRecord: (record: TaskHistoryRecord) => Promise<void>
   loginQb: (settings: Settings) => Promise<void>
   addUrlsToQb: (settings: Settings, urls: string[], options?: { savePath?: string }) => Promise<void>
+  fetchTorrentForUpload: (torrentUrl: string) => Promise<QbTorrentFile>
+  addTorrentFilesToQb: (settings: Settings, torrents: QbTorrentFile[], options?: { savePath?: string }) => Promise<void>
 }
 
 function getSubmitUrl(item: TaskHistoryItem): string | null {
   if (item.magnetUrl) return item.magnetUrl
   if (item.torrentUrl) return item.torrentUrl
   return null
+}
+
+function isTorrentFileItem(item: TaskHistoryItem): boolean {
+  return item.deliveryMode === "torrent-file" && !!item.torrentUrl
 }
 
 function updateItemAfterSuccess(item: TaskHistoryItem): TaskHistoryItem {
@@ -78,15 +85,21 @@ export async function retryFailedItems(
     }
   }
 
-  const itemsWithUrls: { item: TaskHistoryItem; url: string }[] = []
+  const urlItems: { item: TaskHistoryItem; url: string }[] = []
+  const torrentFileItems: { item: TaskHistoryItem; url: string }[] = []
   const itemsWithoutUrls: TaskHistoryItem[] = []
 
   for (const item of targetItems) {
     const url = getSubmitUrl(item)
-    if (url) {
-      itemsWithUrls.push({ item, url })
-    } else {
+    if (!url) {
       itemsWithoutUrls.push(updateItemAfterFailure(item, "无可用的 magnet 或 torrent 链接"))
+      continue
+    }
+
+    if (isTorrentFileItem(item)) {
+      torrentFileItems.push({ item, url })
+    } else {
+      urlItems.push({ item, url })
     }
   }
 
@@ -110,12 +123,33 @@ export async function retryFailedItems(
     return item
   })
 
-  if (itemsWithUrls.length > 0) {
-    const savePathOption = record.savePath ? { savePath: record.savePath } : undefined
+  const savePathOption = record.savePath ? { savePath: record.savePath } : undefined
 
-    for (const { item, url } of itemsWithUrls) {
+  if (urlItems.length > 0) {
+    for (const { item, url } of urlItems) {
       try {
         await deps.addUrlsToQb(settings, [url], savePathOption)
+        const index = updatedItems.findIndex(i => i.id === item.id)
+        if (index !== -1) {
+          updatedItems[index] = updateItemAfterSuccess(item)
+        }
+        successCount++
+      } catch (error) {
+        const message = `qBittorrent 提交失败: ${error instanceof Error ? error.message : String(error)}`
+        const index = updatedItems.findIndex(i => i.id === item.id)
+        if (index !== -1) {
+          updatedItems[index] = updateItemAfterFailure(item, message)
+        }
+        failedCount++
+      }
+    }
+  }
+
+  if (torrentFileItems.length > 0) {
+    for (const { item, url } of torrentFileItems) {
+      try {
+        const torrent = await deps.fetchTorrentForUpload(url)
+        await deps.addTorrentFilesToQb(settings, [torrent], savePathOption)
         const index = updatedItems.findIndex(i => i.id === item.id)
         if (index !== -1) {
           updatedItems[index] = updateItemAfterSuccess(item)

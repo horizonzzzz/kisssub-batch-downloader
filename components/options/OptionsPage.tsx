@@ -34,23 +34,29 @@ type OptionsPageProps = {
   api: OptionsApi
 }
 
-type RouteShellProps = {
-  api: OptionsApi
+type FormShellProps = {
   activeMeta: ReturnType<typeof getOptionsRouteMeta>
+  form: ReturnType<typeof useSettingsForm>["form"]
+  status: ReturnType<typeof useSettingsForm>["status"]
+  saving: ReturnType<typeof useSettingsForm>["saving"]
+  connectionState: ReturnType<typeof useSettingsForm>["connectionState"]
+  connectionMessage: ReturnType<typeof useSettingsForm>["connectionMessage"]
+  testing: ReturnType<typeof useSettingsForm>["testing"]
+  handleSave: ReturnType<typeof useSettingsForm>["handleSave"]
+  handleTestConnection: ReturnType<typeof useSettingsForm>["handleTestConnection"]
 }
 
-function FormRouteShell({ api, activeMeta }: RouteShellProps) {
-  const {
-    form,
-    status,
-    connectionState,
-    connectionMessage,
-    saving,
-    testing,
-    handleSave,
-    handleTestConnection
-  } = useSettingsForm(api)
-
+function FormShell({
+  activeMeta,
+  form,
+  status,
+  saving,
+  connectionState,
+  connectionMessage,
+  testing,
+  handleSave,
+  handleTestConnection
+}: FormShellProps) {
   return (
     <FormProvider {...form}>
       <PageShell activeMeta={activeMeta} status={status} saving={saving} onSubmit={handleSave}>
@@ -75,7 +81,7 @@ function FormRouteShell({ api, activeMeta }: RouteShellProps) {
   )
 }
 
-function ViewRouteShell({ activeMeta }: RouteShellProps) {
+function ViewShell({ activeMeta }: { activeMeta: ReturnType<typeof getOptionsRouteMeta> }) {
   return (
     <PageShell activeMeta={activeMeta}>
       <Routes>
@@ -95,7 +101,33 @@ function OptionsWorkspace({ api }: OptionsPageProps) {
     [location.pathname]
   )
 
-  const RouteShell = activeMeta.mode === "form" ? FormRouteShell : ViewRouteShell
+  const {
+    form,
+    status,
+    connectionState,
+    connectionMessage,
+    saving,
+    testing,
+    handleSave,
+    handleTestConnection
+  } = useSettingsForm(api)
+
+  const routeContent =
+    activeMeta.mode === "form" ? (
+      <FormShell
+        activeMeta={activeMeta}
+        form={form}
+        status={status}
+        saving={saving}
+        connectionState={connectionState}
+        connectionMessage={connectionMessage}
+        testing={testing}
+        handleSave={handleSave}
+        handleTestConnection={handleTestConnection}
+      />
+    ) : (
+      <ViewShell activeMeta={activeMeta} />
+    )
 
   return (
     <div className="min-h-screen bg-zinc-50 text-zinc-900 lg:flex lg:items-start">
@@ -104,7 +136,7 @@ function OptionsWorkspace({ api }: OptionsPageProps) {
         activePath={activeMeta.path}
         onNavigate={navigate}
       />
-      <RouteShell api={api} activeMeta={activeMeta} />
+      {routeContent}
     </div>
   )
 }
