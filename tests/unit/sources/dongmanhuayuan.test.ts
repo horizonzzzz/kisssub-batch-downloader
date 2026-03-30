@@ -44,4 +44,23 @@ describe("parseDongmanhuayuanDetailSnapshot", () => {
       failureReason: "The detail page finished loading, but no usable magnet URL was exposed."
     })
   })
+
+  it("handles site header title fallback when main area title is unavailable", () => {
+    expect(
+      parseDongmanhuayuanDetailSnapshot(
+        {
+          title: "",
+          magnetCandidates: ["magnet:?xt=urn:btih:ABCD1234567890ABCDEF1234567890ABCDEF12"]
+        },
+        "https://www.dongmanhuayuan.com/detail/TEST12.html"
+      )
+    ).toEqual({
+      ok: true,
+      title: "",
+      hash: "abcd1234567890abcdef1234567890abcdef12",
+      magnetUrl: "magnet:?xt=urn:btih:ABCD1234567890ABCDEF1234567890ABCDEF12",
+      torrentUrl: "",
+      failureReason: ""
+    })
+  })
 })

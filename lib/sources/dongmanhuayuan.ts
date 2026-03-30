@@ -127,10 +127,14 @@ function dongmanhuayuanDetailExtractionScript(): DongmanhuayuanDetailSnapshot {
     .map((textarea) => textarea.value.trim())
     .filter(Boolean)
 
+  const mainElement = document.querySelector("main")
+  const resourceTitle = mainElement
+    ? mainElement.querySelector("h1")?.textContent?.trim()
+    : null
+  const fallbackTitle = document.title.replace(/_动漫花园.*$/u, "").trim()
+
   return {
-    title:
-      document.querySelector("main h1, h1")?.textContent?.trim() ||
-      document.title.replace(/_动漫花园.*$/u, "").trim(),
+    title: resourceTitle || fallbackTitle,
     magnetCandidates: [...textInputs, ...textareas]
   }
 }
