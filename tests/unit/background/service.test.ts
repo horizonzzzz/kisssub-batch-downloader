@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
-import { DEFAULT_SETTINGS } from "../../lib/settings/defaults"
-import type { Settings } from "../../lib/shared/types"
+import { DEFAULT_SETTINGS } from "../../../lib/settings/defaults"
+import type { Settings } from "../../../lib/shared/types"
 
 const {
   getSettingsMock,
@@ -15,8 +15,10 @@ const {
   qbFetchTextMock: vi.fn()
 }))
 
-vi.mock("../../lib/settings", async () => {
-  const actual = await vi.importActual<typeof import("../../lib/settings")>("../../lib/settings")
+vi.mock("../../../lib/settings", async () => {
+  const actual = await vi.importActual<typeof import("../../../lib/settings")>(
+    "../../../lib/settings"
+  )
 
   return {
     ...actual,
@@ -25,9 +27,9 @@ vi.mock("../../lib/settings", async () => {
   }
 })
 
-vi.mock("../../lib/downloader/qb", async () => {
-  const actual = await vi.importActual<typeof import("../../lib/downloader/qb")>(
-    "../../lib/downloader/qb"
+vi.mock("../../../lib/downloader/qb", async () => {
+  const actual = await vi.importActual<typeof import("../../../lib/downloader/qb")>(
+    "../../../lib/downloader/qb"
   )
 
   return {
@@ -37,7 +39,7 @@ vi.mock("../../lib/downloader/qb", async () => {
   }
 })
 
-import { testQbConnection } from "../../lib/background/service"
+import { testQbConnection } from "../../../lib/background/service"
 
 describe("testQbConnection", () => {
   const storedSettings: Settings = {

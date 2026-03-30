@@ -8,13 +8,13 @@ describe("shadow-root helpers", () => {
   })
 
   it("does not expose the legacy document stylesheet readback helper", async () => {
-    const shadowRootModule = await import("../../lib/content/shadow-root")
+    const shadowRootModule = await import("../../../lib/content/shadow-root")
 
     expect("getDocumentStylesheetText" in shadowRootModule).toBe(false)
   })
 
   it("creates a shadow host with dataset and inserts its container before the requested marker", async () => {
-    const { createShadowMountHost } = await import("../../lib/content/shadow-root")
+    const { createShadowMountHost } = await import("../../../lib/content/shadow-root")
 
     const marker = document.createElement("div")
     marker.dataset.marker = "after-host"
@@ -38,7 +38,9 @@ describe("shadow-root helpers", () => {
   })
 
   it("reuses the same fallback style tag when styles are injected repeatedly", async () => {
-    const { createShadowMountHost, ensureShadowStyle } = await import("../../lib/content/shadow-root")
+    const { createShadowMountHost, ensureShadowStyle } = await import(
+      "../../../lib/content/shadow-root"
+    )
 
     const mount = createShadowMountHost({
       hostTagName: "div",
@@ -81,7 +83,9 @@ describe("shadow-root helpers", () => {
     })
 
     try {
-      const { createShadowMountHost, ensureShadowStyle } = await import("../../lib/content/shadow-root")
+      const { createShadowMountHost, ensureShadowStyle } = await import(
+        "../../../lib/content/shadow-root"
+      )
 
       const mount = createShadowMountHost({
         hostTagName: "div",

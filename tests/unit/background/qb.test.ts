@@ -6,8 +6,8 @@ import {
   getQbLoginErrorMessage,
   loginQb,
   qbFetchText
-} from "../../lib/downloader/qb"
-import { DEFAULT_SETTINGS } from "../../lib/settings"
+} from "../../../lib/downloader/qb"
+import { DEFAULT_SETTINGS } from "../../../lib/settings"
 
 const qbSettings = {
   ...DEFAULT_SETTINGS,

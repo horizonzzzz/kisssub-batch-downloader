@@ -33,15 +33,15 @@ vi.mock("react-dom/client", () => ({
   createRoot
 }))
 
-vi.mock("../../components/batch-panel", () => ({
+vi.mock("../../../components/batch-panel", () => ({
   BatchPanel: () => null
 }))
 
-vi.mock("../../components/selection-checkbox", () => ({
+vi.mock("../../../components/selection-checkbox", () => ({
   SelectionCheckbox: () => null
 }))
 
-vi.mock("../../lib/content/page", () => ({
+vi.mock("../../../lib/content/page", () => ({
   getAnchorMountTarget,
   getBatchItemFromAnchor,
   getDetailAnchors,
@@ -49,13 +49,13 @@ vi.mock("../../lib/content/page", () => ({
   getEnabledSourceAdapterForLocation
 }))
 
-vi.mock("../../styles/content-style-text", () => ({
+vi.mock("../../../styles/content-style-text", () => ({
   default: bundledContentStyleText
 }))
 
-vi.mock("../../lib/content/shadow-root", async () => {
-  const actual = await vi.importActual<typeof import("../../lib/content/shadow-root")>(
-    "../../lib/content/shadow-root"
+vi.mock("../../../lib/content/shadow-root", async () => {
+  const actual = await vi.importActual<typeof import("../../../lib/content/shadow-root")>(
+    "../../../lib/content/shadow-root"
   )
 
   return {
@@ -105,7 +105,7 @@ describe("content script entry", () => {
   })
 
   it("provides a default export for the Plasmo content-script wrapper", async () => {
-    const module = (await import("../../contents/source-batch")) as Record<string, unknown>
+    const module = (await import("../../../contents/source-batch")) as Record<string, unknown>
 
     expect(module.default).toBeTypeOf("function")
   })
@@ -125,7 +125,7 @@ describe("content script entry", () => {
     })
     getEnabledSourceAdapterForLocation.mockReturnValueOnce(null)
 
-    await import("../../contents/source-batch")
+    await import("../../../contents/source-batch")
 
     await vi.waitFor(() => {
       expect(runtimeSendMessage).toHaveBeenCalledWith({
@@ -146,7 +146,7 @@ describe("content script entry", () => {
     })
     runtimeSendMessage.mockRejectedValueOnce(new Error("settings unavailable"))
 
-    await import("../../contents/source-batch")
+    await import("../../../contents/source-batch")
 
     await vi.waitFor(() => {
       expect(runtimeSendMessage).toHaveBeenCalledWith({
@@ -190,7 +190,7 @@ describe("content script entry", () => {
       }
     })
 
-    await import("../../contents/source-batch")
+    await import("../../../contents/source-batch")
 
     await vi.waitFor(() => {
       expect(createRoot).toHaveBeenCalledTimes(2)
@@ -242,7 +242,7 @@ describe("content script entry", () => {
       }
     })
 
-    await import("../../contents/source-batch")
+    await import("../../../contents/source-batch")
 
     await vi.waitFor(() => {
       expect(createRoot).toHaveBeenCalledTimes(2)

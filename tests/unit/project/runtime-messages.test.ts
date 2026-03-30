@@ -5,8 +5,8 @@ import {
   createRuntimeErrorResponse,
   createRuntimeSuccessResponse,
   sendRuntimeRequest
-} from "../../lib/shared/messages"
-import { DEFAULT_SETTINGS } from "../../lib/settings/defaults"
+} from "../../../lib/shared/messages"
+import { DEFAULT_SETTINGS } from "../../../lib/settings/defaults"
 
 const runtimeSendMessage = vi.fn()
 

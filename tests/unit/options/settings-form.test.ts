@@ -5,7 +5,7 @@ import {
   settingsFormSchema,
   toSettingsPayload,
   type SettingsFormInput
-} from "../../components/options/schema/settings-form"
+} from "../../../components/options/schema/settings-form"
 
 describe("options settings form helpers", () => {
   it("creates merged default values from partial stored settings", () => {

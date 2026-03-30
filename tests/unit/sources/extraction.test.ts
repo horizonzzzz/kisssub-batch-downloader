@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 
 const getSourceAdapterById = vi.fn()
 
-vi.mock("../../lib/sources", () => ({
+vi.mock("../../../lib/sources", () => ({
   getSourceAdapterById
 }))
 
@@ -14,7 +14,7 @@ describe("extractSingleItem", () => {
   it("returns an actionable failure for unsupported sources", async () => {
     getSourceAdapterById.mockReturnValue(null)
 
-    const { extractSingleItem } = await import("../../lib/sources/extraction")
+    const { extractSingleItem } = await import("../../../lib/sources/extraction")
 
     await expect(
       extractSingleItem(
@@ -50,7 +50,7 @@ describe("extractSingleItem", () => {
       extractSingleItem: extract
     })
 
-    const { extractSingleItem } = await import("../../lib/sources/extraction")
+    const { extractSingleItem } = await import("../../../lib/sources/extraction")
     const settings = { retryCount: 1 } as never
     const item = {
       sourceId: "kisssub" as const,

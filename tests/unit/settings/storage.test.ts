@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
-import { DEFAULT_SETTINGS } from "../../lib/settings/defaults"
-import { ensureSettings, getSettings, saveSettings } from "../../lib/settings/storage"
+import { DEFAULT_SETTINGS } from "../../../lib/settings/defaults"
+import { ensureSettings, getSettings, saveSettings } from "../../../lib/settings/storage"
 
 type StoredState = {
   settings?: unknown

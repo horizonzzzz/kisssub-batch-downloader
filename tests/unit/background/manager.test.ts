@@ -1,13 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
-import { createBatchDownloadManager } from "../../lib/background/manager"
-import { DEFAULT_SETTINGS } from "../../lib/settings/defaults"
+import { createBatchDownloadManager } from "../../../lib/background/manager"
+import { DEFAULT_SETTINGS } from "../../../lib/settings/defaults"
 import type {
   BatchEventPayload,
   BatchItem,
   ExtractionResult,
   Settings
-} from "../../lib/shared/types"
+} from "../../../lib/shared/types"
 
 function createSettings(overrides: Partial<Settings> = {}): Settings {
   return {

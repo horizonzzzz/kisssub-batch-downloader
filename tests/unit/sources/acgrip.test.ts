@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import { parseAcgRipDetailSnapshot } from "../../lib/sources/acgrip"
+import { parseAcgRipDetailSnapshot } from "../../../lib/sources/acgrip"
 
 describe("parseAcgRipDetailSnapshot", () => {
   it("returns the torrent URL exposed on the detail page", () => {

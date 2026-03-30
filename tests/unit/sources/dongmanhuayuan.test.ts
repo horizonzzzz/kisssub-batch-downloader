@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import { parseDongmanhuayuanDetailSnapshot } from "../../lib/sources/dongmanhuayuan"
+import { parseDongmanhuayuanDetailSnapshot } from "../../../lib/sources/dongmanhuayuan"
 
 describe("parseDongmanhuayuanDetailSnapshot", () => {
   it("prefers the first usable magnet link and derives the hash from it", () => {

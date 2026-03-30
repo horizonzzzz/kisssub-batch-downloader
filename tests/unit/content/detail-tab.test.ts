@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
-import { withDetailTab } from "../../lib/sources/detail-tab"
+import { withDetailTab } from "../../../lib/sources/detail-tab"
 
 type UpdatedListener = (
   updatedTabId: number,

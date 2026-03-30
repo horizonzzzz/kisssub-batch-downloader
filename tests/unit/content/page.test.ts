@@ -9,7 +9,7 @@ import {
   isListPage,
   isValidDetailAnchor,
   normalizeText
-} from "../../lib/content/page"
+} from "../../../lib/content/page"
 
 describe("content page helpers", () => {
   beforeEach(() => {

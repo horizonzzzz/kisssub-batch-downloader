@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import { parseKisssubDetailSnapshot } from "../../lib/sources/kisssub"
+import { parseKisssubDetailSnapshot } from "../../../lib/sources/kisssub"
 
 describe("parseKisssubDetailSnapshot", () => {
   it("returns the extracted magnet or torrent URLs when the detail page exposes them", () => {

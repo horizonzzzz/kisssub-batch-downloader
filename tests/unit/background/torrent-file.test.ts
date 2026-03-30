@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from "vitest"
 import {
   fetchTorrentForUpload,
   getTorrentFilename
-} from "../../lib/background/torrent-file"
+} from "../../../lib/background/torrent-file"
 
 describe("background torrent-file helpers", () => {
   it("prefers the filename from content-disposition", () => {

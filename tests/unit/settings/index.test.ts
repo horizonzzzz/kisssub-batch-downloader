@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import { DEFAULT_SETTINGS, sanitizeSettings } from "../../lib/settings"
+import { DEFAULT_SETTINGS, sanitizeSettings } from "../../../lib/settings"
 
 describe("sanitizeSettings", () => {
   it("uses 7474 as the default qB WebUI address", () => {

@@ -1,16 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
-import { DEFAULT_SETTINGS } from "../../lib/settings"
+import { DEFAULT_SETTINGS } from "../../../lib/settings"
 import {
   bangumiMoeSourceAdapter,
   parseBangumiMoeDetailSnapshot
-} from "../../lib/sources/bangumimoe"
+} from "../../../lib/sources/bangumimoe"
 
 const { withDetailTab } = vi.hoisted(() => ({
   withDetailTab: vi.fn()
 }))
 
-vi.mock("../../lib/sources/detail-tab", () => ({
+vi.mock("../../../lib/sources/detail-tab", () => ({
   withDetailTab
 }))
 

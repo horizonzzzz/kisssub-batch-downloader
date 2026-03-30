@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import { getBatchPanelViewState } from "../../components/batch-panel/state"
+import { getBatchPanelViewState } from "../../../components/batch-panel/state"
 
 describe("getBatchPanelViewState", () => {
   it("keeps editing enabled but blocks empty-batch actions while idle", () => {
