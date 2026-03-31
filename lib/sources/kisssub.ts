@@ -151,9 +151,12 @@ function kisssubDetailExtractionScript(config: {
   const sleep = (ms: number) => new Promise<void>((resolve) => window.setTimeout(resolve, ms))
 
   const getTitle = () => {
-    const breadcrumb = document.querySelector<HTMLAnchorElement>("div.navigation a:last-of-type")
-    if (breadcrumb?.textContent) {
-      return breadcrumb.textContent.trim()
+    const headingTitle =
+      document.querySelector("div.navigation a:last-of-type")?.textContent?.trim() ||
+      document.querySelector("h1, .entry-title, .post-title")?.textContent?.trim()
+
+    if (headingTitle) {
+      return headingTitle
     }
 
     return document.title.replace(/\s*-\s*爱恋动漫.*$/u, "").trim()

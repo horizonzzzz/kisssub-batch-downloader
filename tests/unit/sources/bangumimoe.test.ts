@@ -63,6 +63,8 @@ describe("parseBangumiMoeDetailSnapshot", () => {
 describe("bangumiMoeSourceAdapter", () => {
   beforeEach(() => {
     document.body.innerHTML = ""
+    document.title = ""
+    delete (window as typeof window & { angular?: unknown }).angular
     withDetailTab.mockReset()
   })
 
@@ -162,5 +164,63 @@ describe("bangumiMoeSourceAdapter", () => {
       15000,
       expect.any(Function)
     )
+  })
+
+  it("extracts title and torrent id from the rendered dialog scope", async () => {
+    withDetailTab.mockImplementation(async (_detailUrl, _timeoutMs, run) => {
+      window.history.replaceState({}, "", "/torrent/69cb76e484f11a93b5a327ff")
+
+      const dialog = document.createElement("md-dialog")
+      dialog.className = "torrent-details-dialog"
+      dialog.innerHTML = `
+        <a class="title-link">[爱恋字幕社][示例资源]</a>
+        <a href="magnet:?xt=urn:btih:abcdef1234567890">磁力链接</a>
+      `
+      document.body.appendChild(dialog)
+
+      ;(window as typeof window & {
+        angular?: {
+          element?: () => {
+            scope?: () => {
+              torrent?: { _id: string; title: string }
+            }
+          }
+        }
+      }).angular = {
+        element: () => ({
+          scope: () => ({
+            torrent: { _id: "69cb76e484f11a93b5a327ff", title: "[爱恋字幕社][示例资源]" }
+          })
+        })
+      }
+
+      globalThis.chrome = {
+        scripting: {
+          executeScript: vi.fn(async ({ func, args = [] }) => [{ result: await func(...args) }])
+        }
+      } as unknown as typeof chrome
+
+      return run(1)
+    })
+
+    await expect(
+      bangumiMoeSourceAdapter.extractSingleItem(
+        {
+          sourceId: "bangumimoe" as never,
+          detailUrl: "https://bangumi.moe/torrent/69cb76e484f11a93b5a327ff",
+          title: "[爱恋字幕社][示例资源]"
+        },
+        {
+          ...DEFAULT_SETTINGS,
+          retryCount: 0,
+          domSettleMs: 0
+        }
+      )
+    ).resolves.toMatchObject({
+      title: "[爱恋字幕社][示例资源]",
+      torrentUrl: expect.stringContaining("/download/torrent/69cb76e484f11a93b5a327ff/"),
+      hash: "69cb76e484f11a93b5a327ff",
+      magnetUrl: expect.stringContaining("magnet:?xt=urn:btih:")
+    })
   })
 })

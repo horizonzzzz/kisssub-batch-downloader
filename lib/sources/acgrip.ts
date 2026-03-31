@@ -156,7 +156,9 @@ async function executeExtraction(tabId: number): Promise<AcgRipDetailSnapshot> {
 
 function acgRipDetailExtractionScript(): AcgRipDetailSnapshot {
   const title =
-    document.querySelector("h1, .panel-title, .post-title")?.textContent?.trim() ||
+    document.querySelector(".post-show-content .panel-heading")?.textContent?.trim() ||
+    document.querySelector(".breadcrumb li:last-child, .breadcrumb li:last-of-type")?.textContent?.trim() ||
+    document.querySelector("h1, .post-title, .panel-title")?.textContent?.trim() ||
     document.title.replace(/\s*-\s*ACG\.RIP\s*$/i, "").trim()
 
   const torrentUrl =

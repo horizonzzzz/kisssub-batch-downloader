@@ -127,10 +127,13 @@ function dongmanhuayuanDetailExtractionScript(): DongmanhuayuanDetailSnapshot {
     .map((textarea) => textarea.value.trim())
     .filter(Boolean)
 
-  const mainElement = document.querySelector("main")
-  const resourceTitle = mainElement
-    ? mainElement.querySelector("h1")?.textContent?.trim()
-    : null
+  const resourceTitle =
+    document.querySelector("main h1")?.textContent?.trim() ||
+    document.querySelector("article h1, section h1, .container h1")?.textContent?.trim() ||
+    Array.from(document.querySelectorAll("h1"))
+      .map((node) => node.textContent?.trim() || "")
+      .find((text) => text && text !== "动漫花园") ||
+    ""
   const fallbackTitle = document.title.replace(/_动漫花园.*$/u, "").trim()
 
   return {

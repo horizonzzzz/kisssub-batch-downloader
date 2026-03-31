@@ -1,6 +1,15 @@
-import { describe, expect, it } from "vitest"
+import { beforeEach, describe, expect, it, vi } from "vitest"
 
-import { parseKisssubDetailSnapshot } from "../../../lib/sources/kisssub"
+import { DEFAULT_SETTINGS } from "../../../lib/settings"
+import { kisssubSourceAdapter, parseKisssubDetailSnapshot } from "../../../lib/sources/kisssub"
+
+const { withDetailTab } = vi.hoisted(() => ({
+  withDetailTab: vi.fn()
+}))
+
+vi.mock("../../../lib/sources/detail-tab", () => ({
+  withDetailTab
+}))
 
 describe("parseKisssubDetailSnapshot", () => {
   it("returns the extracted magnet or torrent URLs when the detail page exposes them", () => {
@@ -60,6 +69,126 @@ describe("parseKisssubDetailSnapshot", () => {
       magnetUrl: "",
       torrentUrl: "",
       failureReason: "The detail page finished loading, but no usable magnet or torrent URL was exposed."
+    })
+  })
+})
+
+describe("kisssubSourceAdapter detail title fallback", () => {
+  beforeEach(() => {
+    document.title = ""
+    document.body.innerHTML = ""
+    withDetailTab.mockReset()
+  })
+
+  it("uses the document title when the navigation breadcrumb is absent", async () => {
+    withDetailTab.mockImplementation(async (_detailUrl, _timeoutMs, run) => {
+      document.title = "[SweetSub][刹那之花] - 爱恋动漫 deadbeef"
+      document.body.innerHTML = `
+        <a id="magnet" href="./addon.php?r=document/view&page=mika-mode">开启虫洞</a>
+        <a id="download" href="./addon.php?r=document/view&page=mika-mode">开启虫洞</a>
+      `
+      window.history.replaceState({}, "", "/show-deadbeef.html")
+
+      globalThis.chrome = {
+        scripting: {
+          executeScript: vi.fn(async ({ func, args = [] }) => [{ result: await func(...args) }])
+        }
+      } as unknown as typeof chrome
+
+      return run(1)
+    })
+
+    await expect(
+      kisssubSourceAdapter.extractSingleItem(
+        {
+          sourceId: "kisssub",
+          detailUrl: "https://www.kisssub.org/show-deadbeef.html",
+          title: "placeholder"
+        },
+        {
+          ...DEFAULT_SETTINGS,
+          retryCount: 0,
+          injectTimeoutMs: 10,
+          domSettleMs: 0
+        }
+      )
+    ).resolves.toMatchObject({
+      title: "[SweetSub][刹那之花]"
+    })
+  })
+
+  it("strips the live site suffix from document.title", async () => {
+    withDetailTab.mockImplementation(async (_detailUrl, _timeoutMs, run) => {
+      document.title = "[爱恋字幕社][示例资源] - 爱恋动漫 deadbeef"
+      document.body.innerHTML = `
+        <a id="magnet" href="magnet:?xt=urn:btih:abcdef1234567890">磁力链接</a>
+        <a id="download" href="/download/example.torrent">下载种子</a>
+      `
+      window.history.replaceState({}, "", "/show-deadbeef.html")
+
+      globalThis.chrome = {
+        scripting: {
+          executeScript: vi.fn(async ({ func, args = [] }) => [{ result: await func(...args) }])
+        }
+      } as unknown as typeof chrome
+
+      return run(1)
+    })
+
+    await expect(
+      kisssubSourceAdapter.extractSingleItem(
+        {
+          sourceId: "kisssub",
+          detailUrl: "https://www.kisssub.org/show-deadbeef.html",
+          title: "placeholder"
+        },
+        {
+          ...DEFAULT_SETTINGS,
+          retryCount: 0,
+          injectTimeoutMs: 10,
+          domSettleMs: 0
+        }
+      )
+    ).resolves.toMatchObject({
+      title: "[爱恋字幕社][示例资源]"
+    })
+  })
+
+  it("prefers an in-page heading before the document title fallback", async () => {
+    withDetailTab.mockImplementation(async (_detailUrl, _timeoutMs, run) => {
+      document.title = "示例资源 - 爱恋动漫 deadbeef"
+      document.body.innerHTML = `
+        <h1>[爱恋字幕社][示例资源]</h1>
+        <a id="magnet" href="magnet:?xt=urn:btih:abcdef1234567890">磁力链接</a>
+        <a id="download" href="/download/example.torrent">下载种子</a>
+      `
+      window.history.replaceState({}, "", "/show-deadbeef.html")
+
+      globalThis.chrome = {
+        scripting: {
+          executeScript: vi.fn(async ({ func, args = [] }) => [{ result: await func(...args) }])
+        }
+      } as unknown as typeof chrome
+
+      return run(1)
+    })
+
+    await expect(
+      kisssubSourceAdapter.extractSingleItem(
+        {
+          sourceId: "kisssub",
+          detailUrl: "https://www.kisssub.org/show-deadbeef.html",
+          title: "placeholder"
+        },
+        {
+          ...DEFAULT_SETTINGS,
+          retryCount: 0,
+          injectTimeoutMs: 10,
+          domSettleMs: 0
+        }
+      )
+    ).resolves.toMatchObject({
+      title: "[爱恋字幕社][示例资源]"
     })
   })
 })

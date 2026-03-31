@@ -1,6 +1,18 @@
-import { describe, expect, it } from "vitest"
+import { beforeEach, describe, expect, it, vi } from "vitest"
 
-import { parseDongmanhuayuanDetailSnapshot } from "../../../lib/sources/dongmanhuayuan"
+import { DEFAULT_SETTINGS } from "../../../lib/settings"
+import {
+  dongmanhuayuanSourceAdapter,
+  parseDongmanhuayuanDetailSnapshot
+} from "../../../lib/sources/dongmanhuayuan"
+
+const { withDetailTab } = vi.hoisted(() => ({
+  withDetailTab: vi.fn()
+}))
+
+vi.mock("../../../lib/sources/detail-tab", () => ({
+  withDetailTab
+}))
 
 describe("parseDongmanhuayuanDetailSnapshot", () => {
   it("prefers the first usable magnet link and derives the hash from it", () => {
@@ -61,6 +73,83 @@ describe("parseDongmanhuayuanDetailSnapshot", () => {
       magnetUrl: "magnet:?xt=urn:btih:ABCD1234567890ABCDEF1234567890ABCDEF12",
       torrentUrl: "",
       failureReason: ""
+    })
+  })
+})
+
+describe("dongmanhuayuanSourceAdapter", () => {
+  beforeEach(() => {
+    document.title = ""
+    document.body.innerHTML = ""
+    withDetailTab.mockReset()
+  })
+
+  it("falls back to a page h1 when the page has no main element", async () => {
+    withDetailTab.mockImplementation(async (_detailUrl, _timeoutMs, run) => {
+      document.title = "动漫花园"
+      document.body.innerHTML = `
+        <h1>动漫花园</h1>
+        <section>
+          <h1>[爱恋字幕社][新番][示例标题]</h1>
+          <input value="magnet:?xt=urn:btih:abcdef1234567890" />
+        </section>
+      `
+
+      globalThis.chrome = {
+        scripting: {
+          executeScript: vi.fn(async ({ func, args = [] }) => [{ result: await func(...args) }])
+        }
+      } as unknown as typeof chrome
+
+      return run(1)
+    })
+
+    await expect(
+      dongmanhuayuanSourceAdapter.extractSingleItem(
+        {
+          sourceId: "dongmanhuayuan",
+          detailUrl: "https://www.dongmanhuayuan.com/detail/TEST12.html",
+          title: "placeholder"
+        },
+        {
+          ...DEFAULT_SETTINGS,
+          retryCount: 0
+        }
+      )
+    ).resolves.toMatchObject({
+      title: "[爱恋字幕社][新番][示例标题]",
+      magnetUrl: "magnet:?xt=urn:btih:abcdef1234567890"
+    })
+  })
+
+  it("falls back to document title when no resource heading exists", async () => {
+    withDetailTab.mockImplementation(async (_detailUrl, _timeoutMs, run) => {
+      document.title = "[爱恋字幕社][新番][示例标题]_动漫花园磁力链接/电驴/迅雷下载"
+      document.body.innerHTML = `<input value="magnet:?xt=urn:btih:abcdef1234567890" />`
+
+      globalThis.chrome = {
+        scripting: {
+          executeScript: vi.fn(async ({ func, args = [] }) => [{ result: await func(...args) }])
+        }
+      } as unknown as typeof chrome
+
+      return run(1)
+    })
+
+    await expect(
+      dongmanhuayuanSourceAdapter.extractSingleItem(
+        {
+          sourceId: "dongmanhuayuan",
+          detailUrl: "https://www.dongmanhuayuan.com/detail/TEST12.html",
+          title: "placeholder"
+        },
+        {
+          ...DEFAULT_SETTINGS,
+          retryCount: 0
+        }
+      )
+    ).resolves.toMatchObject({
+      title: "[爱恋字幕社][新番][示例标题]"
     })
   })
 })
