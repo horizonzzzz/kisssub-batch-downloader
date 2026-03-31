@@ -1,6 +1,15 @@
 import { useState } from "react"
-import { Button } from "../../../ui/button"
-import { ConfirmationDialog } from "../../ui/confirmation-dialog"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  Button
+} from "../../../ui"
 import { HiOutlineTrash } from "react-icons/hi2"
 import { sendRuntimeRequest } from "../../../../lib/shared/messages"
 
@@ -62,15 +71,25 @@ export function DeleteRecordButton({
         </Button>
       )}
 
-      <ConfirmationDialog
-        open={showConfirm}
-        title="删除历史记录"
-        description={`确定删除"${recordName}"吗？此操作不可恢复。`}
-        confirmLabel="删除"
-        onConfirm={handleDelete}
-        onCancel={() => setShowConfirm(false)}
-        loading={loading}
-      />
+      <AlertDialog open={showConfirm} onOpenChange={(open) => !loading && setShowConfirm(open)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>删除历史记录</AlertDialogTitle>
+            <AlertDialogDescription>{`确定删除"${recordName}"吗？此操作不可恢复。`}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={loading}>取消</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={loading}
+              onClick={(event) => {
+                event.preventDefault()
+                void handleDelete()
+              }}>
+              {loading ? "处理中..." : "删除"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   )
 }

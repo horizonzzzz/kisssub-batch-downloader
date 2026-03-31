@@ -1,6 +1,15 @@
 import { useState } from "react"
-import { Button } from "../../../ui/button"
-import { ConfirmationDialog } from "../../ui/confirmation-dialog"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  Button
+} from "../../../ui"
 import { HiOutlineArrowPath } from "react-icons/hi2"
 import { sendRuntimeRequest } from "../../../../lib/shared/messages"
 import type { TaskHistoryRecord } from "../../../../lib/history/types"
@@ -51,15 +60,26 @@ export function RetryAllButton({ record, onRetryComplete }: RetryAllButtonProps)
         重试全部失败项
       </Button>
 
-      <ConfirmationDialog
-        open={showConfirm}
-        title="重试失败条目"
-        description={`确定重试 ${failedCount} 个失败条目吗？`}
-        confirmLabel="重试"
-        onConfirm={handleRetry}
-        onCancel={() => setShowConfirm(false)}
-        loading={loading}
-      />
+      <AlertDialog open={showConfirm} onOpenChange={(open) => !loading && setShowConfirm(open)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>重试失败条目</AlertDialogTitle>
+            <AlertDialogDescription>{`确定重试 ${failedCount} 个失败条目吗？`}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={loading}>取消</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={loading}
+              className="border-blue-600 bg-blue-600 hover:bg-blue-700"
+              onClick={(event) => {
+                event.preventDefault()
+                void handleRetry()
+              }}>
+              {loading ? "处理中..." : "重试"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   )
 }

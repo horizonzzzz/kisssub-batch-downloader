@@ -185,6 +185,48 @@ describe("OptionsPage", () => {
     })
   })
 
+  it(
+    "confirms before deleting a filter rule",
+    async () => {
+    const user = userEvent.setup()
+    const api = createOptionsApi()
+
+    render(<OptionsPage api={api} />)
+
+    expect(await screen.findByDisplayValue("http://127.0.0.1:17474")).toBeInTheDocument()
+
+    await user.click(screen.getByRole("button", { name: "过滤规则" }))
+    await user.click(screen.getByRole("button", { name: "新建规则" }))
+
+    await user.type(screen.getByLabelText("规则名称"), "排除 RAW")
+    await user.click(screen.getByRole("radio", { name: "排除" }))
+    await user.type(screen.getByLabelText("标题排除"), "RAW")
+    await user.click(screen.getByRole("button", { name: "保存规则" }))
+
+    expect(screen.getByRole("button", { name: "拖拽排序 排除 RAW" })).toBeInTheDocument()
+
+    await user.click(screen.getByRole("button", { name: "删除 排除 RAW" }))
+
+    expect(await screen.findByRole("alertdialog", { name: "删除过滤规则" })).toBeInTheDocument()
+    expect(screen.getByText("确定删除规则“排除 RAW”吗？此操作不可恢复。")).toBeInTheDocument()
+
+    await user.click(screen.getByRole("button", { name: "取消" }))
+
+    await waitFor(() => {
+      expect(screen.queryByRole("alertdialog", { name: "删除过滤规则" })).not.toBeInTheDocument()
+    })
+    expect(screen.getByRole("button", { name: "拖拽排序 排除 RAW" })).toBeInTheDocument()
+
+    await user.click(screen.getByRole("button", { name: "删除 排除 RAW" }))
+    await user.click(screen.getByRole("button", { name: "删除" }))
+
+    await waitFor(() => {
+      expect(screen.queryByRole("button", { name: "拖拽排序 排除 RAW" })).not.toBeInTheDocument()
+    })
+    },
+    10000
+  )
+
   it("renders a real site icon for each site in the site management cards", async () => {
     const user = userEvent.setup()
     const api = createOptionsApi()

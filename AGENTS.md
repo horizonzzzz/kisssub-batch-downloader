@@ -10,11 +10,11 @@ The extension injects selection UI into supported list pages, reuses direct magn
 
 - Supported source adapters: `kisssub.org`, `dongmanhuayuan.com`, `acg.rip`, `bangumi.moe`
 - Supported source management in the options page:
-  - `连接与基础设置`
-  - `站点配置`
-  - `过滤规则`
-  - `批次历史`
-  - `源站概览`
+  - `Connection & Basic Settings`
+  - `Site Configuration`
+  - `Filter Rules`
+  - `Batch History`
+  - `Source Overview`
 - the options workspace uses hash-routed navigation with:
   - `options.html#/general`
   - `options.html#/sites`
@@ -93,15 +93,15 @@ The extension injects selection UI into supported list pages, reuses direct magn
 - `tests/`
   Unit, component, and Playwright end-to-end coverage.
 - `lib/history/`
-  任务历史持久化模块，包括类型定义、存储读写、自动清理逻辑。批次完成时由后台自动保存。
+  Task history persistence module, including type definitions, storage read/write, and automatic cleanup logic. Automatically saved by the background when a batch completes.
 - `lib/background/retry.ts`
-  重试失败条目的编排逻辑，从历史记录提取失败条目并重新提交到 qBittorrent。
+  Orchestration logic for retrying failed entries, extracting failed entries from history records and resubmitting to qBittorrent.
 - `components/options/pages/history/`
-  批次历史页面组件，包括列表视图、详情视图、重试按钮和删除按钮。
+  Batch history page components, including list view, detail view, retry button, and delete button.
 - `components/options/ui/alert-dialog.tsx`
-  AlertDialog 组件（shadcn/ui 风格），用于确认对话框。
+  AlertDialog component (shadcn/ui style), used for confirmation dialogs.
 - `components/options/ui/confirmation-dialog.tsx`
-  确认对话框封装组件，基于 AlertDialog。
+  Confirmation dialog wrapper component, based on AlertDialog.
 
 ## Module Map
 
@@ -139,9 +139,9 @@ Use this section as the shortest runtime-oriented guide to the current code layo
 - `lib/shared/`
   Cross-runtime message contracts, shared types, and utility helpers used by multiple domains.
 - `lib/filter-rules/`
-  过滤规则匹配与字幕组提取逻辑，负责提交前保留/排除决策。
+  Filter rule matching and subgroup extraction logic, responsible for include/exclude decisions before submission.
 - `lib/history/`
-  任务历史持久化，类型定义和存储逻辑，后台批次完成时自动保存。
+  Task history persistence, type definitions and storage logic, automatically saved by the background when a batch completes.
 
 ### Boundary Rules
 
@@ -149,7 +149,7 @@ Use this section as the shortest runtime-oriented guide to the current code layo
 - Source-specific parsing, page matching, and capability defaults belong in `lib/sources/`.
 - Batch orchestration belongs in `lib/background/`; source adapters should not take over job-level concerns.
 - `lib/settings/` may normalize or persist settings, but qB/network behavior belongs outside it.
-- 过滤规则存储在 `Settings` 中，但匹配逻辑必须保持在 `lib/filter-rules/`，不要把规则判断散落到 options 组件或源站适配器里。
+- Filter rules are stored in `Settings`, but matching logic must remain in `lib/filter-rules/`; do not scatter rule judgments across options components or source adapters.
 - `lib/content/` may help mount and scan pages, but downloader submission must stay out of content-side helpers.
 - During development, prefer splitting code by responsibility instead of letting a single file keep growing; when a file starts carrying multiple concerns or becomes hard to hold in context, extract focused modules before adding more logic.
 

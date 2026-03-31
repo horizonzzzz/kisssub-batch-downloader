@@ -1,6 +1,15 @@
 import { useState } from "react"
-import { Button } from "../../../ui/button"
-import { ConfirmationDialog } from "../../ui/confirmation-dialog"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  Button
+} from "../../../ui"
 import { HiOutlineTrash } from "react-icons/hi2"
 import { sendRuntimeRequest } from "../../../../lib/shared/messages"
 
@@ -43,15 +52,25 @@ export function ClearHistoryButton({ onCleared, disabled = false }: ClearHistory
         清空历史
       </Button>
 
-      <ConfirmationDialog
-        open={showConfirm}
-        title="清空全部历史"
-        description="确定清空所有历史记录吗？此操作不可恢复。"
-        confirmLabel="清空全部"
-        onConfirm={handleClear}
-        onCancel={() => setShowConfirm(false)}
-        loading={loading}
-      />
+      <AlertDialog open={showConfirm} onOpenChange={(open) => !loading && setShowConfirm(open)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>清空全部历史</AlertDialogTitle>
+            <AlertDialogDescription>确定清空所有历史记录吗？此操作不可恢复。</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={loading}>取消</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={loading}
+              onClick={(event) => {
+                event.preventDefault()
+                void handleClear()
+              }}>
+              {loading ? "处理中..." : "清空全部"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   )
 }

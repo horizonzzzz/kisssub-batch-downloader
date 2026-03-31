@@ -8,7 +8,19 @@ import { HiOutlineArrowDown, HiOutlineArrowUp, HiOutlineBars3, HiOutlinePencilSq
 
 import type { FilterRule } from "../../../../lib/shared/types"
 import type { SettingsFormInput } from "../../schema/settings-form"
-import { Badge, Button, Card } from "../../../ui"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  Badge,
+  Button,
+  Card
+} from "../../../ui"
 import { FilterRuleDialog } from "./FilterRuleDialog"
 
 function describeRule(rule: FilterRule): string[] {
@@ -144,6 +156,7 @@ export function FiltersPage() {
   })
   const [editingIndex, setEditingIndex] = useState<number | null>(null)
   const [creating, setCreating] = useState(false)
+  const [pendingDeleteIndex, setPendingDeleteIndex] = useState<number | null>(null)
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }))
 
   const reindexRules = (rules: FilterRule[]) =>
@@ -216,6 +229,8 @@ export function FiltersPage() {
     setValue("filterRules", nextRules, { shouldDirty: true })
   }
 
+  const pendingDeleteRule = pendingDeleteIndex !== null ? ((getValues(`filterRules.${pendingDeleteIndex}`) as FilterRule) ?? null) : null
+
   return (
     <div className="space-y-6">
       <Card>
@@ -258,7 +273,7 @@ export function FiltersPage() {
                     total={fields.length}
                     onMove={handleMove}
                     onEdit={() => setEditingIndex(index)}
-                    onDelete={() => handleDelete(index)}
+                    onDelete={() => setPendingDeleteIndex(index)}
                     onToggleEnabled={(enabled) => handleToggleEnabled(index, enabled)}
                   />
                 )
@@ -288,6 +303,34 @@ export function FiltersPage() {
           handleUpdateRule(editingIndex, rule)
         }}
       />
+
+      <AlertDialog open={pendingDeleteIndex !== null} onOpenChange={(open) => !open && setPendingDeleteIndex(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>删除过滤规则</AlertDialogTitle>
+            <AlertDialogDescription>
+              {pendingDeleteRule
+                ? `确定删除规则“${pendingDeleteRule.name}”吗？此操作不可恢复。`
+                : "确定删除这条过滤规则吗？此操作不可恢复。"}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>取消</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(event) => {
+                event.preventDefault()
+                if (pendingDeleteIndex === null) {
+                  return
+                }
+
+                handleDelete(pendingDeleteIndex)
+                setPendingDeleteIndex(null)
+              }}>
+              删除
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
