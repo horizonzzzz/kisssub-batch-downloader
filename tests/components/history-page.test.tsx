@@ -67,6 +67,7 @@ describe("HistoryListView", () => {
     
     expect(screen.getByText("暂无下载历史记录")).toBeInTheDocument()
     expect(screen.getByText("开始批量下载后，历史记录将在此显示")).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "清空历史" })).toBeDisabled()
   })
 
   it("renders list of records with correct info", () => {

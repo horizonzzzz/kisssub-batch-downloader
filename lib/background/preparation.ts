@@ -74,26 +74,29 @@ export function classifyPreparedBatchItem(
   seenHashes: Set<string>,
   seenUrls: Set<string>
 ): ClassifiedBatchResult | null {
+  const preparedResult = createPreparedExtractionResult(item)
+  if (!preparedResult) {
+    return null
+  }
+
+  return classifyCandidateUrls(item.sourceId, preparedResult, settings, seenHashes, seenUrls)
+}
+
+export function createPreparedExtractionResult(item: BatchItem): ExtractionResult | null {
   const preparedCandidates = normalizePreparedCandidates(item.magnetUrl, item.torrentUrl, item.detailUrl)
   if (!preparedCandidates.magnetUrl && !preparedCandidates.torrentUrl) {
     return null
   }
 
-  return classifyCandidateUrls(
-    item.sourceId,
-    {
-      ok: true,
-      title: normalizeTitle(item.title) || item.detailUrl,
-      detailUrl: item.detailUrl,
-      hash: "",
-      magnetUrl: preparedCandidates.magnetUrl || "",
-      torrentUrl: preparedCandidates.torrentUrl || "",
-      failureReason: ""
-    },
-    settings,
-    seenHashes,
-    seenUrls
-  )
+  return {
+    ok: true,
+    title: normalizeTitle(item.title) || item.detailUrl,
+    detailUrl: item.detailUrl,
+    hash: "",
+    magnetUrl: preparedCandidates.magnetUrl || "",
+    torrentUrl: preparedCandidates.torrentUrl || "",
+    failureReason: ""
+  }
 }
 
 export function classifyExtractionResult(

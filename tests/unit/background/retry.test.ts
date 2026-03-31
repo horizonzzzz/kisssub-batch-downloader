@@ -193,6 +193,63 @@ describe("retryFailedItems", () => {
       expect(updatedRecord.status).toBe("completed")
     })
 
+    it("re-applies current filter rules before retry submission", async () => {
+      const failedItem = createFailedItem(
+        "item-1",
+        "[喵萌奶茶屋] Episode 01 [1080p][RAW]",
+        "magnet:?xt=test"
+      )
+      const record = createMockRecord("batch-1", [failedItem])
+      deps.getHistoryRecord = vi.fn(async () => record)
+      const filteredSettings: Settings = {
+        qbBaseUrl: "http://localhost:8080",
+        qbUsername: "admin",
+        qbPassword: "password",
+        concurrency: 3,
+        injectTimeoutMs: 5000,
+        domSettleMs: 1000,
+        retryCount: 3,
+        remoteScriptUrl: "",
+        remoteScriptRevision: "",
+        lastSavePath: "",
+        sourceDeliveryModes: {},
+        enabledSources: { kisssub: true },
+        filterRules: [
+          {
+            id: "rule-raw",
+            name: "排除 RAW",
+            enabled: true,
+            action: "exclude",
+            sourceIds: ["kisssub"],
+            order: 0,
+            conditions: {
+              titleIncludes: [],
+              titleExcludes: ["RAW"],
+              subgroupIncludes: []
+            }
+          }
+        ]
+      }
+      deps.getSettings = vi.fn(async () => filteredSettings)
+
+      const result = await retryFailedItems({ recordId: "batch-1" }, deps)
+
+      expect(result.successCount).toBe(0)
+      expect(result.failedCount).toBe(0)
+      expect(deps.loginQb).not.toHaveBeenCalled()
+      expect(deps.addUrlsToQb).not.toHaveBeenCalled()
+      expect(result.updatedRecord.items[0].status).toBe("filtered")
+      expect(result.updatedRecord.items[0].message).toBe("Filtered by rule: 排除 RAW")
+      expect(result.updatedRecord.stats).toEqual({
+        total: 1,
+        success: 0,
+        duplicated: 0,
+        filtered: 1,
+        failed: 0
+      })
+      expect(result.updatedRecord.status).toBe("completed")
+    })
+
     it("uses savePath from record when available", async () => {
       const failedItem = createFailedItem("item-1", "Failed", "magnet:?xt=test")
       const record = {

@@ -1,3 +1,4 @@
+import { decideFilterRuleAction } from "../filter-rules"
 import type { QbTorrentFile } from "../downloader/qb"
 import type { TaskHistoryItem, TaskHistoryRecord } from "../history/types"
 import type { Settings } from "../shared/types"
@@ -56,6 +57,15 @@ function updateItemAfterFailure(item: TaskHistoryItem, message: string): TaskHis
   }
 }
 
+function updateItemAfterFiltered(item: TaskHistoryItem, message: string): TaskHistoryItem {
+  return {
+    ...item,
+    status: "filtered",
+    message,
+    failure: undefined
+  }
+}
+
 function recalculateStats(items: TaskHistoryItem[]): TaskHistoryRecord["stats"] {
   const total = items.length
   const success = items.filter(i => i.status === "success").length
@@ -86,11 +96,28 @@ export async function retryFailedItems(
     }
   }
 
+  const settings = await deps.getSettings()
   const urlItems: { item: TaskHistoryItem; url: string }[] = []
   const torrentFileItems: { item: TaskHistoryItem; url: string }[] = []
+  const filteredItems: TaskHistoryItem[] = []
   const itemsWithoutUrls: TaskHistoryItem[] = []
 
   for (const item of targetItems) {
+    const ruleDecision = decideFilterRuleAction({
+      sourceId: item.sourceId,
+      title: item.title,
+      rules: settings.filterRules
+    })
+    if (!ruleDecision.accepted) {
+      filteredItems.push(
+        updateItemAfterFiltered(
+          item,
+          `Filtered by rule: ${ruleDecision.matchedRule?.name ?? "Unnamed rule"}`
+        )
+      )
+      continue
+    }
+
     const url = getSubmitUrl(item)
     if (!url) {
       itemsWithoutUrls.push(updateItemAfterFailure(item, "无可用的 magnet 或 torrent 链接"))
@@ -104,19 +131,14 @@ export async function retryFailedItems(
     }
   }
 
-  const settings = await deps.getSettings()
-
-  try {
-    await deps.loginQb(settings)
-  } catch (error) {
-    throw new Error(`qBittorrent 登录失败: ${error instanceof Error ? error.message : String(error)}`)
-  }
-
   let successCount = 0
   let failedCount = itemsWithoutUrls.length
   const updatedItems: TaskHistoryItem[] = record.items.map(item => {
     const wasTarget = targetItems.some(t => t.id === item.id)
     if (!wasTarget) return item
+
+    const filtered = filteredItems.find(w => w.id === item.id)
+    if (filtered) return filtered
 
     const withoutUrl = itemsWithoutUrls.find(w => w.id === item.id)
     if (withoutUrl) return withoutUrl
@@ -125,6 +147,14 @@ export async function retryFailedItems(
   })
 
   const savePathOption = record.savePath ? { savePath: record.savePath } : undefined
+
+  if (urlItems.length > 0 || torrentFileItems.length > 0) {
+    try {
+      await deps.loginQb(settings)
+    } catch (error) {
+      throw new Error(`qBittorrent 登录失败: ${error instanceof Error ? error.message : String(error)}`)
+    }
+  }
 
   if (urlItems.length > 0) {
     for (const { item, url } of urlItems) {

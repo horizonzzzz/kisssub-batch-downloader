@@ -5,7 +5,7 @@ import type { BatchItem, ClassifiedBatchResult } from "../shared/types"
 import { getDeliveryModePriority } from "../sources/delivery"
 import { createBatchJob, recordBatchResult, summarizeBatchResults } from "./job-state"
 import { getBatchStartedMessage, getBatchSubmittingMessage } from "./messages"
-import { classifyExtractionResult, classifyPreparedBatchItem, normalizeBatchItems } from "./preparation"
+import { classifyExtractionResult, createPreparedExtractionResult, normalizeBatchItems } from "./preparation"
 import { fetchTorrentForUpload } from "./torrent-file"
 import type { BackgroundBatchDependencies, BatchJob } from "./types"
 import { persistBatchHistory } from "./history-builder"
@@ -199,23 +199,31 @@ export function createBatchDownloadManager(dependencies: BackgroundBatchDependen
     seenHashes: Set<string>,
     seenUrls: Set<string>
   ): Promise<ClassifiedBatchResult> {
-    const ruleDecision = decideFilterRuleAction({
-      sourceId: item.sourceId,
-      title: item.title,
-      rules: job.settings.filterRules
-    })
-    if (!ruleDecision.accepted) {
-      return createFilteredResult(item, job.settings, ruleDecision.matchedRule?.name ?? "Unnamed rule")
+    const preparedResult = createPreparedExtractionResult(item)
+    if (preparedResult) {
+      const filteredPreparedResult = classifyFilteredBatchResult(item.sourceId, preparedResult, job.settings)
+      if (filteredPreparedResult) {
+        return filteredPreparedResult
+      }
+
+      return classifyExtractionResult(item.sourceId, preparedResult, job.settings, seenHashes, seenUrls)
     }
 
-    const prepared = classifyPreparedBatchItem(item, job.settings, seenHashes, seenUrls)
-    if (prepared) {
-      return prepared
+    const extractedResult = await dependencies.extractSingleItem(item, job.settings)
+    if (extractedResult.ok) {
+      const filteredExtractedResult = classifyFilteredBatchResult(
+        item.sourceId,
+        extractedResult,
+        job.settings
+      )
+      if (filteredExtractedResult) {
+        return filteredExtractedResult
+      }
     }
 
     return classifyExtractionResult(
       item.sourceId,
-      await dependencies.extractSingleItem(item, job.settings),
+      extractedResult,
       job.settings,
       seenHashes,
       seenUrls
@@ -228,25 +236,34 @@ export function createBatchDownloadManager(dependencies: BackgroundBatchDependen
   }
 }
 
-function createFilteredResult(
-  item: BatchItem,
+function classifyFilteredBatchResult(
+  sourceId: BatchItem["sourceId"],
+  item: Pick<ClassifiedBatchResult, "title" | "detailUrl" | "hash" | "magnetUrl" | "torrentUrl">,
   settings: BatchJob["settings"],
-  ruleName: string
-): ClassifiedBatchResult {
-  const preferredDeliveryMode = getDeliveryModePriority(item.sourceId, settings)[0] ?? "magnet"
+): ClassifiedBatchResult | null {
+  const ruleDecision = decideFilterRuleAction({
+    sourceId,
+    title: item.title,
+    rules: settings.filterRules
+  })
+  if (ruleDecision.accepted) {
+    return null
+  }
+
+  const preferredDeliveryMode = getDeliveryModePriority(sourceId, settings)[0] ?? "magnet"
 
   return {
     ok: false,
     title: item.title,
     detailUrl: item.detailUrl,
-    hash: "",
+    hash: item.hash || "",
     magnetUrl: item.magnetUrl || "",
     torrentUrl: item.torrentUrl || "",
     failureReason: "",
     status: "filtered",
     deliveryMode: preferredDeliveryMode,
     submitUrl: "",
-    message: `Filtered by rule: ${ruleName}`
+    message: `Filtered by rule: ${ruleDecision.matchedRule?.name ?? "Unnamed rule"}`
   }
 }
 

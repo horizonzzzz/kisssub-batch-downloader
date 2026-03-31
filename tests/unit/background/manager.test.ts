@@ -195,7 +195,16 @@ describe("createBatchDownloadManager", () => {
       ]
     })
     const { manager, dependencies } = createManager({
-      saveSettings: vi.fn().mockResolvedValue(settings)
+      saveSettings: vi.fn().mockResolvedValue(settings),
+      extractSingleItem: vi.fn().mockResolvedValue({
+        ok: true,
+        title: "[喵萌奶茶屋] Episode 01 [1080p][RAW]",
+        detailUrl: "https://www.kisssub.org/show-deadbeef.html",
+        hash: "deadbeef",
+        magnetUrl: "magnet:?xt=urn:btih:deadbeef",
+        torrentUrl: "",
+        failureReason: ""
+      })
     })
 
     await expect(
@@ -227,7 +236,7 @@ describe("createBatchDownloadManager", () => {
       })
     })
 
-    expect(dependencies.extractSingleItem).not.toHaveBeenCalled()
+    expect(dependencies.extractSingleItem).toHaveBeenCalledTimes(1)
     expect(dependencies.loginQb).not.toHaveBeenCalled()
     expect(dependencies.addUrlsToQb).not.toHaveBeenCalled()
     expect(dependencies.addTorrentFilesToQb).not.toHaveBeenCalled()
@@ -257,6 +266,79 @@ describe("createBatchDownloadManager", () => {
       }),
       "kisssub"
     )
+  })
+
+  it("filters extracted items using the extracted detail title and subgroup", async () => {
+    const settings = createSettings({
+      filterRules: [
+        {
+          id: "rule-subgroup",
+          name: "排除喵萌",
+          enabled: true,
+          action: "exclude",
+          sourceIds: ["kisssub"],
+          order: 0,
+          conditions: {
+            titleIncludes: [],
+            titleExcludes: [],
+            subgroupIncludes: ["喵萌奶茶屋"]
+          }
+        }
+      ]
+    })
+    const { manager, dependencies } = createManager({
+      saveSettings: vi.fn().mockResolvedValue(settings),
+      extractSingleItem: vi.fn().mockResolvedValue({
+        ok: true,
+        title: "[喵萌奶茶屋] Episode 01 [1080p]",
+        detailUrl: "https://www.kisssub.org/show-deadbeef.html",
+        hash: "deadbeef",
+        magnetUrl: "magnet:?xt=urn:btih:deadbeef",
+        torrentUrl: "",
+        failureReason: ""
+      })
+    })
+
+    await expect(
+      manager.startBatchDownload(
+        17,
+        [
+          {
+            sourceId: "kisssub",
+            detailUrl: "https://www.kisssub.org/show-deadbeef.html",
+            title: "Episode 01"
+          }
+        ],
+        ""
+      )
+    ).resolves.toEqual({
+      ok: true,
+      total: 1
+    })
+
+    await vi.waitFor(() => {
+      expect(dependencies.sendBatchEvent.mock.calls.at(-1)?.[1]).toMatchObject({
+        stage: "completed",
+        summary: {
+          submitted: 0,
+          duplicated: 0,
+          filtered: 1,
+          failed: 0
+        }
+      })
+    })
+
+    expect(dependencies.extractSingleItem).toHaveBeenCalledTimes(1)
+    expect(dependencies.loginQb).not.toHaveBeenCalled()
+    expect(dependencies.addUrlsToQb).not.toHaveBeenCalled()
+    expect(dependencies.sendBatchEvent.mock.calls.at(-1)?.[1].results).toEqual([
+      {
+        title: "[喵萌奶茶屋] Episode 01 [1080p]",
+        detailUrl: "https://www.kisssub.org/show-deadbeef.html",
+        status: "filtered",
+        message: "Filtered by rule: 排除喵萌"
+      }
+    ])
   })
 
   it("prevents concurrent jobs from starting in the same tab", async () => {

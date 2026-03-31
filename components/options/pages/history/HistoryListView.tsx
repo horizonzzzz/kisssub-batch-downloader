@@ -47,10 +47,15 @@ function formatStats(stats: TaskHistoryRecord["stats"]): string {
 export function HistoryListView({ records, onViewDetail, onRefresh }: HistoryListViewProps) {
   if (records.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-12 text-zinc-500">
-        <HiOutlineClock className="w-10 h-10 mb-3 opacity-50" />
-        <p className="text-sm">暂无下载历史记录</p>
-        <p className="text-xs mt-1 text-zinc-400">开始批量下载后，历史记录将在此显示</p>
+      <div className="grid gap-2">
+        <div className="flex justify-end mb-2">
+          <ClearHistoryButton onCleared={onRefresh} disabled />
+        </div>
+        <div className="flex flex-col items-center justify-center py-12 text-zinc-500">
+          <HiOutlineClock className="w-10 h-10 mb-3 opacity-50" />
+          <p className="text-sm">暂无下载历史记录</p>
+          <p className="text-xs mt-1 text-zinc-400">开始批量下载后，历史记录将在此显示</p>
+        </div>
       </div>
     )
   }

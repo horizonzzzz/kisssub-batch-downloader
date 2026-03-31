@@ -327,7 +327,9 @@ describe("OptionsPage", () => {
     await user.click(saveButton)
 
     expect(api.saveSettings).toHaveBeenCalledTimes(1)
-    expect(saveButton).toBeDisabled()
+    await waitFor(() => {
+      expect(saveButton).toBeDisabled()
+    })
 
     resolveSave?.(settings)
 
