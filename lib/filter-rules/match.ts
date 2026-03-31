@@ -60,7 +60,7 @@ function matchesRule(rule: FilterRule, title: string, subgroup: string): boolean
 
   if (
     rule.conditions.titleExcludes.length > 0 &&
-    !rule.conditions.titleExcludes.every((keyword) => normalizedTitle.includes(keyword.toLowerCase()))
+    !rule.conditions.titleExcludes.some((keyword) => normalizedTitle.includes(keyword.toLowerCase()))
   ) {
     return false
   }

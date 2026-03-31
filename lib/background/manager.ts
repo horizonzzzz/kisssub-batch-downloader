@@ -79,23 +79,20 @@ export function createBatchDownloadManager(dependencies: BackgroundBatchDependen
 
     await Promise.all(workers)
 
-    if (!preparedSubmissions.length) {
-      await finalizeBatch(job, null)
-      return
-    }
+    if (preparedSubmissions.length) {
+      await dependencies.sendBatchEvent(job.sourceTabId, {
+        stage: "submitting",
+        stats: job.stats,
+        message: getBatchSubmittingMessage(preparedSubmissions.length, job.savePath)
+      })
 
-    await dependencies.sendBatchEvent(job.sourceTabId, {
-      stage: "submitting",
-      stats: job.stats,
-      message: getBatchSubmittingMessage(preparedSubmissions.length, job.savePath)
-    })
-
-    try {
-      await dependencies.loginQb(job.settings)
-      await submitPreparedResults(job, preparedSubmissions)
-    } catch (error: unknown) {
-      const failure = error instanceof Error ? error.message : String(error)
-      markFailedSubmissions(preparedSubmissions, job, failure)
+      try {
+        await dependencies.loginQb(job.settings)
+        await submitPreparedResults(job, preparedSubmissions)
+      } catch (error: unknown) {
+        const failure = error instanceof Error ? error.message : String(error)
+        markFailedSubmissions(preparedSubmissions, job, failure)
+      }
     }
 
     await finalizeBatch(job, null)

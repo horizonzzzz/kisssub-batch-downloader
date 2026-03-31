@@ -1,5 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
+const { persistBatchHistoryMock } = vi.hoisted(() => ({
+  persistBatchHistoryMock: vi.fn()
+}))
+
+vi.mock("../../../lib/background/history-builder", () => ({
+  persistBatchHistory: persistBatchHistoryMock
+}))
+
 import { createBatchDownloadManager } from "../../../lib/background/manager"
 import { DEFAULT_SETTINGS } from "../../../lib/settings/defaults"
 import type {
@@ -55,6 +63,7 @@ function createManager(overrides: Partial<Parameters<typeof createBatchDownloadM
 describe("createBatchDownloadManager", () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    persistBatchHistoryMock.mockReset()
   })
 
   it("rejects downloads that do not come from a source tab", async () => {
@@ -230,6 +239,24 @@ describe("createBatchDownloadManager", () => {
         message: "Filtered by rule: 排除 RAW"
       }
     ])
+    expect(persistBatchHistoryMock).toHaveBeenCalledTimes(1)
+    expect(persistBatchHistoryMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        stats: expect.objectContaining({
+          total: 1,
+          submitted: 0,
+          filtered: 1,
+          failed: 0
+        }),
+        results: expect.arrayContaining([
+          expect.objectContaining({
+            status: "filtered",
+            message: "Filtered by rule: 排除 RAW"
+          })
+        ])
+      }),
+      "kisssub"
+    )
   })
 
   it("prevents concurrent jobs from starting in the same tab", async () => {

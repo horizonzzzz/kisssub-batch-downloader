@@ -77,6 +77,28 @@ describe("decideFilterRuleAction", () => {
     })
   })
 
+  it("matches title exclude keywords when any keyword is present", () => {
+    expect(
+      decideFilterRuleAction({
+        sourceId: "kisssub",
+        title: "[LoliHouse] Summer Pockets 01 [720p]",
+        rules: [
+          createRule({
+            conditions: {
+              titleIncludes: [],
+              titleExcludes: ["RAW", "720p"],
+              subgroupIncludes: []
+            }
+          })
+        ]
+      })
+    ).toMatchObject({
+      accepted: false,
+      matchedRule: expect.objectContaining({ name: "排除生肉" }),
+      action: "exclude"
+    })
+  })
+
   it("only applies rules to their selected source ids", () => {
     expect(
       decideFilterRuleAction({
