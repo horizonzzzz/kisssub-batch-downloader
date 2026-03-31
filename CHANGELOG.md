@@ -2,6 +2,26 @@
 
 All notable release changes for `Anime BT Batch Downloader` are tracked here. GitHub Release pages should reuse the matching version section from this file.
 
+## 1.4.0
+
+### Features
+
+- Added batch history persistence with detail, retry, and delete flows in the options workspace so completed jobs can be reviewed and resubmitted without returning to the source page. (`a423fa7`, `d100fbf`, `e5eb4ff`)
+- Added configurable pre-submit filter rules with include/exclude matching, subgroup extraction, and delete confirmation so batches can be filtered before qBittorrent submission. (`397d4f7`, `be8570e`)
+- Refreshed the options workspace and injected batch panel with Tailwind-based primitives, route-aware shells, and bottom-right expand/collapse motion. (`83b9fd8`, `2a273db`, `01a84a3`)
+
+### Fixes
+
+- Fixed filter-rule processing so filtered batches persist correctly, rules are re-evaluated after extraction and retry, and stored rule data is sanitized more robustly. (`41a0bd8`, `07bf580`, `af7ff55`)
+- Fixed live-site extraction by aligning source selectors and correcting Dongmanhuayuan detail-page and history titles. (`146bde5`, `64c1f64`, `d59a27c`)
+- Fixed UI regressions affecting injected hover transforms, hash-route behavior, retry error handling, and leftover Tailwind migration state. (`d567953`, `24df73b`, `733b9c2`, `df58674`)
+
+### Refactor
+
+- Reorganized shared modules by domain and unified runtime message responses so background, content, settings, and source responsibilities are clearer. (`7d3599c`, `42a1d41`, `1194a47`)
+- Migrated options and content styling to Tailwind v4 and cleaned up shadow-root style injection so injected UI stays isolated across supported sites. (`d0fba15`, `15361f1`, `34bf841`, `c2e0cd9`)
+- Simplified component boundaries and history construction by extracting focused helpers, aligning route-mode shells, and cleaning up supporting tests. (`2865c5d`, `ed4ccef`, `0397761`, `db2ce8e`, `dff78dc`)
+
 ## 1.3.0
 
 ### Features
