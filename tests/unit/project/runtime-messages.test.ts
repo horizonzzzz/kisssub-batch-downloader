@@ -54,7 +54,7 @@ describe("runtime message helpers", () => {
 
   it("supports popup runtime requests and typed popup state responses", () => {
     const popupState: PopupStateViewModel = {
-      qbConfigured: false,
+      qbConnectionStatus: "idle",
       activeTab: {
         url: null,
         sourceId: null,

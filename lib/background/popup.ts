@@ -7,6 +7,7 @@ import {
   POPUP_HELP_URL,
   POPUP_SUPPORTED_SITE_IDS,
   POPUP_SUPPORTED_SITE_META,
+  type PopupQbConnectionStatus,
   type PopupStateViewModel
 } from "../shared/popup"
 import type { Settings, SourceId } from "../shared/types"
@@ -22,9 +23,15 @@ type SetSourceEnabledDependencies = {
   saveSettings: (partialSettings: Partial<Settings>) => Promise<Settings>
 }
 
+type OptionsTabTarget = {
+  tabId: number
+  windowId: number | null
+}
+
 type OpenOptionsPageDependencies = {
-  queryOptionsTabIds: () => Promise<number[]>
+  queryOptionsTabs: () => Promise<OptionsTabTarget[]>
   updateTab: (tabId: number, url: string) => Promise<void>
+  focusWindow: (windowId: number) => Promise<void>
   createTab: (url: string) => Promise<void>
   getExtensionUrl: (path: string) => string
 }
@@ -46,19 +53,33 @@ const DEFAULT_SET_SOURCE_ENABLED_DEPENDENCIES: SetSourceEnabledDependencies = {
 }
 
 const DEFAULT_OPEN_OPTIONS_PAGE_DEPENDENCIES: OpenOptionsPageDependencies = {
-  queryOptionsTabIds: async () => {
+  queryOptionsTabs: async () => {
     const optionsTabs = await chrome.tabs.query({
       url: chrome.runtime.getURL("options.html*")
     })
 
     return optionsTabs
-      .map((tab) => tab.id)
-      .filter((tabId): tabId is number => typeof tabId === "number")
+      .map((tab) => {
+        if (typeof tab.id !== "number") {
+          return null
+        }
+
+        return {
+          tabId: tab.id,
+          windowId: typeof tab.windowId === "number" ? tab.windowId : null
+        }
+      })
+      .filter((tab): tab is OptionsTabTarget => tab !== null)
   },
   updateTab: async (tabId, url) => {
     await chrome.tabs.update(tabId, {
       url,
       active: true
+    })
+  },
+  focusWindow: async (windowId) => {
+    await chrome.windows.update(windowId, {
+      focused: true
     })
   },
   createTab: async (url) => {
@@ -81,14 +102,15 @@ export async function buildPopupState(
   const settings = await dependencies.getSettings()
   const activeTabUrl = await dependencies.getActiveTabUrl()
   const activeSourceId = resolveActiveSourceId(activeTabUrl)
+  const activeTabEnabled = activeSourceId ? resolveSourceEnabled(activeSourceId, settings) : false
 
   return {
-    qbConfigured: isQbConfigured(settings),
+    qbConnectionStatus: resolvePopupQbConnectionStatus(activeSourceId !== null, activeTabEnabled),
     activeTab: {
       url: activeTabUrl,
       sourceId: activeSourceId,
       supported: activeSourceId !== null,
-      enabled: activeSourceId ? resolveSourceEnabled(activeSourceId, settings) : false
+      enabled: activeTabEnabled
     },
     supportedSites: POPUP_SUPPORTED_SITE_IDS.map((sourceId) => {
       const siteMeta = POPUP_SUPPORTED_SITE_META[sourceId]
@@ -149,10 +171,13 @@ export async function openOptionsPageForRoute(
   dependencies: OpenOptionsPageDependencies = DEFAULT_OPEN_OPTIONS_PAGE_DEPENDENCIES
 ) {
   const optionsUrl = dependencies.getExtensionUrl(`options.html#${route}`)
-  const [existingTabId] = await dependencies.queryOptionsTabIds()
+  const [existingTab] = await dependencies.queryOptionsTabs()
 
-  if (typeof existingTabId === "number") {
-    await dependencies.updateTab(existingTabId, optionsUrl)
+  if (existingTab) {
+    await dependencies.updateTab(existingTab.tabId, optionsUrl)
+    if (typeof existingTab.windowId === "number") {
+      await dependencies.focusWindow(existingTab.windowId)
+    }
     return
   }
 
@@ -190,6 +215,13 @@ function resolveActiveSourceId(url: string | null): SourceId | null {
   }
 }
 
-function isQbConfigured(settings: Settings): boolean {
-  return Boolean(settings.qbBaseUrl.trim())
+function resolvePopupQbConnectionStatus(
+  activeTabSupported: boolean,
+  activeTabEnabled: boolean
+): PopupQbConnectionStatus {
+  if (activeTabSupported && activeTabEnabled) {
+    return "checking"
+  }
+
+  return "idle"
 }

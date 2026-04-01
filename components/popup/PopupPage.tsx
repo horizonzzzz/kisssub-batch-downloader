@@ -55,16 +55,14 @@ export function PopupPage({
 
       <main className="flex-1 overflow-y-auto p-4 space-y-4">
         <PopupStatusCard
-          qbConfigured={state.qbConfigured}
+          qbConnectionStatus={state.qbConnectionStatus}
           activeTab={state.activeTab}
           actionsDisabled={actionsDisabled}
           onOpenGeneralOptions={onOpenGeneralOptions}
           onToggleCurrentSiteEnabled={onToggleCurrentSiteEnabled}
         />
 
-        {state.qbConfigured ? (
-          <PopupQuickActions disabled={actionsDisabled} onOpenOptionsRoute={onOpenOptionsRoute} />
-        ) : null}
+        <PopupQuickActions disabled={actionsDisabled} onOpenOptionsRoute={onOpenOptionsRoute} />
 
         <PopupSupportedSites supportedSites={state.supportedSites} />
       </main>

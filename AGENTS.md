@@ -17,7 +17,7 @@ The extension injects selection UI into supported list pages, reuses direct magn
   - `Source Overview`
 - Supported popup surface responsibilities:
   - loading extension runtime status for quick checks before opening options
-  - surfacing qBittorrent configuration readiness and active-tab source support/enabled state
+  - probing qBittorrent connectivity on the active supported/enabled source page, surfacing active-tab source support/enabled state, and linking to configuration when the connection check fails
   - offering quick links into options routes and one-click enable/disable for the active supported source, with immediate sync to the current tab's injected UI
 - the options workspace uses hash-routed navigation with:
   - `options.html#/general`

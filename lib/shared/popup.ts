@@ -22,8 +22,10 @@ export type PopupActiveTabViewModel = {
   enabled: boolean
 }
 
+export type PopupQbConnectionStatus = "idle" | "checking" | "ready" | "failed"
+
 export type PopupStateViewModel = {
-  qbConfigured: boolean
+  qbConnectionStatus: PopupQbConnectionStatus
   activeTab: PopupActiveTabViewModel
   supportedSites: PopupSupportedSiteViewModel[]
   version: string

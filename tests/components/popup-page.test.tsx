@@ -10,7 +10,7 @@ type PopupPageProps = ComponentProps<typeof PopupPage>
 
 function createState(overrides: Partial<PopupStateViewModel> = {}): PopupStateViewModel {
   return {
-    qbConfigured: false,
+    qbConnectionStatus: "idle",
     activeTab: {
       url: null,
       sourceId: null,
@@ -74,19 +74,19 @@ function renderPopup(overrides: Partial<PopupPageProps> = {}) {
 }
 
 describe("PopupPage", () => {
-  it("renders unconfigured state with setup CTA and hides quick actions", () => {
+  it("renders unsupported state and still shows quick actions when qB has not been verified", () => {
     renderPopup()
 
-    expect(screen.getByText("未配置 qBittorrent")).toBeInTheDocument()
-    expect(screen.getByRole("button", { name: "立即配置" })).toBeInTheDocument()
-    expect(screen.queryByRole("button", { name: "批次历史" })).not.toBeInTheDocument()
-    expect(screen.queryByRole("button", { name: "过滤规则" })).not.toBeInTheDocument()
+    expect(screen.getByText("当前页面暂不支持批量下载")).toBeInTheDocument()
+    expect(screen.queryByText("未配置 qBittorrent")).not.toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "批次历史" })).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "过滤规则" })).toBeInTheDocument()
   })
 
   it("renders configured + supported state with current-site toggle and quick actions", () => {
     renderPopup({
       state: createState({
-        qbConfigured: true,
+        qbConnectionStatus: "ready",
         activeTab: {
           url: "https://kisssub.org/",
           sourceId: "kisssub",
@@ -105,7 +105,7 @@ describe("PopupPage", () => {
   it("renders a disabled-state card when the current supported site is turned off", () => {
     renderPopup({
       state: createState({
-        qbConfigured: true,
+        qbConnectionStatus: "idle",
         activeTab: {
           url: "https://kisssub.org/",
           sourceId: "kisssub",
@@ -124,7 +124,7 @@ describe("PopupPage", () => {
   it("renders configured + unsupported state and hides current-site toggle", () => {
     renderPopup({
       state: createState({
-        qbConfigured: true,
+        qbConnectionStatus: "idle",
         activeTab: {
           url: "https://example.org/",
           sourceId: null,
@@ -144,7 +144,7 @@ describe("PopupPage", () => {
     const user = userEvent.setup()
     const { onOpenOptionsRoute } = renderPopup({
       state: createState({
-        qbConfigured: true,
+        qbConnectionStatus: "ready",
         activeTab: {
           url: "https://kisssub.org/",
           sourceId: "kisssub",
@@ -165,7 +165,7 @@ describe("PopupPage", () => {
     const user = userEvent.setup()
     const { onToggleCurrentSiteEnabled } = renderPopup({
       state: createState({
-        qbConfigured: true,
+        qbConnectionStatus: "ready",
         activeTab: {
           url: "https://kisssub.org/",
           sourceId: "kisssub",
@@ -178,6 +178,41 @@ describe("PopupPage", () => {
     await user.click(screen.getByRole("switch", { name: "当前站点启用开关" }))
 
     expect(onToggleCurrentSiteEnabled).toHaveBeenCalledWith("kisssub", false)
+  })
+
+  it("renders a checking-state card while popup is probing qB connectivity", () => {
+    renderPopup({
+      state: createState({
+        qbConnectionStatus: "checking",
+        activeTab: {
+          url: "https://kisssub.org/",
+          sourceId: "kisssub",
+          supported: true,
+          enabled: true
+        }
+      })
+    })
+
+    expect(screen.getByText("正在检测 qBittorrent 连接")).toBeInTheDocument()
+    expect(screen.queryByText("插件已就绪")).not.toBeInTheDocument()
+  })
+
+  it("renders a failed-connection card with a configure CTA", () => {
+    renderPopup({
+      state: createState({
+        qbConnectionStatus: "failed",
+        activeTab: {
+          url: "https://kisssub.org/",
+          sourceId: "kisssub",
+          supported: true,
+          enabled: true
+        }
+      })
+    })
+
+    expect(screen.getByText("qBittorrent 连接失败")).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "前往配置" })).toBeInTheDocument()
+    expect(screen.queryByText("插件已就绪")).not.toBeInTheDocument()
   })
 
   it("renders supported sites list from source metadata and state", () => {

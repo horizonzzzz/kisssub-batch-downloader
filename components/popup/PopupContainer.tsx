@@ -2,7 +2,7 @@ import { useEffect, useState } from "react"
 
 import { sendRuntimeRequest } from "../../lib/shared/messages"
 import { DEFAULT_OPTIONS_ROUTE, type OptionsRoutePath } from "../../lib/shared/options-routes"
-import type { PopupStateViewModel } from "../../lib/shared/popup"
+import type { PopupQbConnectionStatus, PopupStateViewModel } from "../../lib/shared/popup"
 import type { Settings, SourceId } from "../../lib/shared/types"
 import { Alert, Button } from "../ui"
 import { PopupPage } from "./PopupPage"
@@ -17,6 +17,16 @@ async function requestPopupState(): Promise<PopupStateViewModel> {
   }
 
   return response.state
+}
+
+function resolveQbConnectionStatus(
+  activeTab: PopupStateViewModel["activeTab"]
+): PopupQbConnectionStatus {
+  if (activeTab.supported && activeTab.enabled && activeTab.sourceId) {
+    return "checking"
+  }
+
+  return "idle"
 }
 
 export function PopupContainer() {
@@ -51,6 +61,56 @@ export function PopupContainer() {
     void loadState(true)
   }, [])
 
+  useEffect(() => {
+    if (!state || state.qbConnectionStatus !== "checking") {
+      return
+    }
+
+    let cancelled = false
+
+    void (async () => {
+      try {
+        const response = await sendRuntimeRequest({
+          type: "TEST_QB_CONNECTION"
+        })
+
+        if (cancelled) {
+          return
+        }
+
+        setState((currentState) => {
+          if (!currentState || currentState.qbConnectionStatus !== "checking") {
+            return currentState
+          }
+
+          return {
+            ...currentState,
+            qbConnectionStatus: response.ok ? "ready" : "failed"
+          }
+        })
+      } catch {
+        if (cancelled) {
+          return
+        }
+
+        setState((currentState) => {
+          if (!currentState || currentState.qbConnectionStatus !== "checking") {
+            return currentState
+          }
+
+          return {
+            ...currentState,
+            qbConnectionStatus: "failed"
+          }
+        })
+      }
+    })()
+
+    return () => {
+      cancelled = true
+    }
+  }, [state])
+
   async function openOptionsRoute(route: OptionsRoutePath) {
     if (actionInFlight) {
       return
@@ -81,15 +141,18 @@ export function PopupContainer() {
       return typeof savedEnabled === "boolean" ? savedEnabled : fallbackEnabled
     }
 
+    const nextActiveTab =
+      current.activeTab.sourceId === null
+        ? current.activeTab
+        : {
+            ...current.activeTab,
+            enabled: resolveEnabled(current.activeTab.sourceId, current.activeTab.enabled)
+          }
+
     return {
       ...current,
-      activeTab:
-        current.activeTab.sourceId === null
-          ? current.activeTab
-          : {
-              ...current.activeTab,
-              enabled: resolveEnabled(current.activeTab.sourceId, current.activeTab.enabled)
-            },
+      qbConnectionStatus: resolveQbConnectionStatus(nextActiveTab),
+      activeTab: nextActiveTab,
       supportedSites: current.supportedSites.map((site) => ({
         ...site,
         enabled: resolveEnabled(site.id, site.enabled)

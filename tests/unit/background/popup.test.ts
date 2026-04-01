@@ -41,7 +41,7 @@ describe("popup background helpers", () => {
       getExtensionVersion: () => "1.4.0"
     })
 
-    expect(state.qbConfigured).toBe(true)
+    expect(state.qbConnectionStatus).toBe("idle")
     expect(state.activeTab).toEqual({
       url: "https://acg.rip/",
       sourceId: "acgrip",
@@ -58,7 +58,7 @@ describe("popup background helpers", () => {
     expect(state.helpUrl).toBe("https://github.com/horizonzzzz/anime-bt-batch-downloader")
   })
 
-  it("treats a saved qB base url as configured even when username and password are blank", async () => {
+  it("keeps unsupported pages idle even when qB credentials are explicitly changed", async () => {
     const state = await buildPopupState({
       getSettings: async () =>
         createSettings({
@@ -70,27 +70,22 @@ describe("popup background helpers", () => {
       getExtensionVersion: () => "1.4.0"
     })
 
-    expect(state.qbConfigured).toBe(true)
+    expect(state.qbConnectionStatus).toBe("idle")
   })
 
-  it("reports unsupported active tabs and non-configured qB credentials", async () => {
+  it("marks supported and enabled active tabs as requiring a qB connection check even with the default qB placeholder config", async () => {
     const state = await buildPopupState({
-      getSettings: async () =>
-        createSettings({
-          qbBaseUrl: "",
-          qbUsername: "",
-          qbPassword: ""
-        }),
-      getActiveTabUrl: async () => "https://example.com/list",
+      getSettings: async () => createSettings(),
+      getActiveTabUrl: async () => "https://kisssub.org/",
       getExtensionVersion: () => "1.4.0"
     })
 
-    expect(state.qbConfigured).toBe(false)
+    expect(state.qbConnectionStatus).toBe("checking")
     expect(state.activeTab).toEqual({
-      url: "https://example.com/list",
-      sourceId: null,
-      supported: false,
-      enabled: false
+      url: "https://kisssub.org/",
+      sourceId: "kisssub",
+      supported: true,
+      enabled: true
     })
   })
 
@@ -163,38 +158,44 @@ describe("popup background helpers", () => {
 
   it("normalizes popup options routes and opens deep-linked options tabs", async () => {
     const createTab = vi.fn(async () => undefined)
-    const queryOptionsTabIds = vi.fn(async () => [])
+    const queryOptionsTabs = vi.fn(async () => [])
     const updateTab = vi.fn(async () => undefined)
+    const focusWindow = vi.fn(async () => undefined)
     const getExtensionUrl = vi.fn((path: string) => `chrome-extension://test/${path}`)
 
     await openOptionsPageForRoute("/filters", {
-      queryOptionsTabIds,
+      queryOptionsTabs,
       updateTab,
+      focusWindow,
       createTab,
       getExtensionUrl
     })
 
     expect(normalizePopupOptionsRoute("/history")).toBe("/history")
     expect(normalizePopupOptionsRoute("/unknown")).toBe("/general")
-    expect(queryOptionsTabIds).toHaveBeenCalledTimes(1)
+    expect(queryOptionsTabs).toHaveBeenCalledTimes(1)
     expect(updateTab).not.toHaveBeenCalled()
+    expect(focusWindow).not.toHaveBeenCalled()
     expect(createTab).toHaveBeenCalledWith("chrome-extension://test/options.html#/filters")
   })
 
-  it("reuses an existing options tab by updating route instead of creating a new tab", async () => {
+  it("reuses an existing options tab by updating route and focusing its window", async () => {
     const createTab = vi.fn(async () => undefined)
-    const queryOptionsTabIds = vi.fn(async () => [42])
+    const queryOptionsTabs = vi.fn(async () => [{ tabId: 42, windowId: 7 }])
     const updateTab = vi.fn(async () => undefined)
+    const focusWindow = vi.fn(async () => undefined)
     const getExtensionUrl = vi.fn((path: string) => `chrome-extension://test/${path}`)
 
     await openOptionsPageForRoute("/history", {
-      queryOptionsTabIds,
+      queryOptionsTabs,
       updateTab,
+      focusWindow,
       createTab,
       getExtensionUrl
     })
 
     expect(updateTab).toHaveBeenCalledWith(42, "chrome-extension://test/options.html#/history")
+    expect(focusWindow).toHaveBeenCalledWith(7)
     expect(createTab).not.toHaveBeenCalled()
   })
 

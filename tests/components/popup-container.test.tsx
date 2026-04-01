@@ -25,7 +25,7 @@ import { PopupContainer } from "../../components/popup/PopupContainer"
 
 function createState(overrides: Partial<PopupStateViewModel> = {}): PopupStateViewModel {
   return {
-    qbConfigured: true,
+    qbConnectionStatus: "ready",
     activeTab: {
       url: "https://kisssub.org/",
       sourceId: "kisssub",
@@ -101,7 +101,7 @@ describe("PopupContainer", () => {
     render(<PopupContainer />)
 
     await waitFor(() => {
-      expect(screen.getByText("一键发送至 qBittorrent")).toBeInTheDocument()
+      expect(screen.getByText("插件已就绪")).toBeInTheDocument()
     })
     expect(sendRuntimeRequestMock).toHaveBeenCalledWith({
       type: "GET_POPUP_STATE"
@@ -126,7 +126,7 @@ describe("PopupContainer", () => {
     await user.click(screen.getByRole("button", { name: "重试" }))
 
     await waitFor(() => {
-      expect(screen.getByText("一键发送至 qBittorrent")).toBeInTheDocument()
+      expect(screen.getByText("插件已就绪")).toBeInTheDocument()
     })
     expect(sendRuntimeRequestMock).toHaveBeenNthCalledWith(1, {
       type: "GET_POPUP_STATE"
@@ -153,7 +153,7 @@ describe("PopupContainer", () => {
     })
 
     render(<PopupContainer />)
-    await screen.findByText("一键发送至 qBittorrent")
+    await screen.findByText("插件已就绪")
 
     await user.click(screen.getByRole("button", { name: "打开设置" }))
 
@@ -180,7 +180,7 @@ describe("PopupContainer", () => {
     })
 
     render(<PopupContainer />)
-    await screen.findByText("一键发送至 qBittorrent")
+    await screen.findByText("插件已就绪")
 
     await user.click(screen.getByRole("button", { name: "批次历史" }))
     await user.click(screen.getByRole("button", { name: "过滤规则" }))
@@ -219,7 +219,7 @@ describe("PopupContainer", () => {
       })
 
     render(<PopupContainer />)
-    await screen.findByText("一键发送至 qBittorrent")
+    await screen.findByText("插件已就绪")
 
     await user.click(screen.getByRole("switch", { name: "当前站点启用开关" }))
 
@@ -254,7 +254,7 @@ describe("PopupContainer", () => {
       })
 
     render(<PopupContainer />)
-    await screen.findByText("一键发送至 qBittorrent")
+    await screen.findByText("插件已就绪")
 
     await user.click(screen.getByRole("button", { name: "过滤规则" }))
     await waitFor(() => {
@@ -299,7 +299,7 @@ describe("PopupContainer", () => {
       })
 
     render(<PopupContainer />)
-    await screen.findByText("一键发送至 qBittorrent")
+    await screen.findByText("插件已就绪")
 
     await user.click(screen.getByRole("switch", { name: "当前站点启用开关" }))
 
@@ -329,7 +329,7 @@ describe("PopupContainer", () => {
     })
 
     render(<PopupContainer />)
-    await screen.findByText("一键发送至 qBittorrent")
+    await screen.findByText("插件已就绪")
 
     await user.click(screen.getByRole("button", { name: "过滤规则" }))
 
@@ -346,6 +346,74 @@ describe("PopupContainer", () => {
     routeRequest.resolve({ ok: true })
     await waitFor(() => {
       expect(screen.getByRole("button", { name: "过滤规则" })).toBeEnabled()
+    })
+  })
+
+  it("checks qB connectivity for supported enabled tabs and promotes the popup to ready", async () => {
+    const connectionRequest = createDeferred<RuntimeResponse>()
+
+    sendRuntimeRequestMock.mockImplementation((request: RuntimeRequest) => {
+      if (request.type === "GET_POPUP_STATE") {
+        return okResponse({
+          ok: true,
+          state: createState({
+            qbConnectionStatus: "checking"
+          })
+        })
+      }
+      if (request.type === "TEST_QB_CONNECTION") {
+        return connectionRequest.promise
+      }
+
+      return okResponse({ ok: true })
+    })
+
+    render(<PopupContainer />)
+
+    await waitFor(() => {
+      expect(screen.getByText("正在检测 qBittorrent 连接")).toBeInTheDocument()
+    })
+    expect(sendRuntimeRequestMock).toHaveBeenNthCalledWith(2, {
+      type: "TEST_QB_CONNECTION"
+    })
+
+    connectionRequest.resolve({
+      ok: true,
+      result: {
+        baseUrl: "http://127.0.0.1:17474",
+        version: "5.0.4"
+      }
+    })
+
+    await waitFor(() => {
+      expect(screen.getByText("插件已就绪")).toBeInTheDocument()
+    })
+  })
+
+  it("shows a connection-failed card when the popup qB probe fails", async () => {
+    sendRuntimeRequestMock.mockImplementation((request: RuntimeRequest) => {
+      if (request.type === "GET_POPUP_STATE") {
+        return okResponse({
+          ok: true,
+          state: createState({
+            qbConnectionStatus: "checking"
+          })
+        })
+      }
+      if (request.type === "TEST_QB_CONNECTION") {
+        return okResponse({
+          ok: false,
+          error: "qB 连接失败"
+        })
+      }
+
+      return okResponse({ ok: true })
+    })
+
+    render(<PopupContainer />)
+
+    await waitFor(() => {
+      expect(screen.getByText("qBittorrent 连接失败")).toBeInTheDocument()
     })
   })
 })
