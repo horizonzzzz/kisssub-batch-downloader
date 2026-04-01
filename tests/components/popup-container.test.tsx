@@ -101,7 +101,7 @@ describe("PopupContainer", () => {
     render(<PopupContainer />)
 
     await waitFor(() => {
-      expect(screen.getByText("Popup 控制台")).toBeInTheDocument()
+      expect(screen.getByText("一键发送至 qBittorrent")).toBeInTheDocument()
     })
     expect(sendRuntimeRequestMock).toHaveBeenCalledWith({
       type: "GET_POPUP_STATE"
@@ -126,7 +126,7 @@ describe("PopupContainer", () => {
     await user.click(screen.getByRole("button", { name: "重试" }))
 
     await waitFor(() => {
-      expect(screen.getByText("Popup 控制台")).toBeInTheDocument()
+      expect(screen.getByText("一键发送至 qBittorrent")).toBeInTheDocument()
     })
     expect(sendRuntimeRequestMock).toHaveBeenNthCalledWith(1, {
       type: "GET_POPUP_STATE"
@@ -153,7 +153,7 @@ describe("PopupContainer", () => {
     })
 
     render(<PopupContainer />)
-    await screen.findByText("Popup 控制台")
+    await screen.findByText("一键发送至 qBittorrent")
 
     await user.click(screen.getByRole("button", { name: "打开设置" }))
 
@@ -180,7 +180,7 @@ describe("PopupContainer", () => {
     })
 
     render(<PopupContainer />)
-    await screen.findByText("Popup 控制台")
+    await screen.findByText("一键发送至 qBittorrent")
 
     await user.click(screen.getByRole("button", { name: "批次历史" }))
     await user.click(screen.getByRole("button", { name: "过滤规则" }))
@@ -219,7 +219,7 @@ describe("PopupContainer", () => {
       })
 
     render(<PopupContainer />)
-    await screen.findByText("Popup 控制台")
+    await screen.findByText("一键发送至 qBittorrent")
 
     await user.click(screen.getByRole("switch", { name: "当前站点启用开关" }))
 
@@ -232,7 +232,8 @@ describe("PopupContainer", () => {
       type: "GET_POPUP_STATE"
     })
     await waitFor(() => {
-      expect(screen.getByText("当前页面站点已禁用，启用后可恢复批量下载")).toBeInTheDocument()
+      expect(screen.getByText("插件已就绪")).toBeInTheDocument()
+      expect(screen.getByRole("switch", { name: "当前站点启用开关" })).not.toBeChecked()
     })
   })
 
@@ -253,7 +254,7 @@ describe("PopupContainer", () => {
       })
 
     render(<PopupContainer />)
-    await screen.findByText("Popup 控制台")
+    await screen.findByText("一键发送至 qBittorrent")
 
     await user.click(screen.getByRole("button", { name: "过滤规则" }))
     await waitFor(() => {
@@ -298,12 +299,13 @@ describe("PopupContainer", () => {
       })
 
     render(<PopupContainer />)
-    await screen.findByText("Popup 控制台")
+    await screen.findByText("一键发送至 qBittorrent")
 
     await user.click(screen.getByRole("switch", { name: "当前站点启用开关" }))
 
     await waitFor(() => {
-      expect(screen.getByText("当前页面站点已禁用，启用后可恢复批量下载")).toBeInTheDocument()
+      expect(screen.getByText("插件已就绪")).toBeInTheDocument()
+      expect(screen.getByRole("switch", { name: "当前站点启用开关" })).not.toBeChecked()
     })
     expect(screen.queryByText("刷新失败")).not.toBeInTheDocument()
   })
@@ -327,7 +329,7 @@ describe("PopupContainer", () => {
     })
 
     render(<PopupContainer />)
-    await screen.findByText("Popup 控制台")
+    await screen.findByText("一键发送至 qBittorrent")
 
     await user.click(screen.getByRole("button", { name: "过滤规则" }))
 

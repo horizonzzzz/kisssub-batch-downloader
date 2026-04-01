@@ -1,8 +1,9 @@
 import { HiOutlineCog6Tooth } from "react-icons/hi2"
 
+import brandIcon from "../../assets/anime-bt-icon-speedline.svg"
+
 import type { PopupOptionsRoute, PopupStateViewModel } from "../../lib/shared/popup"
 import type { SourceId } from "../../lib/shared/types"
-import { Button } from "../ui"
 import { PopupFooter } from "./PopupFooter"
 import { PopupQuickActions } from "./PopupQuickActions"
 import { PopupStatusCard } from "./PopupStatusCard"
@@ -24,36 +25,47 @@ export function PopupPage({
   actionsDisabled = false
 }: PopupPageProps) {
   return (
-    <div className="w-[360px] space-y-3 bg-zinc-50 p-3 text-zinc-900">
-      <header className="flex items-center justify-between rounded-xl border border-zinc-200 bg-white px-3 py-2.5 shadow-panel">
-        <div className="space-y-0.5">
-          <h1 className="text-sm font-semibold">Anime BT Batch</h1>
-          <p className="text-xs text-zinc-500">Popup 控制台</p>
+    <div className="flex h-[560px] w-[360px] flex-col bg-zinc-50 font-sans text-zinc-900 shadow-2xl">
+      <header className="flex items-center justify-between border-b border-zinc-200 bg-white px-4 py-3 shadow-sm">
+        <div className="flex items-center gap-3">
+          <img
+            src={brandIcon}
+            alt=""
+            aria-hidden="true"
+            className="h-8 w-8"
+            loading="eager"
+            decoding="async"
+          />
+          <div>
+            <h1 className="text-sm font-bold leading-none tracking-tight">Anime BT Batch</h1>
+            <p className="text-[11px] text-zinc-500 mt-1 font-medium">一键发送至 qBittorrent</p>
+          </div>
         </div>
-        <Button
-          aria-label="打开设置"
+        <button
+          onClick={onOpenGeneralOptions}
           disabled={actionsDisabled}
-          size="sm"
-          type="button"
-          variant="ghost"
-          onClick={onOpenGeneralOptions}>
-          <HiOutlineCog6Tooth aria-hidden="true" className="h-4 w-4" />
-        </Button>
+          aria-label="打开设置"
+          className="rounded-lg p-2 text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-900 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <HiOutlineCog6Tooth className="h-5 w-5" />
+        </button>
       </header>
 
-      <PopupStatusCard
-        qbConfigured={state.qbConfigured}
-        activeTab={state.activeTab}
-        actionsDisabled={actionsDisabled}
-        onOpenGeneralOptions={onOpenGeneralOptions}
-        onToggleCurrentSiteEnabled={onToggleCurrentSiteEnabled}
-      />
+      <main className="flex-1 overflow-y-auto p-4">
+        <PopupStatusCard
+          qbConfigured={state.qbConfigured}
+          activeTab={state.activeTab}
+          actionsDisabled={actionsDisabled}
+          onOpenGeneralOptions={onOpenGeneralOptions}
+          onToggleCurrentSiteEnabled={onToggleCurrentSiteEnabled}
+        />
 
-      {state.qbConfigured ? (
-        <PopupQuickActions disabled={actionsDisabled} onOpenOptionsRoute={onOpenOptionsRoute} />
-      ) : null}
+        {state.qbConfigured ? (
+          <PopupQuickActions disabled={actionsDisabled} onOpenOptionsRoute={onOpenOptionsRoute} />
+        ) : null}
 
-      <PopupSupportedSites supportedSites={state.supportedSites} />
+        <PopupSupportedSites supportedSites={state.supportedSites} />
+      </main>
 
       <PopupFooter version={state.version} helpUrl={state.helpUrl} />
     </div>

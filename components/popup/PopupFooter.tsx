@@ -1,5 +1,3 @@
-import { HiOutlineQuestionMarkCircle } from "react-icons/hi2"
-
 type PopupFooterProps = {
   version: string
   helpUrl: string
@@ -7,17 +5,18 @@ type PopupFooterProps = {
 
 export function PopupFooter({ version, helpUrl }: PopupFooterProps) {
   return (
-    <footer className="flex items-center justify-between border-t border-zinc-200 pt-3">
-      <p className="text-xs text-zinc-500">v{version}</p>
-      <a
-        className="inline-flex items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-700"
-        href={helpUrl}
-        rel="noreferrer"
-        target="_blank">
-        <HiOutlineQuestionMarkCircle aria-hidden="true" className="h-3.5 w-3.5" />
-        <span>使用帮助</span>
-      </a>
+    <footer className="border-t border-zinc-200 bg-zinc-100/50 px-4 py-3 text-center">
+      <p className="text-[11px] font-medium text-zinc-400">
+        Anime BT Batch v{version} ·{" "}
+        <a
+          href={helpUrl}
+          rel="noreferrer"
+          target="_blank"
+          className="hover:text-zinc-600 hover:underline transition-colors"
+        >
+          帮助文档
+        </a>
+      </p>
     </footer>
   )
 }
-

@@ -77,8 +77,8 @@ describe("PopupPage", () => {
   it("renders unconfigured state with setup CTA and hides quick actions", () => {
     renderPopup()
 
-    expect(screen.getByText("请先配置 qBittorrent WebUI")).toBeInTheDocument()
-    expect(screen.getByRole("button", { name: "前往连接设置" })).toBeInTheDocument()
+    expect(screen.getByText("未配置 qBittorrent")).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "立即配置" })).toBeInTheDocument()
     expect(screen.queryByRole("button", { name: "批次历史" })).not.toBeInTheDocument()
     expect(screen.queryByRole("button", { name: "过滤规则" })).not.toBeInTheDocument()
   })
@@ -96,7 +96,7 @@ describe("PopupPage", () => {
       })
     })
 
-    expect(screen.getByText("当前页面已就绪，可直接批量下载")).toBeInTheDocument()
+    expect(screen.getByText("插件已就绪")).toBeInTheDocument()
     expect(screen.getByRole("switch", { name: "当前站点启用开关" })).toBeInTheDocument()
     expect(screen.getByRole("button", { name: "批次历史" })).toBeInTheDocument()
     expect(screen.getByRole("button", { name: "过滤规则" })).toBeInTheDocument()
@@ -198,9 +198,9 @@ describe("PopupPage", () => {
     })
 
     expect(screen.getByText("Kisssub 爱恋动漫")).toBeInTheDocument()
-    expect(screen.getByText("dongmanhuayuan.com")).toBeInTheDocument()
-    expect(screen.getByText("acg.rip")).toBeInTheDocument()
-    expect(screen.getByText("bangumi.moe")).toBeInTheDocument()
+    expect(screen.getByText("Dongmanhuayuan")).toBeInTheDocument()
+    expect(screen.getAllByText("ACG.RIP").length).toBeGreaterThan(0)
+    expect(screen.getAllByText("Bangumi.moe").length).toBeGreaterThan(0)
     expect(container).not.toHaveTextContent("Wrong Name")
     expect(container).not.toHaveTextContent("bad.local")
   })
@@ -231,8 +231,8 @@ describe("PopupPage", () => {
       })
     })
 
-    expect(screen.getByText("v2.0.0")).toBeInTheDocument()
-    expect(screen.getByRole("link", { name: "使用帮助" })).toHaveAttribute(
+    expect(screen.getByText(/Anime BT Batch v2\.0\.0/)).toBeInTheDocument()
+    expect(screen.getByRole("link", { name: "帮助文档" })).toHaveAttribute(
       "href",
       "https://github.com/horizonzzzz/anime-bt-batch-downloader"
     )

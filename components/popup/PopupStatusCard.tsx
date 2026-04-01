@@ -1,9 +1,14 @@
-import { HiOutlineExclamationTriangle } from "react-icons/hi2"
+import { motion, AnimatePresence } from "motion/react"
+import {
+  HiOutlineCheckCircle,
+  HiOutlineExclamationCircle,
+  HiOutlineGlobeAlt
+} from "react-icons/hi2"
 
 import { POPUP_SUPPORTED_SITE_META } from "../../lib/shared/popup"
 import type { PopupActiveTabViewModel } from "../../lib/shared/popup"
 import type { SourceId } from "../../lib/shared/types"
-import { Button, Card, Switch } from "../ui"
+import { Switch } from "../ui"
 
 type PopupStatusCardProps = {
   qbConfigured: boolean
@@ -20,64 +25,78 @@ export function PopupStatusCard({
   onToggleCurrentSiteEnabled,
   actionsDisabled = false
 }: PopupStatusCardProps) {
-  if (!qbConfigured) {
-    return (
-      <Card className="grid gap-4 p-4">
-        <div className="space-y-1">
-          <h2 className="text-base font-semibold text-zinc-900">请先配置 qBittorrent WebUI</h2>
-          <p className="text-sm leading-6 text-zinc-500">
-            完成连接设置后，即可在受支持页面直接批量提交到 qB。
-          </p>
-        </div>
-        <Button disabled={actionsDisabled} type="button" onClick={onOpenGeneralOptions}>
-          前往连接设置
-        </Button>
-      </Card>
-    )
-  }
-
-  if (!activeTab.supported || !activeTab.sourceId) {
-    return (
-      <Card className="grid gap-3 p-4">
-        <div className="inline-flex items-center gap-2 text-sm font-medium text-amber-700">
-          <HiOutlineExclamationTriangle aria-hidden="true" className="h-4 w-4" />
-          <span>当前页面暂不支持批量下载</span>
-        </div>
-        <p className="text-sm leading-6 text-zinc-500">
-          请打开受支持站点页面，或在设置中查看站点状态。
-        </p>
-      </Card>
-    )
-  }
-
-  const siteMeta = POPUP_SUPPORTED_SITE_META[activeTab.sourceId]
-  const enabled = activeTab.enabled
-  const title = enabled
-    ? "当前页面已就绪，可直接批量下载"
-    : "当前页面站点已禁用，启用后可恢复批量下载"
+  const statusKey = !qbConfigured
+    ? "unconfigured"
+    : activeTab.supported && activeTab.sourceId
+      ? "ready"
+      : "unsupported"
 
   return (
-    <Card className="grid gap-4 p-4">
-      <div className="space-y-1">
-        <h2 className="text-base font-semibold text-zinc-900">{title}</h2>
-        <p className="text-sm leading-6 text-zinc-500">
-          {siteMeta.displayName} ({siteMeta.url})
-        </p>
-      </div>
-      <div className="flex items-center justify-between rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2.5">
-        <div className="space-y-0.5">
-          <p className="text-sm font-medium text-zinc-900">当前站点启用状态</p>
-          <p className="text-xs text-zinc-500">{enabled ? "已启用" : "未启用"}</p>
-        </div>
-        <Switch
-          aria-label="当前站点启用开关"
-          checked={enabled}
-          disabled={actionsDisabled}
-          onCheckedChange={(checked) => {
-            onToggleCurrentSiteEnabled(activeTab.sourceId as SourceId, checked)
-          }}
-        />
-      </div>
-    </Card>
+    <AnimatePresence mode="wait">
+      <motion.div
+        key={statusKey}
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -10 }}
+        transition={{ duration: 0.2 }}
+        className="mb-6"
+      >
+        {!qbConfigured ? (
+          <div className="overflow-hidden rounded-2xl border border-orange-200 bg-orange-50 shadow-sm">
+            <div className="p-4">
+              <div className="flex items-center gap-2 text-orange-700 mb-2">
+                <HiOutlineExclamationCircle className="h-5 w-5" />
+                <h2 className="font-semibold">未配置 qBittorrent</h2>
+              </div>
+              <p className="text-xs text-orange-700/80 leading-relaxed mb-4">
+                为了实现一键批量发送种子，请先配置您的 qBittorrent WebUI 连接信息。
+              </p>
+              <button
+                onClick={onOpenGeneralOptions}
+                disabled={actionsDisabled}
+                className="w-full rounded-xl bg-orange-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-all hover:bg-orange-700 active:bg-orange-800 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                立即配置
+              </button>
+            </div>
+          </div>
+        ) : !activeTab.supported || !activeTab.sourceId ? (
+          <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
+            <div className="p-4">
+              <div className="flex items-center gap-2 text-zinc-800 mb-2">
+                <HiOutlineGlobeAlt className="h-5 w-5 text-zinc-500" />
+                <h2 className="font-semibold">当前页面暂不支持批量下载</h2>
+              </div>
+              <p className="text-xs text-zinc-500 leading-relaxed">
+                插件在当前网站未激活。请访问下方支持的动漫资源站点，即可使用批量下载功能。
+              </p>
+            </div>
+          </div>
+        ) : (
+          <div className="overflow-hidden rounded-2xl border border-emerald-200 bg-emerald-50 shadow-sm">
+            <div className="p-4">
+              <div className="flex items-center gap-2 text-emerald-700 mb-2">
+                <HiOutlineCheckCircle className="h-5 w-5" />
+                <h2 className="font-semibold">插件已就绪</h2>
+              </div>
+              <p className="text-xs text-emerald-700/80 leading-relaxed">
+                当前页面受支持！您可以在页面右下角找到批量下载面板，快速勾选并发送种子。
+              </p>
+            </div>
+            <div className="border-t border-emerald-200/50 bg-emerald-100/40 px-4 py-3 flex items-center justify-between">
+              <span className="text-sm font-medium text-emerald-900">在当前站点启用</span>
+              <Switch
+                aria-label="当前站点启用开关"
+                checked={activeTab.enabled}
+                disabled={actionsDisabled}
+                onCheckedChange={(checked) => {
+                  onToggleCurrentSiteEnabled(activeTab.sourceId as SourceId, checked)
+                }}
+              />
+            </div>
+          </div>
+        )}
+      </motion.div>
+    </AnimatePresence>
   )
 }
