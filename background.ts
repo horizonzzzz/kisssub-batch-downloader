@@ -84,6 +84,11 @@ chrome.runtime.onInstalled.addListener(async () => {
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   if (changeInfo.url !== undefined) {
     updateIconForTab(tabId, changeInfo.url)
+    return
+  }
+
+  if (changeInfo.status === "complete" && tab.url) {
+    updateIconForTab(tabId, tab.url)
   }
 })
 
