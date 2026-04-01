@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest"
 import { DEFAULT_SETTINGS } from "../../../lib/settings/defaults"
 import {
   buildPopupState,
+  notifyActiveTabOfSourceEnabledChange,
   normalizePopupOptionsRoute,
   openOptionsPageForRoute,
   setSourceEnabledForPopup
@@ -195,5 +196,34 @@ describe("popup background helpers", () => {
 
     expect(updateTab).toHaveBeenCalledWith(42, "chrome-extension://test/options.html#/history")
     expect(createTab).not.toHaveBeenCalled()
+  })
+
+  it("notifies the active tab when the popup toggles the current source", async () => {
+    const queryActiveTabId = vi.fn(async () => 11)
+    const sendMessageToTab = vi.fn(async () => undefined)
+
+    await notifyActiveTabOfSourceEnabledChange("kisssub", false, {
+      queryActiveTabId,
+      sendMessageToTab
+    })
+
+    expect(queryActiveTabId).toHaveBeenCalledTimes(1)
+    expect(sendMessageToTab).toHaveBeenCalledWith(11, {
+      type: "ANIME_BT_SOURCE_ENABLED_CHANGE_EVENT",
+      sourceId: "kisssub",
+      enabled: false
+    })
+  })
+
+  it("ignores source-toggle tab sync when no active tab is available", async () => {
+    const queryActiveTabId = vi.fn(async () => null)
+    const sendMessageToTab = vi.fn(async () => undefined)
+
+    await notifyActiveTabOfSourceEnabledChange("kisssub", true, {
+      queryActiveTabId,
+      sendMessageToTab
+    })
+
+    expect(sendMessageToTab).not.toHaveBeenCalled()
   })
 })

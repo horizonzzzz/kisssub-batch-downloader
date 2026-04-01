@@ -232,7 +232,7 @@ describe("PopupContainer", () => {
       type: "GET_POPUP_STATE"
     })
     await waitFor(() => {
-      expect(screen.getByText("插件已就绪")).toBeInTheDocument()
+      expect(screen.getByText("当前站点已关闭")).toBeInTheDocument()
       expect(screen.getByRole("switch", { name: "当前站点启用开关" })).not.toBeChecked()
     })
   })
@@ -304,7 +304,7 @@ describe("PopupContainer", () => {
     await user.click(screen.getByRole("switch", { name: "当前站点启用开关" }))
 
     await waitFor(() => {
-      expect(screen.getByText("插件已就绪")).toBeInTheDocument()
+      expect(screen.getByText("当前站点已关闭")).toBeInTheDocument()
       expect(screen.getByRole("switch", { name: "当前站点启用开关" })).not.toBeChecked()
     })
     expect(screen.queryByText("刷新失败")).not.toBeInTheDocument()

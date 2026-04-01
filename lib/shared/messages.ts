@@ -1,8 +1,21 @@
-import type { BatchItem, Settings, SourceId, TestQbConnectionResult } from "./types"
+import type { BatchEventPayload, BatchItem, Settings, SourceId, TestQbConnectionResult } from "./types"
 import type { TaskHistoryRecord } from "../history/types"
 import type { PopupOptionsRoute, PopupStateViewModel } from "./popup"
 
 export const BATCH_EVENT = "ANIME_BT_BATCH_EVENT"
+export const SOURCE_ENABLED_CHANGE_EVENT = "ANIME_BT_SOURCE_ENABLED_CHANGE_EVENT"
+
+export type BatchEventMessage = {
+  type: typeof BATCH_EVENT
+} & BatchEventPayload
+
+export type SourceEnabledChangeMessage = {
+  type: typeof SOURCE_ENABLED_CHANGE_EVENT
+  sourceId: SourceId
+  enabled: boolean
+}
+
+export type ContentRuntimeMessage = BatchEventMessage | SourceEnabledChangeMessage
 
 export type RuntimeRequest =
   | { type: "GET_HISTORY" }

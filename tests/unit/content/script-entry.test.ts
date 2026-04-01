@@ -123,7 +123,7 @@ describe("content script entry", () => {
     expect(module.config?.matches).toContain("https://www.bangumi.moe/*")
   })
 
-  it("does not inject UI when the matched source is disabled", async () => {
+  it("does not inject UI when the matched source is disabled but still listens for toggle updates", async () => {
     getSourceAdapterForLocation.mockReturnValueOnce({
       id: "acgrip",
       displayName: "ACG.RIP"
@@ -148,7 +148,7 @@ describe("content script entry", () => {
 
     expect(getEnabledSourceAdapterForLocation).toHaveBeenCalledTimes(1)
     expect(createRoot).not.toHaveBeenCalled()
-    expect(runtimeAddListener).not.toHaveBeenCalled()
+    expect(runtimeAddListener).toHaveBeenCalledTimes(1)
     expect(document.querySelector("[data-anime-bt-batch-panel-root]")).toBeNull()
   })
 
@@ -169,7 +169,7 @@ describe("content script entry", () => {
 
     expect(getEnabledSourceAdapterForLocation).not.toHaveBeenCalled()
     expect(createRoot).not.toHaveBeenCalled()
-    expect(runtimeAddListener).not.toHaveBeenCalled()
+    expect(runtimeAddListener).toHaveBeenCalledTimes(1)
     expect(document.querySelector("[data-anime-bt-batch-panel-root]")).toBeNull()
   })
 
@@ -272,5 +272,128 @@ describe("content script entry", () => {
     ).not.toBeNull()
     expect(panelHost?.shadowRoot?.textContent).toContain(".anime-bt-content-root")
     expect(checkboxHost?.shadowRoot?.textContent).toContain(".anime-bt-content-root")
+  })
+
+  it("tears down injected UI when the current source is disabled from the popup and rebuilds it when re-enabled", async () => {
+    const anchorCell = document.createElement("td")
+    const anchor = document.createElement("a")
+    anchor.href = "https://acg.rip/t/1"
+    anchor.textContent = "Episode 01"
+    anchorCell.appendChild(anchor)
+    document.body.appendChild(anchorCell)
+
+    const source = {
+      id: "acgrip",
+      displayName: "ACG.RIP"
+    }
+    const item = {
+      title: "Episode 01",
+      detailUrl: "https://acg.rip/t/1"
+    }
+
+    getSourceAdapterForLocation.mockReturnValueOnce(source)
+    getEnabledSourceAdapterForLocation.mockReturnValueOnce(source)
+    getDetailAnchors.mockReturnValueOnce([anchor])
+    getBatchItemFromAnchor.mockReturnValueOnce(item)
+    getAnchorMountTarget.mockReturnValueOnce(anchorCell)
+    runtimeSendMessage.mockResolvedValue({
+      ok: true,
+      settings: {
+        enabledSources: {
+          acgrip: true
+        }
+      }
+    })
+
+    await import("../../../contents/source-batch")
+
+    await vi.waitFor(() => {
+      expect(createRoot).toHaveBeenCalledTimes(2)
+    })
+
+    const listener = runtimeAddListener.mock.calls[0]?.[0]
+    expect(listener).toBeTypeOf("function")
+
+    listener?.({
+      type: "ANIME_BT_SOURCE_ENABLED_CHANGE_EVENT",
+      sourceId: "acgrip",
+      enabled: false
+    })
+
+    expect(createdRoots[0]?.unmount).toHaveBeenCalledTimes(1)
+    expect(createdRoots[1]?.unmount).toHaveBeenCalledTimes(1)
+    expect(document.querySelector("[data-anime-bt-batch-panel-root='1']")).toBeNull()
+    expect(document.querySelector("[data-anime-bt-batch-checkbox-root='1']")).toBeNull()
+    expect(anchor.dataset.animeBtBatchDecorated).toBeUndefined()
+
+    getDetailAnchors.mockReturnValueOnce([anchor])
+    getBatchItemFromAnchor.mockReturnValueOnce(item)
+    getAnchorMountTarget.mockReturnValueOnce(anchorCell)
+
+    listener?.({
+      type: "ANIME_BT_SOURCE_ENABLED_CHANGE_EVENT",
+      sourceId: "acgrip",
+      enabled: true
+    })
+
+    await vi.waitFor(() => {
+      expect(createRoot).toHaveBeenCalledTimes(4)
+    })
+
+    expect(document.querySelector("[data-anime-bt-batch-panel-root='1']")).not.toBeNull()
+    expect(document.querySelector("[data-anime-bt-batch-checkbox-root='1']")).not.toBeNull()
+    expect(anchor.dataset.animeBtBatchDecorated).toBe("1")
+  })
+
+  it("can inject UI when the page started disabled and the popup re-enables the same source", async () => {
+    const anchorCell = document.createElement("td")
+    const anchor = document.createElement("a")
+    anchor.href = "https://acg.rip/t/2"
+    anchor.textContent = "Episode 02"
+    anchorCell.appendChild(anchor)
+    document.body.appendChild(anchorCell)
+
+    const source = {
+      id: "acgrip",
+      displayName: "ACG.RIP"
+    }
+
+    getSourceAdapterForLocation.mockReturnValueOnce(source)
+    getEnabledSourceAdapterForLocation.mockReturnValueOnce(null)
+    runtimeSendMessage.mockResolvedValue({
+      ok: true,
+      settings: {
+        enabledSources: {
+          acgrip: false
+        }
+      }
+    })
+
+    await import("../../../contents/source-batch")
+
+    await vi.waitFor(() => {
+      expect(runtimeAddListener).toHaveBeenCalledTimes(1)
+    })
+
+    const listener = runtimeAddListener.mock.calls[0]?.[0]
+    getDetailAnchors.mockReturnValueOnce([anchor])
+    getBatchItemFromAnchor.mockReturnValueOnce({
+      title: "Episode 02",
+      detailUrl: "https://acg.rip/t/2"
+    })
+    getAnchorMountTarget.mockReturnValueOnce(anchorCell)
+
+    listener?.({
+      type: "ANIME_BT_SOURCE_ENABLED_CHANGE_EVENT",
+      sourceId: "acgrip",
+      enabled: true
+    })
+
+    await vi.waitFor(() => {
+      expect(createRoot).toHaveBeenCalledTimes(2)
+    })
+
+    expect(document.querySelector("[data-anime-bt-batch-panel-root='1']")).not.toBeNull()
+    expect(document.querySelector("[data-anime-bt-batch-checkbox-root='1']")).not.toBeNull()
   })
 })

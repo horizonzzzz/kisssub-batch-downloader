@@ -1,6 +1,7 @@
 import packageJson from "../../package.json"
 import { getSourceAdapterForPage } from "../sources"
 import { getSettings, resolveSourceEnabled, saveSettings } from "../settings"
+import { SOURCE_ENABLED_CHANGE_EVENT, type SourceEnabledChangeMessage } from "../shared/messages"
 import { DEFAULT_OPTIONS_ROUTE, isOptionsRoutePath, type OptionsRoutePath } from "../shared/options-routes"
 import {
   POPUP_HELP_URL,
@@ -26,6 +27,11 @@ type OpenOptionsPageDependencies = {
   updateTab: (tabId: number, url: string) => Promise<void>
   createTab: (url: string) => Promise<void>
   getExtensionUrl: (path: string) => string
+}
+
+type NotifyActiveTabOfSourceEnabledChangeDependencies = {
+  queryActiveTabId: () => Promise<number | null>
+  sendMessageToTab: (tabId: number, message: SourceEnabledChangeMessage) => Promise<void>
 }
 
 const DEFAULT_BUILD_POPUP_STATE_DEPENDENCIES: BuildPopupStateDependencies = {
@@ -60,6 +66,14 @@ const DEFAULT_OPEN_OPTIONS_PAGE_DEPENDENCIES: OpenOptionsPageDependencies = {
   },
   getExtensionUrl: (path) => chrome.runtime.getURL(path)
 }
+
+const DEFAULT_NOTIFY_ACTIVE_TAB_OF_SOURCE_ENABLED_CHANGE_DEPENDENCIES: NotifyActiveTabOfSourceEnabledChangeDependencies =
+  {
+    queryActiveTabId,
+    sendMessageToTab: async (tabId, message) => {
+      await chrome.tabs.sendMessage(tabId, message)
+    }
+  }
 
 export async function buildPopupState(
   dependencies: BuildPopupStateDependencies = DEFAULT_BUILD_POPUP_STATE_DEPENDENCIES
@@ -105,6 +119,27 @@ export async function setSourceEnabledForPopup(
   })
 }
 
+export async function notifyActiveTabOfSourceEnabledChange(
+  sourceId: SourceId,
+  enabled: boolean,
+  dependencies: NotifyActiveTabOfSourceEnabledChangeDependencies = DEFAULT_NOTIFY_ACTIVE_TAB_OF_SOURCE_ENABLED_CHANGE_DEPENDENCIES
+) {
+  const activeTabId = await dependencies.queryActiveTabId()
+  if (typeof activeTabId !== "number") {
+    return
+  }
+
+  try {
+    await dependencies.sendMessageToTab(activeTabId, {
+      type: SOURCE_ENABLED_CHANGE_EVENT,
+      sourceId,
+      enabled
+    })
+  } catch {
+    // Ignore tabs without a receiver, such as unsupported or reloaded pages.
+  }
+}
+
 export function normalizePopupOptionsRoute(route: string | null | undefined): OptionsRoutePath {
   return isOptionsRoutePath(route) ? route : DEFAULT_OPTIONS_ROUTE
 }
@@ -131,6 +166,15 @@ export async function queryActiveTabUrl(): Promise<string | null> {
   })
 
   return typeof activeTab?.url === "string" ? activeTab.url : null
+}
+
+export async function queryActiveTabId(): Promise<number | null> {
+  const [activeTab] = await chrome.tabs.query({
+    active: true,
+    lastFocusedWindow: true
+  })
+
+  return typeof activeTab?.id === "number" ? activeTab.id : null
 }
 
 function resolveActiveSourceId(url: string | null): SourceId | null {

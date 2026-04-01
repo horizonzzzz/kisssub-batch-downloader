@@ -102,6 +102,25 @@ describe("PopupPage", () => {
     expect(screen.getByRole("button", { name: "过滤规则" })).toBeInTheDocument()
   })
 
+  it("renders a disabled-state card when the current supported site is turned off", () => {
+    renderPopup({
+      state: createState({
+        qbConfigured: true,
+        activeTab: {
+          url: "https://kisssub.org/",
+          sourceId: "kisssub",
+          supported: true,
+          enabled: false
+        }
+      })
+    })
+
+    expect(screen.getByText("当前站点已关闭")).toBeInTheDocument()
+    expect(screen.getByText(/重新开启后，页面右下角的批量下载面板和勾选框才会出现/)).toBeInTheDocument()
+    expect(screen.queryByText("插件已就绪")).not.toBeInTheDocument()
+    expect(screen.getByRole("switch", { name: "当前站点启用开关" })).not.toBeChecked()
+  })
+
   it("renders configured + unsupported state and hides current-site toggle", () => {
     renderPopup({
       state: createState({

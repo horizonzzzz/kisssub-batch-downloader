@@ -18,7 +18,7 @@ The extension injects selection UI into supported list pages, reuses direct magn
 - Supported popup surface responsibilities:
   - loading extension runtime status for quick checks before opening options
   - surfacing qBittorrent configuration readiness and active-tab source support/enabled state
-  - offering quick links into options routes and one-click enable/disable for the active supported source
+  - offering quick links into options routes and one-click enable/disable for the active supported source, with immediate sync to the current tab's injected UI
 - the options workspace uses hash-routed navigation with:
   - `options.html#/general`
   - `options.html#/sites`
@@ -33,6 +33,7 @@ The extension injects selection UI into supported list pages, reuses direct magn
   - disabled sources keep their saved per-site configuration
   - disabled sources do not inject the batch UI on matching pages
   - disabled sources are rejected again by the background batch pipeline
+  - popup-driven source toggles should take effect on the current matching tab without requiring a manual page refresh
 - Releases are published from semantic version tags, with GitHub Release notes sourced from `CHANGELOG.md`
 - Release assets are uploaded as versioned Chrome MV3 zip archives named `anime-bt-batch-downloader-chrome-mv3-v<version>.zip`
 - Known product gaps:
@@ -107,7 +108,7 @@ The extension injects selection UI into supported list pages, reuses direct magn
 - `lib/background/retry.ts`
   Orchestration logic for retrying failed entries, extracting failed entries from history records and resubmitting to qBittorrent.
 - `lib/background/popup.ts`
-  Popup-specific background helpers for building popup view state, normalizing options routes, opening options tabs, and persisting source enable/disable toggles from the popup.
+  Popup-specific background helpers for building popup view state, normalizing options routes, opening options tabs, persisting source enable/disable toggles from the popup, and syncing the current active tab after popup source toggles.
 - `lib/shared/popup.ts`
   Shared popup view-model types and popup metadata constants reused across popup UI and background runtime handlers.
 - `components/options/pages/history/`
@@ -147,7 +148,7 @@ Use this section as the shortest runtime-oriented guide to the current code layo
 3. `background.ts`
    Routes popup runtime messages for state loading, source toggles, and options-page opening.
 4. `lib/background/popup.ts`
-   Builds popup view state from settings and active-tab context, applies source toggle writes, and resolves options-route navigation targets.
+   Builds popup view state from settings and active-tab context, applies source toggle writes, syncs current-tab source enablement state, and resolves options-route navigation targets.
 5. `lib/shared/popup.ts`
    Provides popup view-model contracts and supported-site metadata shared between background and popup UI.
 

@@ -4,7 +4,13 @@ import type { PlasmoCSConfig } from "plasmo"
 
 import { BatchPanel } from "../components/batch-panel"
 import { SelectionCheckbox } from "../components/selection-checkbox"
-import { BATCH_EVENT, sendRuntimeRequest } from "../lib/shared/messages"
+import {
+  BATCH_EVENT,
+  SOURCE_ENABLED_CHANGE_EVENT,
+  sendRuntimeRequest,
+  type ContentRuntimeMessage,
+  type SourceEnabledChangeMessage
+} from "../lib/shared/messages"
 import {
   getAnchorMountTarget,
   getBatchItemFromAnchor,
@@ -59,7 +65,9 @@ type PanelSnapshot = {
 const DEFAULT_SAVE_PATH_HINT =
   "留空则使用当前下载器默认目录。远程下载器请手动输入目标主机可识别的绝对路径。"
 
+let matchedPageSource: SourceAdapter | null = null
 let activeSource: SourceAdapter | null = null
+let runtimeListenerRegistered = false
 
 const snapshot: PanelSnapshot = {
   isExpanded: true,
@@ -74,6 +82,7 @@ const checkboxRoots = new Map<string, CheckboxRoot>()
 let panelRoot: Root | null = null
 let panelHost: HTMLDivElement | null = null
 let observer: MutationObserver | null = null
+let observerTimer: ReturnType<typeof globalThis.setTimeout> | null = null
 
 void bootstrap()
 
@@ -84,32 +93,43 @@ async function bootstrap() {
       return
     }
 
+    matchedPageSource = matchedSource
+    registerRuntimeMessageListener()
+
     const settings = await loadSettingsForContentScript()
+    hydrateSavePath(settings)
     const source = getEnabledSourceAdapterForLocation(window.location, settings)
     if (!source) {
       return
     }
 
-    activeSource = source
-    mountPanel()
-    hydrateSavePath(settings)
-    scanAndDecorate(source)
-    renderAll()
-    observeMutations()
-    registerBatchEventListener()
+    activateSource(source)
   } catch (error) {
     console.error("[Anime BT Batch] Failed to bootstrap content script.", error)
   }
 }
 
-function registerBatchEventListener() {
-  chrome.runtime.onMessage.addListener((message: { type?: string } & BatchEventPayload) => {
-    if (!message || message.type !== BATCH_EVENT) {
+function registerRuntimeMessageListener() {
+  if (runtimeListenerRegistered) {
+    return
+  }
+
+  chrome.runtime.onMessage.addListener((message: ContentRuntimeMessage) => {
+    if (!message) {
       return
     }
 
-    handleBatchEvent(message)
+    if (message.type === BATCH_EVENT) {
+      handleBatchEvent(message)
+      return
+    }
+
+    if (message.type === SOURCE_ENABLED_CHANGE_EVENT) {
+      handleSourceEnabledChange(message)
+    }
   })
+
+  runtimeListenerRegistered = true
 }
 
 async function loadSettingsForContentScript(): Promise<Settings> {
@@ -122,6 +142,28 @@ async function loadSettingsForContentScript(): Promise<Settings> {
   }
 
   return response.settings
+}
+
+function activateSource(source: SourceAdapter) {
+  activeSource = source
+  mountPanel()
+  observeMutations()
+  scanAndDecorate(source)
+  if (!snapshot.running && snapshot.selected.size === 0) {
+    snapshot.statusText = buildSelectionStatus(0)
+  }
+  renderAll()
+}
+
+function deactivateSource() {
+  activeSource = null
+  disconnectObserver()
+  snapshot.running = false
+  snapshot.selected.clear()
+  snapshot.statusText = buildSelectionStatus(0)
+  unmountCheckboxes()
+  resetDecoratedAnchors()
+  unmountPanel()
 }
 
 function mountPanel() {
@@ -156,14 +198,44 @@ function unmountPanel() {
   panelRoot = null
 }
 
+function unmountCheckboxes() {
+  for (const { host, root } of checkboxRoots.values()) {
+    root.unmount()
+    host.remove()
+  }
+
+  checkboxRoots.clear()
+}
+
+function resetDecoratedAnchors() {
+  for (const anchor of document.querySelectorAll<HTMLAnchorElement>("[data-anime-bt-batch-decorated='1']")) {
+    delete anchor.dataset.animeBtBatchDecorated
+  }
+}
+
+function disconnectObserver() {
+  if (observerTimer !== null) {
+    globalThis.clearTimeout(observerTimer)
+    observerTimer = null
+  }
+
+  if (observer) {
+    observer.disconnect()
+    observer = null
+  }
+}
+
 function observeMutations() {
-  let timer: ReturnType<typeof globalThis.setTimeout> | null = null
+  if (observer) {
+    return
+  }
+
   observer = new MutationObserver(() => {
-    if (timer !== null) {
-      globalThis.clearTimeout(timer)
+    if (observerTimer !== null) {
+      globalThis.clearTimeout(observerTimer)
     }
 
-    timer = globalThis.setTimeout(() => {
+    observerTimer = globalThis.setTimeout(() => {
       if (activeSource) {
         scanAndDecorate(activeSource)
       }
@@ -175,6 +247,19 @@ function observeMutations() {
     childList: true,
     subtree: true
   })
+}
+
+function handleSourceEnabledChange(message: SourceEnabledChangeMessage) {
+  if (!matchedPageSource || matchedPageSource.id !== message.sourceId) {
+    return
+  }
+
+  if (message.enabled) {
+    activateSource(matchedPageSource)
+    return
+  }
+
+  deactivateSource()
 }
 
 function scanAndDecorate(source: SourceAdapter) {

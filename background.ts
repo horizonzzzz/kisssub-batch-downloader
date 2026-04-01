@@ -2,6 +2,7 @@ import {
   buildPopupState,
   createBatchDownloadManager,
   fetchTorrentForUpload,
+  notifyActiveTabOfSourceEnabledChange,
   openOptionsPageForRoute,
   retryFailedItems,
   testQbConnection,
@@ -140,9 +141,11 @@ chrome.runtime.onMessage.addListener((message: unknown, sender, sendResponse) =>
             sendResponse(createRuntimeErrorResponse("Invalid SET_SOURCE_ENABLED payload"))
             return
           }
+          const settings = await setSourceEnabledForPopup(message.sourceId, message.enabled)
+          await notifyActiveTabOfSourceEnabledChange(message.sourceId, message.enabled)
           sendResponse(
             createRuntimeSuccessResponse("SET_SOURCE_ENABLED", {
-              settings: await setSourceEnabledForPopup(message.sourceId, message.enabled)
+              settings
             })
           )
           return

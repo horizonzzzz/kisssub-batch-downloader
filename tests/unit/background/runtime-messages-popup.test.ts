@@ -2,10 +2,12 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 
 const {
   buildPopupStateMock,
+  notifyActiveTabOfSourceEnabledChangeMock,
   openOptionsPageForRouteMock,
   setSourceEnabledForPopupMock
 } = vi.hoisted(() => ({
   buildPopupStateMock: vi.fn(),
+  notifyActiveTabOfSourceEnabledChangeMock: vi.fn(),
   openOptionsPageForRouteMock: vi.fn(),
   setSourceEnabledForPopupMock: vi.fn()
 }))
@@ -24,6 +26,7 @@ vi.mock("../../../lib/background", async () => {
       startBatchDownload: vi.fn()
     }),
     buildPopupState: buildPopupStateMock,
+    notifyActiveTabOfSourceEnabledChange: notifyActiveTabOfSourceEnabledChangeMock,
     openOptionsPageForRoute: openOptionsPageForRouteMock,
     setSourceEnabledForPopup: setSourceEnabledForPopupMock,
     fetchTorrentForUpload: vi.fn(),
@@ -134,5 +137,42 @@ describe("background popup runtime boundary", () => {
       error: "Invalid SET_SOURCE_ENABLED payload"
     })
     expect(setSourceEnabledForPopupMock).not.toHaveBeenCalled()
+  })
+
+  it("syncs the active tab after a valid source toggle request succeeds", async () => {
+    const listener = onMessageAddListener.mock.calls[0]?.[0]
+    const sendResponse = vi.fn()
+
+    setSourceEnabledForPopupMock.mockResolvedValue({
+      enabledSources: {
+        kisssub: false
+      }
+    })
+    notifyActiveTabOfSourceEnabledChangeMock.mockResolvedValue(undefined)
+
+    listener?.(
+      {
+        type: "SET_SOURCE_ENABLED",
+        sourceId: "kisssub",
+        enabled: false
+      },
+      {},
+      sendResponse
+    )
+
+    await vi.waitFor(() => {
+      expect(sendResponse).toHaveBeenCalledTimes(1)
+    })
+
+    expect(setSourceEnabledForPopupMock).toHaveBeenCalledWith("kisssub", false)
+    expect(notifyActiveTabOfSourceEnabledChangeMock).toHaveBeenCalledWith("kisssub", false)
+    expect(sendResponse).toHaveBeenCalledWith({
+      ok: true,
+      settings: {
+        enabledSources: {
+          kisssub: false
+        }
+      }
+    })
   })
 })

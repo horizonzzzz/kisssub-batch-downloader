@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import {
   BATCH_EVENT,
+  SOURCE_ENABLED_CHANGE_EVENT,
   createRuntimeErrorResponse,
   createRuntimeSuccessResponse,
   sendRuntimeRequest
@@ -84,5 +85,9 @@ describe("runtime message helpers", () => {
 
   it("uses a source-neutral batch event channel name", () => {
     expect(BATCH_EVENT).toBe("ANIME_BT_BATCH_EVENT")
+  })
+
+  it("uses a dedicated source-enablement event channel name", () => {
+    expect(SOURCE_ENABLED_CHANGE_EVENT).toBe("ANIME_BT_SOURCE_ENABLED_CHANGE_EVENT")
   })
 })

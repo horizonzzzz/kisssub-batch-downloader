@@ -63,6 +63,35 @@ export function PopupStatusCard({
     )
   }
 
+  if (!activeTab.enabled) {
+    const siteMeta = POPUP_SUPPORTED_SITE_META[activeTab.sourceId]
+
+    return (
+      <div className="overflow-hidden rounded-2xl border border-amber-200 bg-amber-50 shadow-sm">
+        <div className="p-4">
+          <div className="flex items-center gap-2 text-amber-700 mb-2">
+            <HiOutlineExclamationCircle className="h-5 w-5" />
+            <h2 className="font-semibold">当前站点已关闭</h2>
+          </div>
+          <p className="text-xs text-amber-700/85 leading-relaxed">
+            {siteMeta.displayName} 已在扩展中关闭。重新开启后，页面右下角的批量下载面板和勾选框才会出现。
+          </p>
+        </div>
+        <div className="border-t border-amber-200/60 bg-amber-100/40 px-4 py-3 flex items-center justify-between">
+          <span className="text-sm font-medium text-amber-900">在当前站点启用</span>
+          <Switch
+            aria-label="当前站点启用开关"
+            checked={activeTab.enabled}
+            disabled={actionsDisabled}
+            onCheckedChange={(checked) => {
+              onToggleCurrentSiteEnabled(activeTab.sourceId as SourceId, checked)
+            }}
+          />
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="overflow-hidden rounded-2xl border border-emerald-200 bg-emerald-50 shadow-sm">
       <div className="p-4">
