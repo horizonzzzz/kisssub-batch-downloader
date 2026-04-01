@@ -27,6 +27,11 @@ import { isOptionsRoutePath } from "./lib/shared/options-routes"
 import type { SourceId } from "./lib/shared/types"
 import type { BatchEventPayload } from "./lib/shared/types"
 import { extractSingleItem } from "./lib/sources/extraction"
+import { getSourceAdapterForPage } from "./lib/sources"
+
+// Icon assets for dynamic action icon
+import iconColor from "./assets/icon.png"
+import iconGrayscale from "./assets/icon-grayscale.png"
 
 const batchDownloadManager = createBatchDownloadManager({
   saveSettings,
@@ -37,8 +42,55 @@ const batchDownloadManager = createBatchDownloadManager({
   addTorrentFilesToQb
 })
 
-chrome.runtime.onInstalled.addListener(() => {
-  void ensureSettings()
+/**
+ * Resolves whether a URL belongs to a supported source site.
+ * Returns false for null, empty, chrome:// URLs, or invalid URLs.
+ */
+export function resolveIsSupportedSite(url: string | null | undefined): boolean {
+  if (!url) return false
+  // Chrome internal pages are not supported
+  if (url.startsWith("chrome://") || url.startsWith("chrome-extension://")) return false
+  try {
+    return getSourceAdapterForPage(new URL(url)) !== null
+  } catch {
+    return false
+  }
+}
+
+/**
+ * Updates the extension action icon for a specific tab.
+ * Shows colored icon for supported sites, grayscale for unsupported.
+ */
+export function updateIconForTab(tabId: number, url: string | null | undefined): void {
+  const isSupported = resolveIsSupportedSite(url)
+  const iconPath = isSupported ? iconColor : iconGrayscale
+
+  chrome.action.setIcon({ tabId, path: iconPath }).catch(() => {
+    // Tab may have been closed, ignore error
+  })
+}
+
+// Set initial state on install/update
+chrome.runtime.onInstalled.addListener(async () => {
+  await ensureSettings()
+  // Set icon for currently active tab
+  const [activeTab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true })
+  if (activeTab?.id) {
+    updateIconForTab(activeTab.id, activeTab.url)
+  }
+})
+
+// Update extension icon when tab URL changes
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+  if (changeInfo.url !== undefined) {
+    updateIconForTab(tabId, changeInfo.url)
+  }
+})
+
+// Update extension icon when user switches tabs
+chrome.tabs.onActivated.addListener(async (activeInfo) => {
+  const tab = await chrome.tabs.get(activeInfo.tabId)
+  updateIconForTab(activeInfo.tabId, tab.url)
 })
 
 chrome.runtime.onMessage.addListener((message: unknown, sender, sendResponse) => {
