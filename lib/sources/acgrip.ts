@@ -1,5 +1,6 @@
 import { normalizeTitle } from "../background/preparation"
 import { DEFAULT_SOURCE_DELIVERY_MODES, getSupportedDeliveryModes } from "./delivery"
+import { matchesSourceHost } from "./matching"
 import type { BatchItem, ExtractionResult, Settings } from "../shared/types"
 import { withDetailTab } from "./detail-tab"
 import type { SourceAdapter } from "./types"
@@ -12,7 +13,7 @@ type AcgRipDetailSnapshot = {
 }
 
 function matchesHost(url: URL) {
-  return /(^|\.)acg\.rip$/i.test(url.hostname)
+  return matchesSourceHost("acgrip", url)
 }
 
 function normalizeText(value: string | null | undefined) {

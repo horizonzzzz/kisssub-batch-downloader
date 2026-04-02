@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
+import { CONTENT_SCRIPT_MATCH_PATTERNS } from "../../../lib/sources/matching"
 
 type MockSource = {
   id: string
@@ -110,17 +111,12 @@ describe("content script entry", () => {
     expect(module.default).toBeTypeOf("function")
   })
 
-  it("registers supported bare and www domain variants in content-script matches", async () => {
+  it("registers shared wildcard host match patterns for all supported sources", async () => {
     const module = (await import("../../../contents/source-batch")) as {
       config?: { matches?: string[] }
     }
 
-    expect(module.config?.matches).toContain("https://kisssub.org/*")
-    expect(module.config?.matches).toContain("https://www.kisssub.org/*")
-    expect(module.config?.matches).toContain("https://dongmanhuayuan.com/*")
-    expect(module.config?.matches).toContain("https://www.dongmanhuayuan.com/*")
-    expect(module.config?.matches).toContain("https://bangumi.moe/*")
-    expect(module.config?.matches).toContain("https://www.bangumi.moe/*")
+    expect(module.config?.matches).toEqual(CONTENT_SCRIPT_MATCH_PATTERNS)
   })
 
   it("does not inject UI when the matched source is disabled but still listens for toggle updates", async () => {

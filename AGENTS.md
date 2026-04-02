@@ -101,6 +101,8 @@ The extension injects selection UI into supported list pages, reuses direct magn
   Release helper script that extracts version notes from `CHANGELOG.md`, renames the packaged zip artifact, and exposes the prepared paths to the workflow.
 - `lib/sources/`
   Source adapter registry plus site-specific page matching and extraction logic, source delivery-mode capability helpers, and options-page site metadata.
+- `lib/sources/matching.ts`
+  Shared runtime source host definitions and host-matching helpers. Keep adapter and popup/runtime host recognition here; the content-script `config.matches` array must stay as a static literal in `contents/source-batch.tsx` for Plasmo to analyze correctly, and tests must keep both sides aligned.
 - `tests/`
   Unit, component, and Playwright end-to-end coverage.
 - `lib/history/`
@@ -179,6 +181,7 @@ Use this section as the shortest runtime-oriented guide to the current code layo
 
 - Runtime protocol constants and shared message/request types belong in `lib/shared/`.
 - Source-specific parsing, page matching, and capability defaults belong in `lib/sources/`.
+- Source host aliases and runtime host matching belong in `lib/sources/matching.ts`; keep `contents/source-batch.tsx` `config.matches` as a static wildcard literal for Plasmo, and use tests to prevent it from drifting away from the shared runtime host definitions.
 - Batch orchestration belongs in `lib/background/`; source adapters should not take over job-level concerns.
 - `lib/settings/` may normalize or persist settings, but qB/network behavior belongs outside it.
 - Filter rules are stored in `Settings`, but matching logic must remain in `lib/filter-rules/`; do not scatter rule judgments across options components or source adapters.

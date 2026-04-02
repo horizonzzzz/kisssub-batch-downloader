@@ -58,6 +58,22 @@ describe("popup background helpers", () => {
     expect(state.helpUrl).toBe("https://github.com/horizonzzzz/anime-bt-batch-downloader")
   })
 
+  it("treats www.acg.rip list pages as supported active tabs", async () => {
+    const state = await buildPopupState({
+      getSettings: async () => createSettings(),
+      getActiveTabUrl: async () => "https://www.acg.rip/",
+      getExtensionVersion: () => "1.4.0"
+    })
+
+    expect(state.activeTab).toEqual({
+      url: "https://www.acg.rip/",
+      sourceId: "acgrip",
+      supported: true,
+      enabled: true
+    })
+    expect(state.qbConnectionStatus).toBe("checking")
+  })
+
   it("keeps unsupported pages idle even when qB credentials are explicitly changed", async () => {
     const state = await buildPopupState({
       getSettings: async () =>

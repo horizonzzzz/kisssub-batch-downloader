@@ -72,6 +72,14 @@ describe("resolveIsSupportedSite", () => {
     expect(result).toBe(true)
   })
 
+  it("returns true for supported www.acgrip URL", async () => {
+    const { resolveIsSupportedSite } = await import("../../../background")
+
+    const result = resolveIsSupportedSite("https://www.acg.rip/")
+
+    expect(result).toBe(true)
+  })
+
   it("returns false for unsupported URL", async () => {
     const { resolveIsSupportedSite } = await import("../../../background")
 

@@ -27,23 +27,16 @@ export default function SourceBatchContentScript() {
   return null
 }
 
+// Keep these patterns as a local literal so Plasmo can statically analyze them.
+const CONTENT_SCRIPT_MATCH_PATTERNS = [
+  "*://*.kisssub.org/*",
+  "*://*.dongmanhuayuan.com/*",
+  "*://*.acg.rip/*",
+  "*://*.bangumi.moe/*"
+]
+
 export const config: PlasmoCSConfig = {
-  matches: [
-    "http://kisssub.org/*",
-    "https://kisssub.org/*",
-    "http://www.kisssub.org/*",
-    "https://www.kisssub.org/*",
-    "http://dongmanhuayuan.com/*",
-    "https://dongmanhuayuan.com/*",
-    "http://www.dongmanhuayuan.com/*",
-    "https://www.dongmanhuayuan.com/*",
-    "http://www.bangumi.moe/*",
-    "https://www.bangumi.moe/*",
-    "http://acg.rip/*",
-    "https://acg.rip/*",
-    "http://bangumi.moe/*",
-    "https://bangumi.moe/*"
-  ],
+  matches: CONTENT_SCRIPT_MATCH_PATTERNS,
   run_at: "document_idle"
 }
 

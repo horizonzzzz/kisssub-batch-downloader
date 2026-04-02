@@ -15,6 +15,7 @@ describe("source registry", () => {
       "dongmanhuayuan"
     )
     expect(getSourceAdapterForPage(new URL("https://acg.rip/"))?.id).toBe("acgrip")
+    expect(getSourceAdapterForPage(new URL("https://www.acg.rip/"))?.id).toBe("acgrip")
     expect(getSourceAdapterForPage(new URL("https://acg.rip/page/2"))?.id).toBe("acgrip")
     expect(getSourceAdapterForPage(new URL("https://acg.rip/1"))?.id).toBe("acgrip")
     expect(getSourceAdapterForPage(new URL("https://acg.rip/series/1170"))?.id).toBe("acgrip")
