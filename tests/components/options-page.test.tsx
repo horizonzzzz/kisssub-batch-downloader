@@ -133,7 +133,9 @@ describe("OptionsPage", () => {
     const secondRender = render(<OptionsPage api={api} />)
 
     expect(await screen.findByRole("heading", { name: "过滤规则" })).toBeInTheDocument()
-    expect(screen.getByRole("button", { name: "新建规则" })).toBeInTheDocument()
+    expect(screen.getByText("策略工作台")).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "新建策略组" })).toBeInTheDocument()
+    expect(screen.getByText("规则测试台")).toBeInTheDocument()
 
     secondRender.unmount()
     window.location.hash = "#/overview"
@@ -143,50 +145,73 @@ describe("OptionsPage", () => {
     expect(screen.getAllByRole("button", { name: "访问站点" })).toHaveLength(4)
   })
 
-  it("creates and saves a filter rule from the filters route", async () => {
+  it(
+    "keeps filter workbench edits local when saving settings",
+    async () => {
+      const user = userEvent.setup()
+      const api = createOptionsApi({
+        saveSettings: vi.fn().mockImplementation(async (nextSettings) => nextSettings)
+      })
+
+      render(<OptionsPage api={api} />)
+
+      expect(await screen.findByDisplayValue("http://127.0.0.1:17474")).toBeInTheDocument()
+
+      await user.click(screen.getByRole("button", { name: "过滤规则" }))
+
+      expect(screen.getByRole("heading", { name: "过滤规则" })).toBeInTheDocument()
+      await user.click(screen.getByRole("button", { name: "新建策略组" }))
+
+      await user.type(screen.getByLabelText("策略组名称"), "画质过滤")
+      await user.click(screen.getByRole("button", { name: "保存策略组" }))
+
+      expect(screen.getByText("画质过滤")).toBeInTheDocument()
+
+      await user.click(screen.getByRole("button", { name: "添加规则" }))
+
+      await user.type(screen.getByLabelText("规则名称"), "排除 RAW")
+      await user.type(screen.getByLabelText("条件值 1"), "RAW")
+
+      await user.click(screen.getByRole("button", { name: "保存规则" }))
+
+      expect(screen.getByText("排除 RAW")).toBeInTheDocument()
+
+      await user.click(screen.getByRole("button", { name: "保存所有设置" }))
+
+      await waitFor(() => {
+        expect(api.saveSettings).toHaveBeenCalledWith(
+          expect.objectContaining({
+            filterRules: []
+          })
+        )
+      })
+    },
+    10000
+  )
+
+  it("focuses and closes the strategy-group sheet with keyboard controls", async () => {
     const user = userEvent.setup()
-    const api = createOptionsApi({
-      saveSettings: vi.fn().mockImplementation(async (nextSettings) => nextSettings)
-    })
+    const api = createOptionsApi()
 
     render(<OptionsPage api={api} />)
 
     expect(await screen.findByDisplayValue("http://127.0.0.1:17474")).toBeInTheDocument()
 
     await user.click(screen.getByRole("button", { name: "过滤规则" }))
+    await user.click(screen.getByRole("button", { name: "新建策略组" }))
 
-    expect(screen.getByRole("heading", { name: "过滤规则" })).toBeInTheDocument()
-    await user.click(screen.getByRole("button", { name: "新建规则" }))
+    expect(await screen.findByRole("dialog", { name: "新建策略组" })).toBeInTheDocument()
+    expect(screen.getByLabelText("策略组名称")).toHaveFocus()
 
-    await user.type(screen.getByLabelText("规则名称"), "排除 RAW")
-    await user.click(screen.getByRole("radio", { name: "排除" }))
-    await user.type(screen.getByLabelText("标题排除"), "RAW")
-
-    await user.click(screen.getByRole("button", { name: "保存规则" }))
-
-    expect(screen.getByRole("button", { name: "拖拽排序 排除 RAW" })).toBeInTheDocument()
-
-    await user.click(screen.getByRole("button", { name: "保存所有设置" }))
+    await user.keyboard("{Escape}")
 
     await waitFor(() => {
-      expect(api.saveSettings).toHaveBeenCalledWith(
-        expect.objectContaining({
-          filterRules: [
-            expect.objectContaining({
-              name: "排除 RAW",
-              action: "exclude",
-              conditions: expect.objectContaining({
-                titleExcludes: ["RAW"]
-              })
-            })
-          ]
-        })
-      )
+      expect(screen.queryByRole("dialog", { name: "新建策略组" })).not.toBeInTheDocument()
     })
   })
 
   it(
-    "confirms before deleting a filter rule",
+    "runs the local prototype test bench without requiring persisted filter rules",
     async () => {
     const user = userEvent.setup()
     const api = createOptionsApi()
@@ -196,33 +221,13 @@ describe("OptionsPage", () => {
     expect(await screen.findByDisplayValue("http://127.0.0.1:17474")).toBeInTheDocument()
 
     await user.click(screen.getByRole("button", { name: "过滤规则" }))
-    await user.click(screen.getByRole("button", { name: "新建规则" }))
 
-    await user.type(screen.getByLabelText("规则名称"), "排除 RAW")
-    await user.click(screen.getByRole("radio", { name: "排除" }))
-    await user.type(screen.getByLabelText("标题排除"), "RAW")
-    await user.click(screen.getByRole("button", { name: "保存规则" }))
+    await user.type(screen.getByLabelText("资源标题"), "[SubsPlease] Frieren - 01 (720p) [RAW].mkv")
+    await user.click(screen.getByRole("button", { name: "开始测试" }))
 
-    expect(screen.getByRole("button", { name: "拖拽排序 排除 RAW" })).toBeInTheDocument()
-
-    await user.click(screen.getByRole("button", { name: "删除 排除 RAW" }))
-
-    expect(await screen.findByRole("alertdialog", { name: "删除过滤规则" })).toBeInTheDocument()
-    expect(screen.getByText("确定删除规则“排除 RAW”吗？此操作不可恢复。")).toBeInTheDocument()
-
-    await user.click(screen.getByRole("button", { name: "取消" }))
-
-    await waitFor(() => {
-      expect(screen.queryByRole("alertdialog", { name: "删除过滤规则" })).not.toBeInTheDocument()
-    })
-    expect(screen.getByRole("button", { name: "拖拽排序 排除 RAW" })).toBeInTheDocument()
-
-    await user.click(screen.getByRole("button", { name: "删除 排除 RAW" }))
-    await user.click(screen.getByRole("button", { name: "删除" }))
-
-    await waitFor(() => {
-      expect(screen.queryByRole("button", { name: "拖拽排序 排除 RAW" })).not.toBeInTheDocument()
-    })
+    expect(await screen.findByText("原型阶段结果，仅用于界面预览。")).toBeInTheDocument()
+    expect(screen.getByText("最终结果")).toBeInTheDocument()
+    expect(screen.getByText(/最近测试/)).toBeInTheDocument()
     },
     10000
   )

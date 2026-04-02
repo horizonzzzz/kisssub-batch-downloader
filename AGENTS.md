@@ -13,6 +13,9 @@ The extension injects selection UI into supported list pages, reuses direct magn
   - `Connection & Basic Settings`
   - `Site Configuration`
   - `Filter Rules`
+    - currently rendered as a prototype `Strategy Workbench` UI with local-only state
+    - current page interactions do not write back to saved `filterRules` yet
+    - background/runtime filtering still uses the existing persisted `filterRules` model until later wiring work lands
   - `Batch History`
   - `Source Overview`
 - Supported popup surface responsibilities:
@@ -77,7 +80,7 @@ The extension injects selection UI into supported list pages, reuses direct magn
   Contents-only Tailwind/shadcn-style primitives for the injected batch panel and selection checkbox visuals. Keep these isolated from `components/ui/` so third-party page injection stays on its own sizing, reset contract, and `data-*` test-anchor surface.
 - `components/options/`
   Source of truth for the options workspace shell, hash-route config, form hooks/schema, shared options-only form fragments under `components/options/form/`, and the `general` / `sites` / `overview` page implementations.
-  Filtering rules UI lives under `components/options/pages/filters/` and participates in the same form-save flow as other editable options routes.
+  Filtering rules UI lives under `components/options/pages/filters/` and currently hosts the prototype strategy-workbench surface with local-only state plus side-panel editors; it does not yet participate in the shared form-save flow for persisted `filterRules`.
 - `components/ui/`
   Tailwind-first primitive components used by the options workspace, including buttons, inputs, cards, badges, alerts, switches, and radio groups.
 - `contents/`

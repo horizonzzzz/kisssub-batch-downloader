@@ -1,13 +1,22 @@
 import { useState } from "react"
 
-import { DndContext, PointerSensor, closestCenter, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core"
-import { CSS } from "@dnd-kit/utilities"
-import { SortableContext, arrayMove, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable"
-import { useFieldArray, useFormContext } from "react-hook-form"
-import { HiOutlineArrowDown, HiOutlineArrowUp, HiOutlineBars3, HiOutlinePencilSquare, HiOutlineTrash } from "react-icons/hi2"
+import {
+  DndContext,
+  KeyboardSensor,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+  type DragEndEvent
+} from "@dnd-kit/core"
+import {
+  SortableContext,
+  arrayMove,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy
+} from "@dnd-kit/sortable"
+import { HiOutlineInformationCircle, HiOutlinePlus } from "react-icons/hi2"
 
-import type { FilterRule } from "../../../../lib/shared/types"
-import type { SettingsFormInput } from "../../schema/settings-form"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -21,297 +30,435 @@ import {
   Button,
   Card
 } from "../../../ui"
-import { FilterRuleDialog } from "./FilterRuleDialog"
+import { FilterGroupDialog } from "./FilterGroupDialog"
+import { FilterRuleBuilderDialog } from "./FilterRuleBuilderDialog"
+import { FilterWorkbenchGroupCard } from "./FilterWorkbenchCards"
+import { FilterWorkbenchTestBench } from "./FilterWorkbenchTestBench"
+import {
+  cloneWorkbenchRule,
+  createPresetGroup,
+  runPrototypeWorkbenchTest,
+  type FilterWorkbenchGroup,
+  type FilterWorkbenchRule,
+  type FilterWorkbenchTestInput,
+  type FilterWorkbenchTestResult
+} from "./filter-workbench"
 
-function describeRule(rule: FilterRule): string[] {
-  const sections: string[] = []
-
-  if (rule.conditions.titleIncludes.length > 0) {
-    sections.push(`标题包含：${rule.conditions.titleIncludes.join(", ")}`)
-  }
-
-  if (rule.conditions.titleExcludes.length > 0) {
-    sections.push(`标题排除：${rule.conditions.titleExcludes.join(", ")}`)
-  }
-
-  if (rule.conditions.subgroupIncludes.length > 0) {
-    sections.push(`字幕组：${rule.conditions.subgroupIncludes.join(", ")}`)
-  }
-
-  return sections
+type PendingDeleteRule = {
+  groupIndex: number
+  ruleIndex: number
 }
 
-type SortableFilterRuleCardProps = {
-  rule: FilterRule
-  index: number
-  total: number
-  onMove: (index: number, direction: -1 | 1) => void
-  onEdit: () => void
-  onDelete: () => void
-  onToggleEnabled: (enabled: boolean) => void
-}
-
-function SortableFilterRuleCard({
-  rule,
-  index,
-  total,
-  onMove,
-  onEdit,
-  onDelete,
-  onToggleEnabled
-}: SortableFilterRuleCardProps) {
-  const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } =
-    useSortable({
-      id: rule.id
-    })
-
-  return (
-    <div
-      ref={setNodeRef}
-      style={{
-        transform: CSS.Transform.toString(transform),
-        transition
-      }}>
-      <Card className={isDragging ? "opacity-80 shadow-lg" : undefined}>
-        <div className="flex flex-col gap-4 px-6 py-5">
-        <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-          <div className="space-y-3">
-            <div className="flex flex-wrap items-center gap-2">
-              <h3 className="text-base font-medium text-zinc-900">{rule.name}</h3>
-              <Badge variant={rule.enabled ? "success" : "muted"}>
-                {rule.enabled ? "已启用" : "已停用"}
-              </Badge>
-              <Badge variant={rule.action === "exclude" ? "warning" : "brand"}>
-                {rule.action === "exclude" ? "排除" : "保留"}
-              </Badge>
-            </div>
-
-            <div className="flex flex-wrap gap-2 text-xs text-zinc-600">
-              {describeRule(rule).map((item) => (
-                <span key={item} className="rounded-md border border-zinc-200 bg-zinc-50 px-2.5 py-1.5">
-                  {item}
-                </span>
-              ))}
-            </div>
-
-            <p className="text-xs text-zinc-500">生效站点：{rule.sourceIds.join(", ")}</p>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2">
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              aria-label={`拖拽排序 ${rule.name}`}
-              ref={setActivatorNodeRef}
-              {...attributes}
-              {...listeners}>
-              <HiOutlineBars3 className="h-4 w-4" />
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              aria-label={`上移 ${rule.name}`}
-              disabled={index === 0}
-              onClick={() => onMove(index, -1)}>
-              <HiOutlineArrowUp className="h-4 w-4" />
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              aria-label={`下移 ${rule.name}`}
-              disabled={index === total - 1}
-              onClick={() => onMove(index, 1)}>
-              <HiOutlineArrowDown className="h-4 w-4" />
-            </Button>
-            <Button type="button" variant="ghost" size="sm" aria-label={`编辑 ${rule.name}`} onClick={onEdit}>
-              <HiOutlinePencilSquare className="h-4 w-4" />
-            </Button>
-            <Button type="button" variant="ghost" size="sm" aria-label={`删除 ${rule.name}`} onClick={onDelete}>
-              <HiOutlineTrash className="h-4 w-4" />
-            </Button>
-            <Button
-              type="button"
-              variant={rule.enabled ? "secondary" : "outline"}
-              size="sm"
-              onClick={() => onToggleEnabled(!rule.enabled)}>
-              {rule.enabled ? "停用" : "启用"}
-            </Button>
-          </div>
-        </div>
-        </div>
-      </Card>
-    </div>
-  )
+type RuleEditorState = {
+  groupIndex: number
+  ruleIndex: number | null
 }
 
 export function FiltersPage() {
-  const { control, getValues, setValue } = useFormContext<SettingsFormInput>()
-  const { fields, replace, update, move } = useFieldArray({
-    control,
-    name: "filterRules",
-    keyName: "fieldKey"
+  const [groups, setGroups] = useState<FilterWorkbenchGroup[]>([])
+  const [editingGroupIndex, setEditingGroupIndex] = useState<number | null>(null)
+  const [creatingGroup, setCreatingGroup] = useState(false)
+  const [editingRule, setEditingRule] = useState<RuleEditorState | null>(null)
+  const [pendingDeleteGroupIndex, setPendingDeleteGroupIndex] = useState<
+    number | null
+  >(null)
+  const [pendingDeleteRule, setPendingDeleteRule] =
+    useState<PendingDeleteRule | null>(null)
+  const [testInput, setTestInput] = useState<FilterWorkbenchTestInput>({
+    title: "",
+    source: "kisssub",
+    subgroup: ""
   })
-  const [editingIndex, setEditingIndex] = useState<number | null>(null)
-  const [creating, setCreating] = useState(false)
-  const [pendingDeleteIndex, setPendingDeleteIndex] = useState<number | null>(null)
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }))
-
-  const reindexRules = (rules: FilterRule[]) =>
-    rules.map((rule, index) => ({
-      ...rule,
-      order: index
-    }))
-
-  const handleToggleEnabled = (index: number, enabled: boolean) => {
-    const current = getValues(`filterRules.${index}`)
-    if (!current) {
-      return
-    }
-
-    update(index, {
-      ...current,
-      enabled
+  const [testResult, setTestResult] = useState<FilterWorkbenchTestResult | null>(
+    null
+  )
+  const groupSensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 8 }
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates
     })
-  }
+  )
 
-  const handleMove = (index: number, direction: -1 | 1) => {
-    const currentRules = getValues("filterRules") as FilterRule[]
-    const nextIndex = index + direction
-    if (nextIndex < 0 || nextIndex >= currentRules.length) {
-      return
-    }
+  const enabledGroupsCount = groups.filter((group) => group.enabled).length
+  const totalRulesCount = groups.reduce(
+    (count, group) => count + group.rules.length,
+    0
+  )
 
-    const reordered = reindexRules(arrayMove(currentRules, index, nextIndex))
-    move(index, nextIndex)
-    setValue("filterRules", reordered, { shouldDirty: true })
-  }
-
-  const handleDragEnd = (event: DragEndEvent) => {
+  const handleGroupDragEnd = (event: DragEndEvent) => {
     const { active, over } = event
+
     if (!over || active.id === over.id) {
       return
     }
 
-    const currentRules = getValues("filterRules") as FilterRule[]
-    const oldIndex = currentRules.findIndex((rule) => rule.id === active.id)
-    const newIndex = currentRules.findIndex((rule) => rule.id === over.id)
+    const oldIndex = groups.findIndex((group) => group.id === active.id)
+    const newIndex = groups.findIndex((group) => group.id === over.id)
 
     if (oldIndex < 0 || newIndex < 0 || oldIndex === newIndex) {
       return
     }
 
-    const reordered = reindexRules(arrayMove(currentRules, oldIndex, newIndex))
-    replace(reordered)
-    setValue("filterRules", reordered, { shouldDirty: true })
+    setGroups((current) => arrayMove(current, oldIndex, newIndex))
   }
 
-  const handleDelete = (index: number) => {
-    const nextRules = reindexRules(
-      (getValues("filterRules") as FilterRule[]).filter((_, currentIndex) => currentIndex !== index)
-    )
-    replace(nextRules)
-    setValue("filterRules", nextRules, { shouldDirty: true })
-  }
+  const handleSaveGroup = (group: FilterWorkbenchGroup) => {
+    setGroups((current) => {
+      if (editingGroupIndex === null) {
+        return [...current, group]
+      }
 
-  const handleUpdateRule = (index: number, rule: FilterRule) => {
-    update(index, rule)
-    setValue("filterRules", reindexRules(getValues("filterRules") as FilterRule[]), {
-      shouldDirty: true
+      return current.map((entry, index) =>
+        index === editingGroupIndex ? group : entry
+      )
     })
+    setCreatingGroup(false)
+    setEditingGroupIndex(null)
   }
 
-  const handleAppendRule = (rule: FilterRule) => {
-    const nextRules = reindexRules([...(getValues("filterRules") as FilterRule[]), rule])
-    replace(nextRules)
-    setValue("filterRules", nextRules, { shouldDirty: true })
+  const handleDeleteGroup = (groupIndex: number) => {
+    setGroups((current) =>
+      current.filter((_, currentIndex) => currentIndex !== groupIndex)
+    )
   }
 
-  const pendingDeleteRule = pendingDeleteIndex !== null ? ((getValues(`filterRules.${pendingDeleteIndex}`) as FilterRule) ?? null) : null
+  const handleSaveRule = (target: RuleEditorState, rule: FilterWorkbenchRule) => {
+    setGroups((current) =>
+      current.map((group, groupIndex) => {
+        if (groupIndex !== target.groupIndex) {
+          return group
+        }
+
+        if (target.ruleIndex === null) {
+          return {
+            ...group,
+            rules: [...group.rules, rule]
+          }
+        }
+
+        return {
+          ...group,
+          rules: group.rules.map((entry, ruleIndex) =>
+            ruleIndex === target.ruleIndex ? rule : entry
+          )
+        }
+      })
+    )
+    setEditingRule(null)
+  }
+
+  const handleDeleteRule = (groupIndex: number, ruleIndex: number) => {
+    setGroups((current) =>
+      current.map((group, currentIndex) => {
+        if (currentIndex !== groupIndex) {
+          return group
+        }
+
+        return {
+          ...group,
+          rules: group.rules.filter((_, currentRuleIndex) => currentRuleIndex !== ruleIndex)
+        }
+      })
+    )
+  }
+
+  const handleCopyRule = (groupIndex: number, ruleIndex: number) => {
+    setGroups((current) =>
+      current.map((group, currentIndex) => {
+        if (currentIndex !== groupIndex) {
+          return group
+        }
+
+        const originalRule = group.rules[ruleIndex]
+        if (!originalRule) {
+          return group
+        }
+
+        const copiedRule = cloneWorkbenchRule(originalRule)
+        const nextRules = [...group.rules]
+        nextRules.splice(ruleIndex + 1, 0, copiedRule)
+
+        return {
+          ...group,
+          rules: nextRules
+        }
+      })
+    )
+  }
+
+  const handleToggleGroupEnabled = (groupIndex: number, enabled: boolean) => {
+    setGroups((current) =>
+      current.map((group, currentIndex) =>
+        currentIndex === groupIndex ? { ...group, enabled } : group
+      )
+    )
+  }
+
+  const handleToggleRuleEnabled = (
+    groupIndex: number,
+    ruleIndex: number,
+    enabled: boolean
+  ) => {
+    setGroups((current) =>
+      current.map((group, currentIndex) => {
+        if (currentIndex !== groupIndex) {
+          return group
+        }
+
+        return {
+          ...group,
+          rules: group.rules.map((rule, currentRuleIndex) =>
+            currentRuleIndex === ruleIndex ? { ...rule, enabled } : rule
+          )
+        }
+      })
+    )
+  }
+
+  const handleReorderRules = (
+    groupIndex: number,
+    reorderedRules: FilterWorkbenchRule[]
+  ) => {
+    setGroups((current) =>
+      current.map((group, currentIndex) =>
+        currentIndex === groupIndex
+          ? { ...group, rules: reorderedRules }
+          : group
+      )
+    )
+  }
+
+  const handleImportPreset = () => {
+    setGroups((current) => [...current, createPresetGroup()])
+  }
+
+  const handleRunPrototypeTest = () => {
+    setTestResult(runPrototypeWorkbenchTest(testInput, groups))
+  }
+
+  const pendingDeleteGroup =
+    pendingDeleteGroupIndex !== null ? groups[pendingDeleteGroupIndex] : null
+  const pendingDeleteRuleValue =
+    pendingDeleteRule !== null
+      ? groups[pendingDeleteRule.groupIndex]?.rules[pendingDeleteRule.ruleIndex]
+      : null
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8" data-testid="filters-workbench">
       <Card>
-        <div className="flex flex-col gap-4 px-6 py-6 md:flex-row md:items-start md:justify-between">
-          <div className="space-y-2">
-            <h2 className="text-lg font-medium text-zinc-900">提交前自动筛选</h2>
-            <p className="text-sm leading-6 text-zinc-500">
-              规则会按列表顺序依次执行；同一规则内所有已填写条件都满足时才命中，后命中的规则会覆盖前面的结果。
-            </p>
+        <div className="flex flex-col gap-5 px-6 py-6">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <div className="space-y-2">
+              <div className="flex flex-wrap items-center gap-3">
+                <h2 className="text-2xl font-semibold tracking-tight text-zinc-900">
+                  策略工作台
+                </h2>
+                <Badge variant="warning">原型阶段</Badge>
+              </div>
+              <p className="max-w-2xl text-sm leading-6 text-zinc-500">
+                过滤模块正在迁移为“策略组 + 规则构建器”信息架构。本页仅承载最终交互原型和本地临时态演示，便于后续接入真实规则引擎。
+              </p>
+            </div>
+
+            <div className="flex flex-wrap gap-3">
+              <Button type="button" variant="outline" onClick={handleImportPreset}>
+                从模板库导入
+              </Button>
+              <Button
+                type="button"
+                onClick={() => {
+                  setEditingGroupIndex(null)
+                  setCreatingGroup(true)
+                }}>
+                <HiOutlinePlus className="h-4 w-4" />
+                新建策略组
+              </Button>
+            </div>
           </div>
-          <Button type="button" onClick={() => setCreating(true)}>
-            新建规则
-          </Button>
+
+          <div className="flex flex-wrap gap-3">
+            <div className="rounded-full border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-600">
+              默认策略：<span className="font-medium text-zinc-900">放行</span>
+            </div>
+            <div className="rounded-full border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-600">
+              已启用 <span className="font-medium text-zinc-900">{enabledGroupsCount}</span> 个策略组
+            </div>
+            <div className="rounded-full border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-600">
+              共 <span className="font-medium text-zinc-900">{totalRulesCount}</span> 条规则
+            </div>
+            {testResult?.state === "result" ? (
+              <div className="rounded-full border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-600">
+                最近测试：
+                <span
+                  className={[
+                    "ml-1 font-medium",
+                    testResult.accepted ? "text-emerald-700" : "text-rose-700"
+                  ].join(" ")}>
+                  {testResult.label}
+                </span>
+              </div>
+            ) : null}
+          </div>
+
+          <div className="rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm leading-6 text-blue-900">
+            当前页面的增删改拖拽只在本次会话内生效，不会写回现有的 `filterRules`
+            设置，也不会影响后台批量提交流程。
+          </div>
         </div>
       </Card>
 
-      {fields.length === 0 ? (
-        <Card>
-          <div className="grid gap-3 px-6 py-8 text-center">
-            <h3 className="text-base font-medium text-zinc-900">还没有过滤规则</h3>
-            <p className="text-sm leading-6 text-zinc-500">
-              先创建第一条规则，例如排除 RAW 或优先保留特定字幕组。
-            </p>
-          </div>
-        </Card>
-      ) : (
-        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-          <SortableContext
-            items={fields.map((field) => field.id)}
-            strategy={verticalListSortingStrategy}>
-            <div className="grid gap-4">
-              {fields.map((field, index) => {
-                const rule = getValues(`filterRules.${index}`) as FilterRule
-
-                return (
-                  <SortableFilterRuleCard
-                    key={(field as FilterRule & { fieldKey: string }).fieldKey}
-                    rule={rule}
-                    index={index}
-                    total={fields.length}
-                    onMove={handleMove}
-                    onEdit={() => setEditingIndex(index)}
-                    onDelete={() => setPendingDeleteIndex(index)}
-                    onToggleEnabled={(enabled) => handleToggleEnabled(index, enabled)}
-                  />
-                )
-              })}
+      <div className="grid gap-8 xl:grid-cols-[minmax(0,1.75fr)_minmax(320px,1fr)]">
+        <section className="space-y-5">
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div>
+              <h3 className="text-lg font-semibold text-zinc-900">
+                执行策略编排
+              </h3>
+              <p className="mt-1 text-sm leading-6 text-zinc-500">
+                从上到下整理策略组和组内规则，优先保证原型中的布局、分层与操作反馈。
+              </p>
             </div>
-          </SortableContext>
-        </DndContext>
-      )}
+            <div className="flex items-center gap-2 text-sm text-zinc-500">
+              <HiOutlineInformationCircle className="h-4 w-4" />
+              命中即停止的真实执行逻辑将在后续版本接入。
+            </div>
+          </div>
 
-      <FilterRuleDialog
-        open={creating}
-        order={fields.length}
-        onClose={() => setCreating(false)}
-        onSave={handleAppendRule}
+          {groups.length === 0 ? (
+            <Card>
+              <div className="grid gap-4 px-6 py-10 text-center">
+                <h4 className="text-base font-medium text-zinc-900">
+                  还没有策略组
+                </h4>
+                <p className="text-sm leading-6 text-zinc-500">
+                  先创建一个策略组，或者导入模板库里的原型样例，开始搭建新的过滤工作台。
+                </p>
+                <div className="flex flex-wrap justify-center gap-3">
+                  <Button type="button" variant="outline" onClick={handleImportPreset}>
+                    从模板库导入
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={() => {
+                      setEditingGroupIndex(null)
+                      setCreatingGroup(true)
+                    }}>
+                    <HiOutlinePlus className="h-4 w-4" />
+                    开始创建策略组
+                  </Button>
+                </div>
+              </div>
+            </Card>
+          ) : (
+            <DndContext
+              sensors={groupSensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleGroupDragEnd}>
+              <SortableContext
+                items={groups.map((group) => group.id)}
+                strategy={verticalListSortingStrategy}>
+                <div className="grid gap-4">
+                  {groups.map((group, groupIndex) => (
+                    <FilterWorkbenchGroupCard
+                      key={group.id}
+                      group={group}
+                      index={groupIndex}
+                      onEdit={() => {
+                        setCreatingGroup(false)
+                        setEditingGroupIndex(groupIndex)
+                      }}
+                      onDelete={() => setPendingDeleteGroupIndex(groupIndex)}
+                      onToggleEnabled={(enabled) =>
+                        handleToggleGroupEnabled(groupIndex, enabled)
+                      }
+                      onAddRule={() =>
+                        setEditingRule({
+                          groupIndex,
+                          ruleIndex: null
+                        })
+                      }
+                      onEditRule={(ruleIndex) =>
+                        setEditingRule({
+                          groupIndex,
+                          ruleIndex
+                        })
+                      }
+                      onDeleteRule={(ruleIndex) =>
+                        setPendingDeleteRule({
+                          groupIndex,
+                          ruleIndex
+                        })
+                      }
+                      onCopyRule={(ruleIndex) =>
+                        handleCopyRule(groupIndex, ruleIndex)
+                      }
+                      onToggleRuleEnabled={(ruleIndex, enabled) =>
+                        handleToggleRuleEnabled(groupIndex, ruleIndex, enabled)
+                      }
+                      onReorderRules={(rules) =>
+                        handleReorderRules(groupIndex, rules)
+                      }
+                    />
+                  ))}
+                </div>
+              </SortableContext>
+            </DndContext>
+          )}
+        </section>
+
+        <FilterWorkbenchTestBench
+          value={testInput}
+          result={testResult}
+          onChange={setTestInput}
+          onRun={handleRunPrototypeTest}
+        />
+      </div>
+
+      <FilterGroupDialog
+        open={creatingGroup || editingGroupIndex !== null}
+        initialGroup={
+          editingGroupIndex !== null ? groups[editingGroupIndex] : undefined
+        }
+        onClose={() => {
+          setCreatingGroup(false)
+          setEditingGroupIndex(null)
+        }}
+        onSave={handleSaveGroup}
       />
 
-      <FilterRuleDialog
-        open={editingIndex !== null}
-        initialRule={editingIndex !== null ? ((getValues(`filterRules.${editingIndex}`) as FilterRule) ?? undefined) : undefined}
-        order={editingIndex ?? 0}
-        onClose={() => setEditingIndex(null)}
+      <FilterRuleBuilderDialog
+        open={editingRule !== null}
+        initialRule={
+          editingRule !== null && editingRule.ruleIndex !== null
+            ? groups[editingRule.groupIndex]?.rules[editingRule.ruleIndex]
+            : undefined
+        }
+        onClose={() => setEditingRule(null)}
         onSave={(rule) => {
-          if (editingIndex === null) {
+          if (!editingRule) {
             return
           }
 
-          handleUpdateRule(editingIndex, rule)
+          handleSaveRule(editingRule, rule)
         }}
       />
 
-      <AlertDialog open={pendingDeleteIndex !== null} onOpenChange={(open) => !open && setPendingDeleteIndex(null)}>
+      <AlertDialog
+        open={pendingDeleteGroupIndex !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setPendingDeleteGroupIndex(null)
+          }
+        }}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>删除过滤规则</AlertDialogTitle>
+            <AlertDialogTitle>删除策略组</AlertDialogTitle>
             <AlertDialogDescription>
-              {pendingDeleteRule
-                ? `确定删除规则“${pendingDeleteRule.name}”吗？此操作不可恢复。`
-                : "确定删除这条过滤规则吗？此操作不可恢复。"}
+              {pendingDeleteGroup
+                ? `确定删除策略组“${pendingDeleteGroup.name}”以及其下的全部本地规则吗？`
+                : "确定删除这个策略组吗？"}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -319,12 +466,49 @@ export function FiltersPage() {
             <AlertDialogAction
               onClick={(event) => {
                 event.preventDefault()
-                if (pendingDeleteIndex === null) {
+                if (pendingDeleteGroupIndex === null) {
                   return
                 }
 
-                handleDelete(pendingDeleteIndex)
-                setPendingDeleteIndex(null)
+                handleDeleteGroup(pendingDeleteGroupIndex)
+                setPendingDeleteGroupIndex(null)
+              }}>
+              删除
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog
+        open={pendingDeleteRule !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setPendingDeleteRule(null)
+          }
+        }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>删除规则</AlertDialogTitle>
+            <AlertDialogDescription>
+              {pendingDeleteRuleValue
+                ? `确定删除规则“${pendingDeleteRuleValue.name || "未命名规则"}”吗？`
+                : "确定删除这条规则吗？"}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>取消</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(event) => {
+                event.preventDefault()
+                if (!pendingDeleteRule) {
+                  return
+                }
+
+                handleDeleteRule(
+                  pendingDeleteRule.groupIndex,
+                  pendingDeleteRule.ruleIndex
+                )
+                setPendingDeleteRule(null)
               }}>
               删除
             </AlertDialogAction>

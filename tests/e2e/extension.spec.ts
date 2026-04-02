@@ -296,7 +296,7 @@ test("options page saves settings through the background worker", async () => {
   }
 })
 
-test("options page saves filter rules through the background worker", async () => {
+test("options page keeps filter workbench edits local after saving settings", async () => {
   const extension = await launchExtensionContext()
 
   try {
@@ -305,17 +305,35 @@ test("options page saves filter rules through the background worker", async () =
       heading: "过滤规则"
     })
 
-    await page.getByRole("button", { name: "新建规则" }).click()
+    await expect(page.getByText("策略工作台")).toBeVisible()
+
+    await page.getByRole("button", { name: "新建策略组" }).click()
+    await page.getByLabel("策略组名称").fill("画质过滤")
+    await page.getByRole("button", { name: "保存策略组" }).click()
+
+    await expect(page.getByText("画质过滤")).toBeVisible()
+
+    await page.getByRole("button", { name: "添加规则" }).click()
     await page.getByLabel("规则名称").fill("排除 RAW")
-    await page.getByRole("radio", { name: "排除" }).click()
-    await page.getByLabel("标题排除").fill("RAW")
+    await page.getByLabel("条件值 1").fill("RAW")
     await page.getByRole("button", { name: "保存规则" }).click()
 
-    await expect(page.getByRole("button", { name: "拖拽排序 排除 RAW" })).toBeVisible()
+    await expect(page.getByText("排除 RAW")).toBeVisible()
 
     await page.getByRole("button", { name: "保存所有设置" }).click()
 
-    await expect(page.getByText("设置已保存。" )).toBeVisible()
+    await expect(page.getByText("设置已保存。")).toBeVisible()
+
+    const reopenedPage = await openOptionsPage(extension, {
+      route: "/filters",
+      heading: "过滤规则"
+    })
+
+    await expect(reopenedPage.getByText("策略工作台")).toBeVisible()
+    await expect(reopenedPage.getByText("画质过滤")).toHaveCount(0)
+    await expect(reopenedPage.getByText("排除 RAW")).toHaveCount(0)
+
+    await reopenedPage.close()
   } finally {
     await extension.close()
   }
