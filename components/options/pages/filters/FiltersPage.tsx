@@ -15,6 +15,7 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy
 } from "@dnd-kit/sortable"
+import { useFormContext, useWatch } from "react-hook-form"
 import { HiOutlineInformationCircle, HiOutlinePlus } from "react-icons/hi2"
 
 import {
@@ -30,6 +31,10 @@ import {
   Button,
   Card
 } from "../../../ui"
+import {
+  type SettingsFormInput,
+  type SettingsFormValues
+} from "../../schema/settings-form"
 import { FilterGroupDialog } from "./FilterGroupDialog"
 import { FilterRuleBuilderDialog } from "./FilterRuleBuilderDialog"
 import { FilterWorkbenchGroupCard } from "./FilterWorkbenchCards"
@@ -37,7 +42,7 @@ import { FilterWorkbenchTestBench } from "./FilterWorkbenchTestBench"
 import {
   cloneWorkbenchRule,
   createPresetGroup,
-  runPrototypeWorkbenchTest,
+  runWorkbenchTest,
   type FilterWorkbenchGroup,
   type FilterWorkbenchRule,
   type FilterWorkbenchTestInput,
@@ -55,7 +60,12 @@ type RuleEditorState = {
 }
 
 export function FiltersPage() {
-  const [groups, setGroups] = useState<FilterWorkbenchGroup[]>([])
+  const form = useFormContext<SettingsFormInput, unknown, SettingsFormValues>()
+  const groups =
+    useWatch({
+      control: form.control,
+      name: "filterGroups"
+    }) ?? []
   const [editingGroupIndex, setEditingGroupIndex] = useState<number | null>(null)
   const [creatingGroup, setCreatingGroup] = useState(false)
   const [editingRule, setEditingRule] = useState<RuleEditorState | null>(null)
@@ -81,6 +91,13 @@ export function FiltersPage() {
     })
   )
 
+  const setFilterGroups = (nextGroups: FilterWorkbenchGroup[]) => {
+    form.setValue("filterGroups", nextGroups, {
+      shouldDirty: true,
+      shouldTouch: true
+    })
+  }
+
   const enabledGroupsCount = groups.filter((group) => group.enabled).length
   const totalRulesCount = groups.reduce(
     (count, group) => count + group.rules.length,
@@ -101,32 +118,34 @@ export function FiltersPage() {
       return
     }
 
-    setGroups((current) => arrayMove(current, oldIndex, newIndex))
+    setFilterGroups(arrayMove(groups, oldIndex, newIndex))
   }
 
   const handleSaveGroup = (group: FilterWorkbenchGroup) => {
-    setGroups((current) => {
-      if (editingGroupIndex === null) {
-        return [...current, group]
-      }
-
-      return current.map((entry, index) =>
-        index === editingGroupIndex ? group : entry
+    const currentGroups = form.getValues("filterGroups") ?? []
+    if (editingGroupIndex === null) {
+      setFilterGroups([...currentGroups, group])
+    } else {
+      setFilterGroups(
+        currentGroups.map((entry, index) =>
+          index === editingGroupIndex ? group : entry
+        )
       )
-    })
+    }
+
     setCreatingGroup(false)
     setEditingGroupIndex(null)
   }
 
   const handleDeleteGroup = (groupIndex: number) => {
-    setGroups((current) =>
-      current.filter((_, currentIndex) => currentIndex !== groupIndex)
+    setFilterGroups(
+      groups.filter((_, currentIndex) => currentIndex !== groupIndex)
     )
   }
 
   const handleSaveRule = (target: RuleEditorState, rule: FilterWorkbenchRule) => {
-    setGroups((current) =>
-      current.map((group, groupIndex) => {
+    setFilterGroups(
+      groups.map((group, groupIndex) => {
         if (groupIndex !== target.groupIndex) {
           return group
         }
@@ -150,23 +169,25 @@ export function FiltersPage() {
   }
 
   const handleDeleteRule = (groupIndex: number, ruleIndex: number) => {
-    setGroups((current) =>
-      current.map((group, currentIndex) => {
+    setFilterGroups(
+      groups.map((group, currentIndex) => {
         if (currentIndex !== groupIndex) {
           return group
         }
 
         return {
           ...group,
-          rules: group.rules.filter((_, currentRuleIndex) => currentRuleIndex !== ruleIndex)
+          rules: group.rules.filter(
+            (_, currentRuleIndex) => currentRuleIndex !== ruleIndex
+          )
         }
       })
     )
   }
 
   const handleCopyRule = (groupIndex: number, ruleIndex: number) => {
-    setGroups((current) =>
-      current.map((group, currentIndex) => {
+    setFilterGroups(
+      groups.map((group, currentIndex) => {
         if (currentIndex !== groupIndex) {
           return group
         }
@@ -189,8 +210,8 @@ export function FiltersPage() {
   }
 
   const handleToggleGroupEnabled = (groupIndex: number, enabled: boolean) => {
-    setGroups((current) =>
-      current.map((group, currentIndex) =>
+    setFilterGroups(
+      groups.map((group, currentIndex) =>
         currentIndex === groupIndex ? { ...group, enabled } : group
       )
     )
@@ -201,8 +222,8 @@ export function FiltersPage() {
     ruleIndex: number,
     enabled: boolean
   ) => {
-    setGroups((current) =>
-      current.map((group, currentIndex) => {
+    setFilterGroups(
+      groups.map((group, currentIndex) => {
         if (currentIndex !== groupIndex) {
           return group
         }
@@ -221,8 +242,8 @@ export function FiltersPage() {
     groupIndex: number,
     reorderedRules: FilterWorkbenchRule[]
   ) => {
-    setGroups((current) =>
-      current.map((group, currentIndex) =>
+    setFilterGroups(
+      groups.map((group, currentIndex) =>
         currentIndex === groupIndex
           ? { ...group, rules: reorderedRules }
           : group
@@ -231,11 +252,11 @@ export function FiltersPage() {
   }
 
   const handleImportPreset = () => {
-    setGroups((current) => [...current, createPresetGroup()])
+    setFilterGroups([...(form.getValues("filterGroups") ?? []), createPresetGroup()])
   }
 
-  const handleRunPrototypeTest = () => {
-    setTestResult(runPrototypeWorkbenchTest(testInput, groups))
+  const handleRunTest = () => {
+    setTestResult(runWorkbenchTest(testInput, form.getValues("filterGroups") ?? []))
   }
 
   const pendingDeleteGroup =
@@ -255,10 +276,10 @@ export function FiltersPage() {
                 <h2 className="text-2xl font-semibold tracking-tight text-zinc-900">
                   策略工作台
                 </h2>
-                <Badge variant="warning">原型阶段</Badge>
+                <Badge variant="brand">已接入</Badge>
               </div>
               <p className="max-w-2xl text-sm leading-6 text-zinc-500">
-                过滤模块正在迁移为“策略组 + 规则构建器”信息架构。本页仅承载最终交互原型和本地临时态演示，便于后续接入真实规则引擎。
+                使用“策略组 + 规则构建器”管理预提交过滤逻辑。策略组和规则会在保存设置后写入扩展配置，并参与后台过滤流程。
               </p>
             </div>
 
@@ -303,8 +324,7 @@ export function FiltersPage() {
           </div>
 
           <div className="rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm leading-6 text-blue-900">
-            当前页面的增删改拖拽只在本次会话内生效，不会写回现有的 `filterRules`
-            设置，也不会影响后台批量提交流程。
+            当前页的策略编排会并入共享设置表单；工作台中的改动会立即反映到规则测试台，点击“保存所有设置”后，同样的配置会用于后台批量提交流程。
           </div>
         </div>
       </Card>
@@ -317,12 +337,12 @@ export function FiltersPage() {
                 执行策略编排
               </h3>
               <p className="mt-1 text-sm leading-6 text-zinc-500">
-                从上到下整理策略组和组内规则，优先保证原型中的布局、分层与操作反馈。
+                从上到下整理策略组和组内规则。匹配时按当前顺序执行，命中后立即停止，不再继续匹配后续规则。
               </p>
             </div>
             <div className="flex items-center gap-2 text-sm text-zinc-500">
               <HiOutlineInformationCircle className="h-4 w-4" />
-              命中即停止的真实执行逻辑将在后续版本接入。
+              当前排序即真实执行顺序
             </div>
           </div>
 
@@ -333,7 +353,7 @@ export function FiltersPage() {
                   还没有策略组
                 </h4>
                 <p className="text-sm leading-6 text-zinc-500">
-                  先创建一个策略组，或者导入模板库里的原型样例，开始搭建新的过滤工作台。
+                  先创建一个策略组，或者导入模板库里的默认样例，开始搭建过滤工作台。
                 </p>
                 <div className="flex flex-wrap justify-center gap-3">
                   <Button type="button" variant="outline" onClick={handleImportPreset}>
@@ -412,7 +432,7 @@ export function FiltersPage() {
           value={testInput}
           result={testResult}
           onChange={setTestInput}
-          onRun={handleRunPrototypeTest}
+          onRun={handleRunTest}
         />
       </div>
 
@@ -457,7 +477,7 @@ export function FiltersPage() {
             <AlertDialogTitle>删除策略组</AlertDialogTitle>
             <AlertDialogDescription>
               {pendingDeleteGroup
-                ? `确定删除策略组“${pendingDeleteGroup.name}”以及其下的全部本地规则吗？`
+                ? `确定删除策略组“${pendingDeleteGroup.name}”以及其下的全部规则吗？`
                 : "确定删除这个策略组吗？"}
             </AlertDialogDescription>
           </AlertDialogHeader>

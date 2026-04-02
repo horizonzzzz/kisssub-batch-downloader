@@ -1,7 +1,15 @@
 import { z } from "zod"
 
 import { DEFAULT_SETTINGS, sanitizeSettings } from "../../../lib/settings"
-import type { DeliveryMode, FilterRuleAction, Settings, SourceId } from "../../../lib/shared/types"
+import type {
+  DeliveryMode,
+  FilterConditionField,
+  FilterConditionOperator,
+  FilterConditionRelation,
+  FilterRuleAction,
+  Settings,
+  SourceId
+} from "../../../lib/shared/types"
 
 const deliveryModeSchema = z.enum([
   "magnet",
@@ -21,43 +29,73 @@ const filterRuleActionSchema = z.enum([
   "exclude"
 ] satisfies FilterRuleAction[])
 
-const filterRuleConditionsSchema = z.object({
-  titleIncludes: z.array(z.string().trim()),
-  titleExcludes: z.array(z.string().trim()),
-  subgroupIncludes: z.array(z.string().trim())
+const filterConditionFieldSchema = z.enum([
+  "title",
+  "subgroup",
+  "source"
+] satisfies FilterConditionField[])
+
+const filterConditionOperatorSchema = z.enum([
+  "contains",
+  "not_contains",
+  "is",
+  "is_not",
+  "regex"
+] satisfies FilterConditionOperator[])
+
+const filterConditionRelationSchema = z.enum([
+  "and",
+  "or"
+] satisfies FilterConditionRelation[])
+
+const filterConditionSchema = z
+  .object({
+    id: z.string().trim().min(1, "条件 ID 不能为空"),
+    field: filterConditionFieldSchema,
+    operator: filterConditionOperatorSchema,
+    value: z.string().trim().min(1, "请输入条件值")
+  })
+  .superRefine((condition, ctx) => {
+    if (
+      condition.field === "source" &&
+      !sourceIdSchema.safeParse(condition.value.toLowerCase()).success
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["value"],
+        message: "站点条件值必须是受支持的 SourceId"
+      })
+    }
+
+    if (condition.operator === "regex") {
+      try {
+        new RegExp(condition.value)
+      } catch {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["value"],
+          message: "请输入有效的正则表达式"
+        })
+      }
+    }
+  })
+
+const filterRuleSchema = z.object({
+  id: z.string().trim().min(1, "规则 ID 不能为空"),
+  name: z.string().trim().min(1, "请输入规则名称"),
+  enabled: z.boolean(),
+  action: filterRuleActionSchema,
+  relation: filterConditionRelationSchema,
+  conditions: z.array(filterConditionSchema).min(1, "至少填写一个过滤条件")
 })
 
-const filterRuleSchema = z
-  .object({
-    id: z.string().trim().min(1, "规则 ID 不能为空"),
-    name: z.string().trim().min(1, "请输入规则名称"),
-    enabled: z.boolean(),
-    action: filterRuleActionSchema,
-    sourceIds: z.array(sourceIdSchema).min(1, "至少选择一个站点"),
-    order: z.coerce.number().int().min(0),
-    conditions: filterRuleConditionsSchema
-  })
-  .superRefine((rule, ctx) => {
-    const hasCondition = Object.values(rule.conditions).some((values) =>
-      values.some((value) => value.trim().length > 0)
-    )
-
-    if (!hasCondition) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["conditions"],
-        message: "至少填写一个过滤条件"
-      })
-    }
-
-    if (rule.action === "include" && rule.conditions.titleExcludes.some((value) => value.trim().length > 0)) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["conditions", "titleExcludes"],
-        message: "保留规则暂不支持使用标题排除条件"
-      })
-    }
-  })
+const filterRuleGroupSchema = z.object({
+  id: z.string().trim().min(1, "策略组 ID 不能为空"),
+  name: z.string().trim().min(1, "请输入策略组名称"),
+  description: z.string().trim(),
+  enabled: z.boolean(),
+  rules: z.array(filterRuleSchema)
+})
 
 export const settingsFormSchema = z.object({
   qbBaseUrl: z
@@ -86,7 +124,7 @@ export const settingsFormSchema = z.object({
     acgrip: z.boolean().optional(),
     bangumimoe: z.boolean().optional()
   }),
-  filterRules: z.array(filterRuleSchema)
+  filterGroups: z.array(filterRuleGroupSchema)
 })
 
 export type SettingsFormInput = z.input<typeof settingsFormSchema>

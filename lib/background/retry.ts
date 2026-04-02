@@ -1,4 +1,4 @@
-import { decideFilterRuleAction } from "../filter-rules"
+import { decideFilterGroupAction } from "../filter-rules"
 import type { QbTorrentFile } from "../downloader/qb"
 import type { TaskHistoryItem, TaskHistoryRecord } from "../history/types"
 import type { Settings } from "../shared/types"
@@ -103,16 +103,18 @@ export async function retryFailedItems(
   const itemsWithoutUrls: TaskHistoryItem[] = []
 
   for (const item of targetItems) {
-    const ruleDecision = decideFilterRuleAction({
+    const ruleDecision = decideFilterGroupAction({
       sourceId: item.sourceId,
       title: item.title,
-      rules: settings.filterRules
+      groups: settings.filterGroups
     })
     if (!ruleDecision.accepted) {
       filteredItems.push(
         updateItemAfterFiltered(
           item,
-          `Filtered by rule: ${ruleDecision.matchedRule?.name ?? "Unnamed rule"}`
+          `Filtered by group: ${ruleDecision.matchedGroup?.name ?? "Unnamed group"} / rule: ${
+            ruleDecision.matchedRule?.name ?? "Unnamed rule"
+          }`
         )
       )
       continue

@@ -111,113 +111,154 @@ describe("sanitizeSettings", () => {
     })
   })
 
-  it("defaults filter rules to an empty array", () => {
-    expect(sanitizeSettings({}).filterRules).toEqual([])
-  })
-
-  it("normalizes filter rules, trims conditions, and rewrites order", () => {
+  it("defaults filter groups to an empty array and ignores legacy filter rules", () => {
     expect(
       sanitizeSettings({
         filterRules: [
           {
-            id: "rule-2",
-            name: "  排除生肉  ",
-            enabled: true,
-            action: "exclude",
-            sourceIds: ["kisssub", "kisssub", "bangumimoe"],
-            order: 99,
-            conditions: {
-              titleIncludes: ["  1080p ", "", "  "],
-              titleExcludes: [" RAW ", ""],
-              subgroupIncludes: []
-            }
-          },
-          {
-            id: "rule-1",
-            name: "  仅保留喵萌  ",
-            enabled: false,
-            action: "include",
-            sourceIds: ["acgrip"],
-            order: -1,
-            conditions: {
-              titleIncludes: [],
-              titleExcludes: [],
-              subgroupIncludes: [" 喵萌奶茶屋 ", ""]
-            }
+            id: "legacy-rule",
+            name: "排除 RAW"
           }
         ]
-      }).filterRules
+      } as never).filterGroups
+    ).toEqual([])
+  })
+
+  it("normalizes filter groups and trims valid nested fields", () => {
+    expect(
+      sanitizeSettings({
+        filterGroups: [
+          {
+            id: " group-1 ",
+            name: " 画质过滤 ",
+            description: " 拦截低画质 ",
+            enabled: true,
+            rules: [
+              {
+                id: " rule-1 ",
+                name: " 排除 720p ",
+                enabled: true,
+                action: "exclude",
+                relation: "or",
+                conditions: [
+                  {
+                    id: " condition-1 ",
+                    field: "title",
+                    operator: "contains",
+                    value: " 720p "
+                  },
+                  {
+                    id: " condition-2 ",
+                    field: "source",
+                    operator: "is",
+                    value: " kisssub "
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }).filterGroups
     ).toEqual([
       {
-        id: "rule-2",
-        name: "排除生肉",
+        id: "group-1",
+        name: "画质过滤",
+        description: "拦截低画质",
         enabled: true,
-        action: "exclude",
-        sourceIds: ["kisssub", "bangumimoe"],
-        order: 0,
-        conditions: {
-          titleIncludes: ["1080p"],
-          titleExcludes: ["RAW"],
-          subgroupIncludes: []
-        }
-      },
-      {
-        id: "rule-1",
-        name: "仅保留喵萌",
-        enabled: false,
-        action: "include",
-        sourceIds: ["acgrip"],
-        order: 1,
-        conditions: {
-          titleIncludes: [],
-          titleExcludes: [],
-          subgroupIncludes: ["喵萌奶茶屋"]
-        }
+        rules: [
+          {
+            id: "rule-1",
+            name: "排除 720p",
+            enabled: true,
+            action: "exclude",
+            relation: "or",
+            conditions: [
+              {
+                id: "condition-1",
+                field: "title",
+                operator: "contains",
+                value: "720p"
+              },
+              {
+                id: "condition-2",
+                field: "source",
+                operator: "is",
+                value: "kisssub"
+              }
+            ]
+          }
+        ]
       }
     ])
   })
 
-  it("drops title exclude conditions from include rules during sanitization", () => {
+  it("drops invalid rules and conditions during sanitization", () => {
     expect(
       sanitizeSettings({
-        filterRules: [
+        filterGroups: [
           {
-            id: "rule-include",
-            name: "保留 1080p",
+            id: "group-1",
+            name: "规则组",
+            description: "",
+            enabled: true,
+            rules: [
+              {
+                id: "rule-valid",
+                name: "保留 Kisssub",
+                enabled: true,
+                action: "include",
+                relation: "and",
+                conditions: [
+                  {
+                    id: "condition-valid",
+                    field: "source",
+                    operator: "is",
+                    value: "kisssub"
+                  },
+                  {
+                    id: "condition-invalid",
+                    field: "title",
+                    operator: "regex",
+                    value: "[RAW"
+                  }
+                ]
+              },
+              {
+                id: "rule-invalid",
+                name: "空规则",
+                enabled: true,
+                action: "exclude",
+                relation: "and",
+                conditions: []
+              }
+            ]
+          }
+        ]
+      }).filterGroups
+    ).toEqual([
+      {
+        id: "group-1",
+        name: "规则组",
+        description: "",
+        enabled: true,
+        rules: [
+          {
+            id: "rule-valid",
+            name: "保留 Kisssub",
             enabled: true,
             action: "include",
-            sourceIds: ["kisssub"],
-            order: 0,
-            conditions: {
-              titleIncludes: ["1080p"],
-              titleExcludes: ["RAW"],
-              subgroupIncludes: []
-            }
+            relation: "and",
+            conditions: [
+              {
+                id: "condition-valid",
+                field: "source",
+                operator: "is",
+                value: "kisssub"
+              }
+            ]
           }
         ]
-      }).filterRules[0]?.conditions.titleExcludes
-    ).toEqual([])
-  })
-
-  it("drops filter rules without any conditions during sanitization", () => {
-    expect(
-      sanitizeSettings({
-        filterRules: [
-          {
-            id: "rule-empty",
-            name: "空规则",
-            enabled: true,
-            action: "exclude",
-            sourceIds: ["kisssub"],
-            order: 0,
-            conditions: {
-              titleIncludes: [],
-              titleExcludes: [],
-              subgroupIncludes: []
-            }
-          }
-        ]
-      }).filterRules
-    ).toEqual([])
+      }
+    ])
   })
 })

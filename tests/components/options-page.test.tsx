@@ -27,7 +27,7 @@ const settings = {
     acgrip: true,
     bangumimoe: true
   },
-  filterRules: []
+  filterGroups: []
 }
 
 function createOptionsApi(overrides: Partial<OptionsApi> = {}): OptionsApi {
@@ -146,7 +146,7 @@ describe("OptionsPage", () => {
   })
 
   it(
-    "keeps filter workbench edits local when saving settings",
+    "includes filter workbench edits when saving settings",
     async () => {
       const user = userEvent.setup()
       const api = createOptionsApi({
@@ -181,7 +181,16 @@ describe("OptionsPage", () => {
       await waitFor(() => {
         expect(api.saveSettings).toHaveBeenCalledWith(
           expect.objectContaining({
-            filterRules: []
+            filterGroups: expect.arrayContaining([
+              expect.objectContaining({
+                name: "画质过滤",
+                rules: expect.arrayContaining([
+                  expect.objectContaining({
+                    name: "排除 RAW"
+                  })
+                ])
+              })
+            ])
           })
         )
       })
@@ -211,8 +220,46 @@ describe("OptionsPage", () => {
   })
 
   it(
-    "runs the local prototype test bench without requiring persisted filter rules",
+    "runs the real test bench against current filter workbench values",
     async () => {
+      const user = userEvent.setup()
+      const api = createOptionsApi()
+
+      render(<OptionsPage api={api} />)
+
+      expect(await screen.findByDisplayValue("http://127.0.0.1:17474")).toBeInTheDocument()
+
+      await user.click(screen.getByRole("button", { name: "过滤规则" }))
+      await user.click(screen.getByRole("button", { name: "新建策略组" }))
+      await user.type(screen.getByLabelText("策略组名称"), "画质过滤")
+      await user.click(screen.getByRole("button", { name: "保存策略组" }))
+
+      await user.click(screen.getByRole("button", { name: "添加规则" }))
+      await user.type(screen.getByLabelText("规则名称"), "排除 RAW")
+      await user.type(screen.getByLabelText("条件值 1"), "RAW")
+      await user.click(screen.getByRole("button", { name: "保存规则" }))
+
+      await user.type(
+        screen.getByLabelText("资源标题"),
+        "SubsPlease Frieren - 01 (720p) RAW.mkv"
+      )
+      await user.click(screen.getByRole("button", { name: "开始测试" }))
+
+      expect(
+        await screen.findByText((content) =>
+          content.includes("命中策略组「画质过滤」中的规则「排除 RAW」")
+        )
+      ).toBeInTheDocument()
+      expect(
+        screen.getByText("当前结果基于当前工作台中的真实策略配置。")
+      ).toBeInTheDocument()
+      expect(screen.getByText("最终结果")).toBeInTheDocument()
+      expect(screen.getByText(/最近测试/)).toBeInTheDocument()
+    },
+    10000
+  )
+
+  it("shows a clear empty preview message when a rule has no conditions", async () => {
     const user = userEvent.setup()
     const api = createOptionsApi()
 
@@ -221,16 +268,17 @@ describe("OptionsPage", () => {
     expect(await screen.findByDisplayValue("http://127.0.0.1:17474")).toBeInTheDocument()
 
     await user.click(screen.getByRole("button", { name: "过滤规则" }))
+    await user.click(screen.getByRole("button", { name: "新建策略组" }))
+    await user.type(screen.getByLabelText("策略组名称"), "交互验证")
+    await user.click(screen.getByRole("button", { name: "保存策略组" }))
 
-    await user.type(screen.getByLabelText("资源标题"), "[SubsPlease] Frieren - 01 (720p) [RAW].mkv")
-    await user.click(screen.getByRole("button", { name: "开始测试" }))
+    await user.click(screen.getByRole("button", { name: "添加规则" }))
+    await user.click(screen.getByRole("button", { name: "删除条件 1" }))
 
-    expect(await screen.findByText("原型阶段结果，仅用于界面预览。")).toBeInTheDocument()
-    expect(screen.getByText("最终结果")).toBeInTheDocument()
-    expect(screen.getByText(/最近测试/)).toBeInTheDocument()
-    },
-    10000
-  )
+    expect(
+      screen.getByText("暂无条件，请至少添加一个匹配条件。")
+    ).toBeInTheDocument()
+  })
 
   it("renders a real site icon for each site in the site management cards", async () => {
     const user = userEvent.setup()

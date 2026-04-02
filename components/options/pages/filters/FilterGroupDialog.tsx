@@ -120,7 +120,7 @@ export function FilterGroupDialog({ open, initialGroup, onClose, onSave }: Filte
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-zinc-900">启用策略组</p>
-                <p className="text-xs text-zinc-500">停用后，组内规则只保留原型展示，不参与本页演示。</p>
+                <p className="text-xs text-zinc-500">停用后，组内规则会保留，但不会参与测试台或后台真实过滤。</p>
               </div>
               <Switch
                 checked={group.enabled}

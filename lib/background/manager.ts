@@ -1,4 +1,4 @@
-import { decideFilterRuleAction } from "../filter-rules"
+import { decideFilterGroupAction } from "../filter-rules"
 import { getDisabledSources, normalizeSavePath } from "../settings"
 import type { StartBatchDownloadSuccessResponse } from "../shared/messages"
 import type { BatchItem, ClassifiedBatchResult } from "../shared/types"
@@ -241,10 +241,10 @@ function classifyFilteredBatchResult(
   item: Pick<ClassifiedBatchResult, "title" | "detailUrl" | "hash" | "magnetUrl" | "torrentUrl">,
   settings: BatchJob["settings"],
 ): ClassifiedBatchResult | null {
-  const ruleDecision = decideFilterRuleAction({
+  const ruleDecision = decideFilterGroupAction({
     sourceId,
     title: item.title,
-    rules: settings.filterRules
+    groups: settings.filterGroups
   })
   if (ruleDecision.accepted) {
     return null
@@ -263,7 +263,9 @@ function classifyFilteredBatchResult(
     status: "filtered",
     deliveryMode: preferredDeliveryMode,
     submitUrl: "",
-    message: `Filtered by rule: ${ruleDecision.matchedRule?.name ?? "Unnamed rule"}`
+    message: `Filtered by group: ${ruleDecision.matchedGroup?.name ?? "Unnamed group"} / rule: ${
+      ruleDecision.matchedRule?.name ?? "Unnamed rule"
+    }`
   }
 }
 

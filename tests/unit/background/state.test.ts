@@ -85,7 +85,7 @@ describe("background job state helpers", () => {
         status: "filtered",
         deliveryMode: "",
         submitUrl: "",
-        message: "Filtered by rule: 排除 RAW"
+        message: "Filtered by group: RAW 过滤器 / rule: 排除 RAW"
       })
     )
     recordBatchResult(
@@ -136,7 +136,7 @@ describe("background job state helpers", () => {
           status: "filtered",
           deliveryMode: "",
           submitUrl: "",
-          message: "Filtered by rule: 排除 RAW"
+          message: "Filtered by group: RAW 过滤器 / rule: 排除 RAW"
         }),
         createResult({
           title: "Episode 05",

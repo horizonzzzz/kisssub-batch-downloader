@@ -13,9 +13,9 @@ The extension injects selection UI into supported list pages, reuses direct magn
   - `Connection & Basic Settings`
   - `Site Configuration`
   - `Filter Rules`
-    - currently rendered as a prototype `Strategy Workbench` UI with local-only state
-    - current page interactions do not write back to saved `filterRules` yet
-    - background/runtime filtering still uses the existing persisted `filterRules` model until later wiring work lands
+    - rendered as the `Strategy Workbench` surface backed by persisted `filterGroups`
+    - page interactions now write through the shared settings form, and the rule test bench exercises the real group/condition engine
+    - background/runtime filtering consumes the same `filterGroups` with first-match semantics, so filtering in the UI matches runtime behavior
   - `Batch History`
   - `Source Overview`
 - Supported popup surface responsibilities:
@@ -30,7 +30,7 @@ The extension injects selection UI into supported list pages, reuses direct magn
   - `options.html#/overview`
 - Supported downloader target: `qBittorrent WebUI` only
 - Optional per-batch save path override is supported
-- Pre-submit filter rules can include or exclude resources by source scope, title keywords, and extracted subgroup name
+- Pre-submit filter rules can include or exclude resources by strategy-group order, source field, title field, and extracted subgroup field
 - Magnet links are preferred; torrent URLs are the fallback
 - Each supported source can be enabled or disabled by the user:
   - disabled sources keep their saved per-site configuration
@@ -80,7 +80,7 @@ The extension injects selection UI into supported list pages, reuses direct magn
   Contents-only Tailwind/shadcn-style primitives for the injected batch panel and selection checkbox visuals. Keep these isolated from `components/ui/` so third-party page injection stays on its own sizing, reset contract, and `data-*` test-anchor surface.
 - `components/options/`
   Source of truth for the options workspace shell, hash-route config, form hooks/schema, shared options-only form fragments under `components/options/form/`, and the `general` / `sites` / `overview` page implementations.
-  Filtering rules UI lives under `components/options/pages/filters/` and currently hosts the prototype strategy-workbench surface with local-only state plus side-panel editors; it does not yet participate in the shared form-save flow for persisted `filterRules`.
+  Filtering rules UI lives under `components/options/pages/filters/` and now persists strategy-group data through the shared settings form; drawers, test bench, and orchestration cards all reflect the real `filterGroups` model and feed the backend filter engine.
 - `components/ui/`
   Tailwind-first primitive components used by the options workspace, including buttons, inputs, cards, badges, alerts, switches, and radio groups.
 - `contents/`
@@ -176,7 +176,7 @@ Use this section as the shortest runtime-oriented guide to the current code layo
 - `lib/shared/popup.ts`
   Popup-specific shared types and constants for popup state/view-model contracts.
 - `lib/filter-rules/`
-  Filter rule matching and subgroup extraction logic, responsible for include/exclude decisions before submission.
+  Filter-group matching and subgroup extraction logic, responsible for include/exclude decisions before submission and shared by the options-page test bench.
 - `lib/history/`
   Task history persistence, type definitions and storage logic, automatically saved by the background when a batch completes.
 
@@ -187,7 +187,7 @@ Use this section as the shortest runtime-oriented guide to the current code layo
 - Source host aliases and runtime host matching belong in `lib/sources/matching.ts`; keep `contents/source-batch.tsx` `config.matches` as a static wildcard literal for Plasmo, and use tests to prevent it from drifting away from the shared runtime host definitions.
 - Batch orchestration belongs in `lib/background/`; source adapters should not take over job-level concerns.
 - `lib/settings/` may normalize or persist settings, but qB/network behavior belongs outside it.
-- Filter rules are stored in `Settings`, but matching logic must remain in `lib/filter-rules/`; do not scatter rule judgments across options components or source adapters.
+- Filter groups are stored in `Settings.filterGroups`, but matching logic must remain in `lib/filter-rules/`; do not scatter rule judgments across options components or source adapters.
 - `lib/content/` may help mount and scan pages, but downloader submission must stay out of content-side helpers.
 - During development, prefer splitting code by responsibility instead of letting a single file keep growing; when a file starts carrying multiple concerns or becomes hard to hold in context, extract focused modules before adding more logic.
 

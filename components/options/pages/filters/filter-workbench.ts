@@ -1,45 +1,23 @@
-export type FilterWorkbenchSourceId =
-  | "kisssub"
-  | "dongmanhuayuan"
-  | "acgrip"
-  | "bangumimoe"
+import { decideFilterGroupAction } from "../../../../lib/filter-rules"
+import type {
+  FilterCondition,
+  FilterConditionField,
+  FilterConditionOperator,
+  FilterConditionRelation,
+  FilterRule,
+  FilterRuleAction,
+  FilterRuleGroup,
+  SourceId
+} from "../../../../lib/shared/types"
 
-export type FilterWorkbenchRuleAction = "include" | "exclude"
-
-export type FilterWorkbenchConditionField = "title" | "subgroup" | "source"
-
-export type FilterWorkbenchConditionOperator =
-  | "contains"
-  | "not_contains"
-  | "is"
-  | "is_not"
-  | "regex"
-
-export type FilterWorkbenchConditionRelation = "and" | "or"
-
-export type FilterWorkbenchCondition = {
-  id: string
-  field: FilterWorkbenchConditionField
-  operator: FilterWorkbenchConditionOperator
-  value: string
-}
-
-export type FilterWorkbenchRule = {
-  id: string
-  name: string
-  enabled: boolean
-  action: FilterWorkbenchRuleAction
-  relation: FilterWorkbenchConditionRelation
-  conditions: FilterWorkbenchCondition[]
-}
-
-export type FilterWorkbenchGroup = {
-  id: string
-  name: string
-  description: string
-  enabled: boolean
-  rules: FilterWorkbenchRule[]
-}
+export type FilterWorkbenchSourceId = SourceId
+export type FilterWorkbenchRuleAction = FilterRuleAction
+export type FilterWorkbenchConditionField = FilterConditionField
+export type FilterWorkbenchConditionOperator = FilterConditionOperator
+export type FilterWorkbenchConditionRelation = FilterConditionRelation
+export type FilterWorkbenchCondition = FilterCondition
+export type FilterWorkbenchRule = FilterRule
+export type FilterWorkbenchGroup = FilterRuleGroup
 
 export type FilterWorkbenchGroupDraft = {
   name: string
@@ -213,7 +191,7 @@ export function createPresetGroup(): FilterWorkbenchGroup {
   return {
     id: createWorkbenchId("group"),
     name: "画质与格式过滤",
-    description: "拦截明显不符合偏好的画质与格式，作为原型默认样例。",
+    description: "拦截明显不符合偏好的画质与格式。",
     enabled: true,
     rules: [
       {
@@ -250,7 +228,7 @@ export function createPresetGroup(): FilterWorkbenchGroup {
   }
 }
 
-export function runPrototypeWorkbenchTest(
+export function runWorkbenchTest(
   input: FilterWorkbenchTestInput,
   groups: FilterWorkbenchGroup[]
 ): FilterWorkbenchTestResult {
@@ -259,62 +237,39 @@ export function runPrototypeWorkbenchTest(
       state: "error",
       summary: "请输入资源标题进行测试",
       trace: ["当前没有可供分析的资源标题。"],
-      note: "原型阶段结果，仅用于界面预览。"
+      note: "测试台仅在输入完整资源信息后才会运行。"
     }
   }
 
-  const enabledGroups = groups.filter((group) => group.enabled)
-  const enabledRules = enabledGroups.flatMap((group) =>
-    group.rules.filter((rule) => rule.enabled)
-  )
+  const decision = decideFilterGroupAction({
+    sourceId: input.source,
+    title: input.title,
+    subgroup: input.subgroup,
+    groups
+  })
   const sourceLabel =
     SOURCE_OPTIONS.find((item) => item.value === input.source)?.label ??
     input.source
-  const normalizedTitle = input.title.toLowerCase()
-  const matchedKeywords = ["raw", "720p", ".mp4"].filter((keyword) =>
-    normalizedTitle.includes(keyword)
-  )
-  const accepted = matchedKeywords.length === 0
-  const trace: string[] = []
-
-  if (!enabledGroups.length) {
-    trace.push("当前没有已启用的策略组，本次结果按原型默认路径生成。")
-  } else {
-    trace.push(
-      `读取到 ${enabledGroups.length} 个已启用策略组，优先参考「${enabledGroups[0].name}」。`
-    )
-  }
-
-  if (!enabledRules.length) {
-    trace.push("没有已启用规则可供匹配，本次仅演示结果面板。")
-  } else {
-    trace.push(
-      `示例命中路径参考规则「${enabledRules[0].name}」，但尚未接入真实过滤引擎。`
-    )
-  }
-
-  if (matchedKeywords.length) {
-    trace.push(
-      `标题包含原型阶段风险关键字：${matchedKeywords.join(" / ")}。`
-    )
-  } else {
-    trace.push("标题未命中示例风险关键字：RAW / 720p / .mp4。")
-  }
-
-  if (input.subgroup.trim()) {
-    trace.push(`已带入字幕组字段：${input.subgroup.trim()}。`)
-  }
-
-  trace.push(`测试来源站点：${sourceLabel}。`)
+  const trace = [
+    `测试来源站点：${sourceLabel}。`,
+    decision.subgroup
+      ? `参与匹配的字幕组：${decision.subgroup}。`
+      : "当前未识别出字幕组信息。",
+    ...decision.trace
+  ]
 
   return {
     state: "result",
-    accepted,
-    label: accepted ? "放行" : "拦截",
-    summary: accepted
-      ? "按原型演示逻辑，该资源会被视为可放行。"
-      : "按原型演示逻辑，该资源会被视为需要拦截。",
+    accepted: decision.accepted,
+    label: decision.accepted ? "放行" : "拦截",
+    summary: decision.matchedGroup && decision.matchedRule
+      ? `命中策略组「${decision.matchedGroup.name}」中的规则「${decision.matchedRule.name}」，该资源将被${
+          decision.accepted ? "放行" : "拦截"
+        }。`
+      : "未命中任何已启用规则，该资源将按默认策略放行。",
     trace,
-    note: "原型阶段结果，仅用于界面预览。"
+    note: decision.errors.length
+      ? `有 ${decision.errors.length} 条条件因格式错误被当作未命中处理。`
+      : "当前结果基于当前工作台中的真实策略配置。"
   }
 }

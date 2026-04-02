@@ -281,7 +281,7 @@ export function FilterWorkbenchGroupCard({
           <div className="mt-5 rounded-xl border border-dashed border-zinc-300 bg-white/80 px-4 py-8 text-center">
             <p className="text-sm font-medium text-zinc-900">该策略组下还没有规则</p>
             <p className="mt-1 text-sm leading-6 text-zinc-500">
-              先添加一条规则，用于构建原型演示用的命中路径和说明文案。
+              先添加一条规则，命中后会按当前顺序参与真实过滤和规则测试。
             </p>
             <div className="mt-4">
               <Button type="button" variant="secondary" size="sm" onClick={onAddRule}>

@@ -178,19 +178,29 @@ describe("createBatchDownloadManager", () => {
 
   it("filters excluded items before submitting them to qBittorrent", async () => {
     const settings = createSettings({
-      filterRules: [
+      filterGroups: [
         {
-          id: "rule-raw",
-          name: "排除 RAW",
+          id: "group-raw",
+          name: "RAW 过滤器",
+          description: "",
           enabled: true,
-          action: "exclude",
-          sourceIds: ["kisssub"],
-          order: 0,
-          conditions: {
-            titleIncludes: [],
-            titleExcludes: ["RAW"],
-            subgroupIncludes: []
-          }
+          rules: [
+            {
+              id: "rule-raw",
+              name: "排除 RAW",
+              enabled: true,
+              action: "exclude",
+              relation: "and",
+              conditions: [
+                {
+                  id: "condition-title",
+                  field: "title",
+                  operator: "contains",
+                  value: "RAW"
+                }
+              ]
+            }
+          ]
         }
       ]
     })
@@ -245,7 +255,7 @@ describe("createBatchDownloadManager", () => {
         title: "[喵萌奶茶屋] Episode 01 [1080p][RAW]",
         detailUrl: "https://www.kisssub.org/show-deadbeef.html",
         status: "filtered",
-        message: "Filtered by rule: 排除 RAW"
+        message: "Filtered by group: RAW 过滤器 / rule: 排除 RAW"
       }
     ])
     expect(persistBatchHistoryMock).toHaveBeenCalledTimes(1)
@@ -260,7 +270,7 @@ describe("createBatchDownloadManager", () => {
         results: expect.arrayContaining([
           expect.objectContaining({
             status: "filtered",
-            message: "Filtered by rule: 排除 RAW"
+            message: "Filtered by group: RAW 过滤器 / rule: 排除 RAW"
           })
         ])
       }),
@@ -270,19 +280,29 @@ describe("createBatchDownloadManager", () => {
 
   it("filters extracted items using the extracted detail title and subgroup", async () => {
     const settings = createSettings({
-      filterRules: [
+      filterGroups: [
         {
-          id: "rule-subgroup",
-          name: "排除喵萌",
+          id: "group-subgroup",
+          name: "字幕组规则",
+          description: "",
           enabled: true,
-          action: "exclude",
-          sourceIds: ["kisssub"],
-          order: 0,
-          conditions: {
-            titleIncludes: [],
-            titleExcludes: [],
-            subgroupIncludes: ["喵萌奶茶屋"]
-          }
+          rules: [
+            {
+              id: "rule-subgroup",
+              name: "排除喵萌",
+              enabled: true,
+              action: "exclude",
+              relation: "and",
+              conditions: [
+                {
+                  id: "condition-subgroup",
+                  field: "subgroup",
+                  operator: "contains",
+                  value: "喵萌奶茶屋"
+                }
+              ]
+            }
+          ]
         }
       ]
     })
@@ -336,7 +356,8 @@ describe("createBatchDownloadManager", () => {
         title: "[喵萌奶茶屋] Episode 01 [1080p]",
         detailUrl: "https://www.kisssub.org/show-deadbeef.html",
         status: "filtered",
-        message: "Filtered by rule: 排除喵萌"
+        message:
+          "Filtered by group: 字幕组规则 / rule: 排除喵萌"
       }
     ])
   })

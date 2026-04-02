@@ -74,7 +74,7 @@ describe("settings storage helpers", () => {
       qbBaseUrl: "http://127.0.0.1:17474",
       qbUsername: "admin",
       lastSavePath: "D:\\Anime",
-      filterRules: [],
+      filterGroups: [],
       enabledSources: {
         kisssub: false,
         dongmanhuayuan: true,
@@ -117,19 +117,35 @@ describe("settings storage helpers", () => {
         enabledSources: {
           acgrip: false
         },
-        filterRules: [
+        filterGroups: [
           {
-            id: "rule-new",
-            name: "  仅保留喵萌  ",
+            id: " group-1 ",
+            name: " 场景过滤 ",
+            description: " 描述 ",
             enabled: true,
-            action: "include",
-            sourceIds: ["bangumimoe", "bangumimoe"],
-            order: 9,
-            conditions: {
-              titleIncludes: [],
-              titleExcludes: [],
-              subgroupIncludes: [" 喵萌奶茶屋 ", ""]
-            }
+            rules: [
+              {
+                id: " rule-1 ",
+                name: " 保留 Bangumi ",
+                enabled: true,
+                action: "include",
+                relation: "and",
+                conditions: [
+                  {
+                    id: " condition-1 ",
+                    field: "source",
+                    operator: "is",
+                    value: " bangumimoe "
+                  },
+                  {
+                    id: " condition-2 ",
+                    field: "title",
+                    operator: "contains",
+                    value: " 1080p "
+                  }
+                ]
+              }
+            ]
           }
         ]
       })
@@ -138,19 +154,35 @@ describe("settings storage helpers", () => {
       qbBaseUrl: "http://127.0.0.1:17474",
       qbUsername: "admin",
       lastSavePath: "D:\\Downloads\\Anime",
-      filterRules: [
+      filterGroups: [
         {
-          id: "rule-new",
-          name: "仅保留喵萌",
+          id: "group-1",
+          name: "场景过滤",
+          description: "描述",
           enabled: true,
-          action: "include",
-          sourceIds: ["bangumimoe"],
-          order: 0,
-          conditions: {
-            titleIncludes: [],
-            titleExcludes: [],
-            subgroupIncludes: ["喵萌奶茶屋"]
-          }
+          rules: [
+            {
+              id: "rule-1",
+              name: "保留 Bangumi",
+              enabled: true,
+              action: "include",
+              relation: "and",
+              conditions: [
+                {
+                  id: "condition-1",
+                  field: "source",
+                  operator: "is",
+                  value: "bangumimoe"
+                },
+                {
+                  id: "condition-2",
+                  field: "title",
+                  operator: "contains",
+                  value: "1080p"
+                }
+              ]
+            }
+          ]
         }
       ],
       enabledSources: {
@@ -167,19 +199,35 @@ describe("settings storage helpers", () => {
         qbBaseUrl: "http://127.0.0.1:17474",
         qbUsername: "admin",
         lastSavePath: "D:\\Downloads\\Anime",
-        filterRules: [
+        filterGroups: [
           {
-            id: "rule-new",
-            name: "仅保留喵萌",
+            id: "group-1",
+            name: "场景过滤",
+            description: "描述",
             enabled: true,
-            action: "include",
-            sourceIds: ["bangumimoe"],
-            order: 0,
-            conditions: {
-              titleIncludes: [],
-              titleExcludes: [],
-              subgroupIncludes: ["喵萌奶茶屋"]
-            }
+            rules: [
+              {
+                id: "rule-1",
+                name: "保留 Bangumi",
+                enabled: true,
+                action: "include",
+                relation: "and",
+                conditions: [
+                  {
+                    id: "condition-1",
+                    field: "source",
+                    operator: "is",
+                    value: "bangumimoe"
+                  },
+                  {
+                    id: "condition-2",
+                    field: "title",
+                    operator: "contains",
+                    value: "1080p"
+                  }
+                ]
+              }
+            ]
           }
         ],
         enabledSources: {

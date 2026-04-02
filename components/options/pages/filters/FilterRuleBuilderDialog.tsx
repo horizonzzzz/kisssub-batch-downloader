@@ -29,6 +29,7 @@ import {
   createRuleDraft,
   getConditionFieldLabel,
   getConditionOperatorLabel,
+  SOURCE_OPTIONS,
   type FilterWorkbenchCondition,
   type FilterWorkbenchConditionField,
   type FilterWorkbenchConditionOperator,
@@ -95,7 +96,7 @@ export function FilterRuleBuilderDialog({
 
   const generatePreview = () => {
     if (!rule.conditions.length) {
-      return "暂无条件，保存后可作为原型示例规则展示。"
+      return "暂无条件，请至少添加一个匹配条件。"
     }
 
     const relationText = rule.relation === "and" ? "且" : "或"
@@ -130,9 +131,36 @@ export function FilterRuleBuilderDialog({
       return
     }
 
+    const invalidSourceCondition = rule.conditions.find(
+      (condition) =>
+        condition.field === "source" &&
+        !SOURCE_OPTIONS.some(
+          (option) => option.value === condition.value.trim().toLowerCase()
+        )
+    )
+    if (invalidSourceCondition) {
+      setError("站点条件值必须是受支持的 SourceId，例如 kisssub 或 acgrip")
+      return
+    }
+
+    const invalidRegexCondition = rule.conditions.find(
+      (condition) => condition.operator === "regex" && !isValidRegex(condition.value)
+    )
+    if (invalidRegexCondition) {
+      setError("请输入有效的正则表达式")
+      return
+    }
+
     onSave({
       ...rule,
-      name: rule.name.trim()
+      name: rule.name.trim(),
+      conditions: rule.conditions.map((condition) => ({
+        ...condition,
+        value:
+          condition.field === "source"
+            ? condition.value.trim().toLowerCase()
+            : condition.value.trim()
+      }))
     })
     onClose()
   }
@@ -194,8 +222,8 @@ export function FilterRuleBuilderDialog({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="exclude">直接拦截（仅界面原型）</SelectItem>
-                  <SelectItem value="include">优先放行（仅界面原型）</SelectItem>
+                  <SelectItem value="exclude">直接拦截</SelectItem>
+                  <SelectItem value="include">优先放行</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -325,7 +353,7 @@ export function FilterRuleBuilderDialog({
             <label className="flex items-center justify-between rounded-xl border border-zinc-200 p-4 transition-colors hover:bg-zinc-50">
               <div>
                 <div className="text-sm font-medium text-zinc-900">启用规则</div>
-                <div className="text-xs text-zinc-500">仅影响当前页面原型演示，不会写入真实过滤配置。</div>
+                <div className="text-xs text-zinc-500">停用后保留配置，但不会参与测试台或后台真实过滤。</div>
               </div>
               <Switch
                 checked={rule.enabled}
@@ -355,4 +383,13 @@ export function FilterRuleBuilderDialog({
       </SheetContent>
     </Sheet>
   )
+}
+
+function isValidRegex(value: string) {
+  try {
+    new RegExp(value)
+    return true
+  } catch {
+    return false
+  }
 }

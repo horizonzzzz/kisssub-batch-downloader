@@ -44,7 +44,7 @@ export function FilterWorkbenchTestBench({
             <h3 className="text-lg font-semibold text-zinc-900">规则测试台</h3>
           </div>
           <p className="mt-2 text-sm leading-6 text-zinc-500">
-            输入资源标题和站点信息，预览新页面的测试反馈区域。这里展示的是原型结果，不会调用真实过滤逻辑。
+            输入资源标题和站点信息，验证当前工作台配置的真实执行结果与命中路径。
           </p>
         </div>
 

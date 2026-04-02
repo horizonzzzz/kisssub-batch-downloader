@@ -296,7 +296,7 @@ test("options page saves settings through the background worker", async () => {
   }
 })
 
-test("options page keeps filter workbench edits local after saving settings", async () => {
+test("options page persists filter workbench edits after saving settings", async () => {
   const extension = await launchExtensionContext()
 
   try {
@@ -330,8 +330,15 @@ test("options page keeps filter workbench edits local after saving settings", as
     })
 
     await expect(reopenedPage.getByText("策略工作台")).toBeVisible()
-    await expect(reopenedPage.getByText("画质过滤")).toHaveCount(0)
-    await expect(reopenedPage.getByText("排除 RAW")).toHaveCount(0)
+    await expect(reopenedPage.getByText("画质过滤")).toBeVisible()
+    await expect(reopenedPage.getByText("排除 RAW")).toBeVisible()
+
+    await reopenedPage.getByLabel("资源标题").fill("[SubsPlease] Frieren - 01 (720p) [RAW].mkv")
+    await reopenedPage.getByRole("button", { name: "开始测试" }).click()
+
+    await expect(
+      reopenedPage.getByText("命中策略组「画质过滤」中的规则「排除 RAW」，该资源将被拦截。")
+    ).toBeVisible()
 
     await reopenedPage.close()
   } finally {

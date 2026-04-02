@@ -99,7 +99,7 @@ function createMockDeps(
       lastSavePath: "",
       sourceDeliveryModes: {},
       enabledSources: { kisssub: true },
-      filterRules: []
+      filterGroups: []
     })),
     getHistoryRecord: vi.fn(async () => null),
     updateHistoryRecord: vi.fn(async () => {}),
@@ -214,19 +214,29 @@ describe("retryFailedItems", () => {
         lastSavePath: "",
         sourceDeliveryModes: {},
         enabledSources: { kisssub: true },
-        filterRules: [
+        filterGroups: [
           {
-            id: "rule-raw",
-            name: "排除 RAW",
+            id: "group-raw",
+            name: "RAW 过滤器",
+            description: "",
             enabled: true,
-            action: "exclude",
-            sourceIds: ["kisssub"],
-            order: 0,
-            conditions: {
-              titleIncludes: [],
-              titleExcludes: ["RAW"],
-              subgroupIncludes: []
-            }
+            rules: [
+              {
+                id: "rule-raw",
+                name: "排除 RAW",
+                enabled: true,
+                action: "exclude",
+                relation: "and",
+                conditions: [
+                  {
+                    id: "condition-raw",
+                    field: "title",
+                    operator: "contains",
+                    value: "RAW"
+                  }
+                ]
+              }
+            ]
           }
         ]
       }
@@ -239,7 +249,9 @@ describe("retryFailedItems", () => {
       expect(deps.loginQb).not.toHaveBeenCalled()
       expect(deps.addUrlsToQb).not.toHaveBeenCalled()
       expect(result.updatedRecord.items[0].status).toBe("filtered")
-      expect(result.updatedRecord.items[0].message).toBe("Filtered by rule: 排除 RAW")
+      expect(result.updatedRecord.items[0].message).toBe(
+        "Filtered by group: RAW 过滤器 / rule: 排除 RAW"
+      )
       expect(result.updatedRecord.stats).toEqual({
         total: 1,
         success: 0,
