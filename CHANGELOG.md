@@ -2,6 +2,22 @@
 
 All notable release changes for `Anime BT Batch Downloader` are tracked here. GitHub Release pages should reuse the matching version section from this file.
 
+## 1.5.0
+
+### Features
+
+- Added a dedicated extension popup for quick runtime checks, deep links into the hash-routed options workspace, and one-click source toggles on the active supported tab. (`3ea0ff6`, `3ed319c`)
+- Added dynamic extension action icons that reflect whether the current page is supported so source-page readiness is visible before opening the popup. (`c4c2b77`)
+
+### Fixes
+
+- Fixed popup readiness detection by restoring source alias recognition, refreshing unsupported-page icon state after reloads, and aligning runtime source matching between popup checks and content injection. (`ac470f9`, `e53687b`, `709ddf3`)
+- Fixed popup interactions so active-tab source toggles sync immediately with the injected UI, qBittorrent connection states are clearer, and running batches no longer blank the source controls. (`8c47e13`, `d6f4a08`, `4b047e1`)
+
+### Refactor
+
+- Simplified the popup implementation by removing the motion dependency, tightening popup layout polish, and extracting popup-specific background, shared-message, and routing helpers into focused modules with dedicated tests. (`bc800bb`, `a8dfc2c`)
+
 ## 1.4.0
 
 ### Features
