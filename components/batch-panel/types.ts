@@ -1,3 +1,15 @@
+export type BatchPanelFilterStatusItem = {
+  id: string
+  name: string
+  summary: string
+}
+
+export type BatchPanelFilterStatus = {
+  summaryText: string
+  emptyStateText: string | null
+  filters: BatchPanelFilterStatusItem[]
+}
+
 export type BatchPanelProps = {
   sourceName?: string
   isExpanded: boolean
@@ -6,6 +18,7 @@ export type BatchPanelProps = {
   statusText: string
   savePath: string
   savePathHint?: string
+  filterStatus: BatchPanelFilterStatus
   onToggleExpanded: (expanded: boolean) => void
   onSelectAll: () => void
   onClear: () => void

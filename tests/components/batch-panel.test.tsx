@@ -14,6 +14,11 @@ function renderBatchPanel(overrides: Record<string, unknown> = {}) {
     statusText: "就绪。先在当前列表页勾选资源。",
     savePath: "",
     savePathHint: "留空则使用当前下载器默认目录。",
+    filterStatus: {
+      summaryText: "筛选规则：未启用",
+      emptyStateText: "当前站点未加载可生效的筛选规则，默认全部保留。",
+      filters: []
+    },
     onToggleExpanded: vi.fn(),
     onSelectAll: vi.fn(),
     onClear: vi.fn(),
@@ -28,6 +33,52 @@ function renderBatchPanel(overrides: Record<string, unknown> = {}) {
 }
 
 describe("BatchPanel", () => {
+  it("shows filter status empty state by default", () => {
+    renderBatchPanel()
+
+    expect(screen.getByText("筛选规则：未启用")).toBeInTheDocument()
+    expect(
+      screen.getByText("当前站点未加载可生效的筛选规则，默认全部保留。")
+    ).toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: "收起规则详情" })).not.toBeInTheDocument()
+  })
+
+  it("shows an icon-only action that opens filter settings when effective rules exist", async () => {
+    const user = userEvent.setup()
+    const onOpenSettings = vi.fn()
+
+    renderBatchPanel({
+      onOpenSettings,
+      filterStatus: {
+        summaryText: "筛选规则：已启用 2 条",
+        emptyStateText: null,
+        filters: [
+          {
+            id: "filter-1",
+            name: "爱恋 1080 简繁",
+            summary: "字幕组包含“爱恋字幕社”；标题包含“1080”"
+          },
+          {
+            id: "filter-2",
+            name: "Bangumi 专用",
+            summary: "站点是 Bangumi.moe"
+          }
+        ]
+      }
+    })
+
+    expect(screen.getByText("筛选规则：已启用 2 条")).toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: "查看规则详情" })).not.toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: "收起规则详情" })).not.toBeInTheDocument()
+
+    const filterSettingsButton = screen.getByRole("button", { name: "打开过滤规则配置" })
+    await user.click(filterSettingsButton)
+
+    expect(onOpenSettings).toHaveBeenCalledTimes(1)
+    expect(screen.queryByText("爱恋 1080 简繁")).not.toBeInTheDocument()
+  })
+
+
   it("renders a collapsed launcher when minimized", async () => {
     const user = userEvent.setup()
     const onToggleExpanded = vi.fn()
@@ -72,6 +123,11 @@ describe("BatchPanel", () => {
           statusText: "本次将使用自定义路径。",
           savePath: "D:\\Downloads",
           savePathHint: "本次任务将请求下载器保存到：D:\\Downloads",
+          filterStatus: {
+            summaryText: "筛选规则：未启用",
+            emptyStateText: "当前站点未加载可生效的筛选规则，默认全部保留。",
+            filters: []
+          },
           onToggleExpanded: vi.fn(),
           onSelectAll: vi.fn(),
           onClear: vi.fn(),
@@ -134,6 +190,11 @@ describe("BatchPanel", () => {
             statusText: "本次将使用自定义路径。",
             savePath,
             savePathHint: "本次任务将请求下载器保存到：D:\\Downloads",
+            filterStatus: {
+              summaryText: "筛选规则：未启用",
+              emptyStateText: "当前站点未加载可生效的筛选规则，默认全部保留。",
+              filters: []
+            },
             onToggleExpanded: vi.fn(),
             onSelectAll: vi.fn(),
             onClear: vi.fn(),

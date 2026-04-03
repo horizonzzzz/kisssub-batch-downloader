@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react"
 
 import { BatchAdvancedOptions } from "./batch-panel/BatchAdvancedOptions"
+import { BatchFilterStatusCard } from "./batch-panel/BatchFilterStatusCard"
 import { BatchPanelActions } from "./batch-panel/BatchPanelActions"
 import { BatchPanelHeader } from "./batch-panel/BatchPanelHeader"
 import { BatchPanelLauncher } from "./batch-panel/BatchPanelLauncher"
@@ -16,6 +17,7 @@ export function BatchPanel({
   statusText,
   savePath,
   savePathHint,
+  filterStatus,
   onToggleExpanded,
   onSelectAll,
   onClear,
@@ -96,6 +98,10 @@ export function BatchPanel({
 
         <div className="flex flex-col gap-[var(--anime-bt-panel-gap)] p-[18px]">
           <BatchSelectionSummary selectedCount={selectedCount} statusText={statusText} />
+          <BatchFilterStatusCard
+            filterStatus={filterStatus}
+            onOpenSettings={onOpenSettings}
+          />
           <BatchAdvancedOptions
             showAdvanced={showAdvanced}
             advancedState={viewState.advancedState}

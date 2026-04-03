@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 import { CONTENT_SCRIPT_MATCH_PATTERNS } from "../../../lib/sources/matching"
 
+const FILTERS_ROUTE = "/filters" as const
+
 type MockSource = {
   id: string
   displayName: string
@@ -109,6 +111,7 @@ describe("content script entry", () => {
             statusText: string
             onSelectAll: () => void
             onDownload: () => void
+            onOpenSettings: () => void
           }
         }
       }
@@ -188,6 +191,42 @@ describe("content script entry", () => {
     expect(createRoot).not.toHaveBeenCalled()
     expect(runtimeAddListener).toHaveBeenCalledTimes(1)
     expect(document.querySelector("[data-anime-bt-batch-panel-root]")).toBeNull()
+  })
+
+  it("opens the filters route from the panel settings action", async () => {
+    const source = {
+      id: "acgrip",
+      displayName: "ACG.RIP"
+    }
+
+    getSourceAdapterForLocation.mockReturnValueOnce(source)
+    getEnabledSourceAdapterForLocation.mockReturnValueOnce(source)
+    runtimeSendMessage.mockResolvedValue({
+      ok: true,
+      settings: {
+        enabledSources: {
+          acgrip: true
+        },
+        filters: []
+      }
+    })
+
+    await import("../../../contents/source-batch")
+
+    await vi.waitFor(() => {
+      expect(createRoot).toHaveBeenCalledTimes(1)
+    })
+
+    runtimeSendMessage.mockClear()
+
+    getLatestPanelProps().onOpenSettings()
+
+    await vi.waitFor(() => {
+      expect(runtimeSendMessage).toHaveBeenCalledWith({
+        type: "OPEN_OPTIONS_PAGE",
+        route: FILTERS_ROUTE
+      })
+    })
   })
 
   it("mounts the panel and checkbox inside shadow-root hosts when the source is enabled", async () => {

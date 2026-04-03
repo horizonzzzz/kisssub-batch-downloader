@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client"
 import type { PlasmoCSConfig } from "plasmo"
 
 import { BatchPanel } from "../components/batch-panel"
+import { createBatchPanelFilterStatus } from "../components/batch-panel/filter-status"
 import { SelectionCheckbox } from "../components/selection-checkbox"
 import {
   BATCH_EVENT,
@@ -21,6 +22,7 @@ import {
 import { createShadowMountHost, ensureShadowStyle } from "../lib/content/shadow-root"
 import type { SourceAdapter } from "../lib/sources/types"
 import type { BatchEventPayload, BatchItem, Settings } from "../lib/shared/types"
+import { FILTERS_ROUTE } from "../lib/shared/options-routes"
 import contentStyleText from "../styles/content-style-text"
 
 export default function SourceBatchContentScript() {
@@ -53,6 +55,7 @@ type PanelSnapshot = {
   statusText: string
   savePath: string
   savePathHint: string
+  filterStatus: ReturnType<typeof createBatchPanelFilterStatus>
 }
 
 const DEFAULT_SAVE_PATH_HINT =
@@ -68,7 +71,11 @@ const snapshot: PanelSnapshot = {
   selected: new Map(),
   statusText: "就绪。先在当前列表页勾选资源。",
   savePath: "",
-  savePathHint: DEFAULT_SAVE_PATH_HINT
+  savePathHint: DEFAULT_SAVE_PATH_HINT,
+  filterStatus: createBatchPanelFilterStatus({
+    sourceId: "kisssub",
+    filters: []
+  })
 }
 
 const checkboxRoots = new Map<string, CheckboxRoot>()
@@ -95,6 +102,11 @@ async function bootstrap() {
     if (!source) {
       return
     }
+
+    snapshot.filterStatus = createBatchPanelFilterStatus({
+      sourceId: source.id,
+      filters: settings.filters ?? []
+    })
 
     activateSource(source)
   } catch (error) {
@@ -333,6 +345,7 @@ function renderPanel() {
       statusText={snapshot.statusText}
       savePath={snapshot.savePath}
       savePathHint={snapshot.savePathHint}
+      filterStatus={snapshot.filterStatus}
       onToggleExpanded={updateExpanded}
       onSelectAll={selectAllVisible}
       onClear={clearSelection}
@@ -342,7 +355,7 @@ function renderPanel() {
         void startBatchDownload()
       }}
       onOpenSettings={() => {
-        void sendRuntimeRequest({ type: "OPEN_OPTIONS_PAGE" })
+        void sendRuntimeRequest({ type: "OPEN_OPTIONS_PAGE", route: FILTERS_ROUTE })
       }}
     />
   )

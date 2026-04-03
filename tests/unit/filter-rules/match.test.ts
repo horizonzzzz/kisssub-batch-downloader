@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest"
 
 import {
   decideFilterAction,
+  deriveEffectiveFilterSummary,
   matchesCondition,
   matchesFilter
 } from "../../../lib/filter-rules"
@@ -134,6 +135,96 @@ describe("matchesFilter", () => {
         }
       ).matched
     ).toBe(false)
+  })
+})
+
+describe("deriveEffectiveFilterSummary", () => {
+  it("returns an empty-state reason when no enabled filters exist", () => {
+    expect(
+      deriveEffectiveFilterSummary({
+        sourceId: "kisssub",
+        filters: []
+      })
+    ).toMatchObject({
+      effectiveCount: 0,
+      hasEnabledFilters: false,
+      emptyStateReason: "no-enabled-filters"
+    })
+  })
+
+  it("includes global filters and matching site filters for the current source", () => {
+    const result = deriveEffectiveFilterSummary({
+      sourceId: "bangumimoe",
+      filters: [
+        createFilter({
+          id: "global-filter",
+          name: "保留 1080",
+          must: [
+            createCondition({
+              field: "title",
+              value: "1080"
+            })
+          ]
+        }),
+        createFilter({
+          id: "site-filter",
+          name: "Bangumi 专用",
+          must: [
+            createCondition({
+              id: "condition-2",
+              field: "source",
+              operator: "is",
+              value: "bangumimoe"
+            })
+          ]
+        }),
+        createFilter({
+          id: "other-site-filter",
+          name: "Kisssub 专用",
+          must: [
+            createCondition({
+              id: "condition-3",
+              field: "source",
+              operator: "is",
+              value: "kisssub"
+            })
+          ]
+        })
+      ]
+    })
+
+    expect(result).toMatchObject({
+      effectiveCount: 2,
+      hasEnabledFilters: true,
+      emptyStateReason: null
+    })
+    expect(result.filters.map((filter) => filter.name)).toEqual(["保留 1080", "Bangumi 专用"])
+  })
+
+  it("keeps an explicit empty-state reason when enabled filters only target other sites", () => {
+    expect(
+      deriveEffectiveFilterSummary({
+        sourceId: "kisssub",
+        filters: [
+          createFilter({
+            id: "site-filter",
+            name: "Bangumi 专用",
+            must: [
+              createCondition({
+                id: "condition-2",
+                field: "source",
+                operator: "is",
+                value: "bangumimoe"
+              })
+            ]
+          })
+        ]
+      })
+    ).toMatchObject({
+      effectiveCount: 0,
+      hasEnabledFilters: true,
+      emptyStateReason: "no-filters-for-source"
+    })
   })
 })
 

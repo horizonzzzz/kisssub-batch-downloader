@@ -5,6 +5,18 @@ import type {
 } from "../shared/types"
 import { extractSubgroup } from "./subgroup"
 
+export type EffectiveFilterSummaryItem = {
+  id: string
+  name: string
+}
+
+export type EffectiveFilterSummary = {
+  effectiveCount: number
+  hasEnabledFilters: boolean
+  emptyStateReason: "no-enabled-filters" | "no-filters-for-source" | null
+  filters: EffectiveFilterSummaryItem[]
+}
+
 export type FilterMatchContext = {
   sourceId: SourceId
   title: string
@@ -25,6 +37,31 @@ export type FilterDecision = {
   message: string
   subgroup: string
   trace: string[]
+}
+
+export function deriveEffectiveFilterSummary(input: {
+  sourceId: SourceId
+  filters: FilterEntry[]
+}): EffectiveFilterSummary {
+  const enabledFilters = input.filters.filter((filter) => filter.enabled)
+  const filters = enabledFilters
+    .filter((filter) => isFilterEffectiveForSource(filter, input.sourceId))
+    .map((filter) => ({
+      id: filter.id,
+      name: filter.name
+    }))
+
+  return {
+    effectiveCount: filters.length,
+    hasEnabledFilters: enabledFilters.length > 0,
+    emptyStateReason:
+      filters.length > 0
+        ? null
+        : enabledFilters.length > 0
+          ? "no-filters-for-source"
+          : "no-enabled-filters",
+    filters
+  }
 }
 
 export function decideFilterAction(input: {
@@ -123,6 +160,19 @@ export function matchesCondition(
   return {
     matched: targetValue.toLowerCase().includes(condition.value.toLowerCase())
   }
+}
+
+function isFilterEffectiveForSource(filter: FilterEntry, sourceId: SourceId) {
+  const sourceMustConditions = filter.must.filter(
+    (condition): condition is Extract<FilterCondition, { field: "source" }> =>
+      condition.field === "source"
+  )
+
+  if (!sourceMustConditions.length) {
+    return true
+  }
+
+  return sourceMustConditions.every((condition) => condition.value === sourceId)
 }
 
 function getConditionTargetValue(
