@@ -41,6 +41,7 @@ import { FilterWorkbenchTestBench } from "./FilterWorkbenchTestBench"
 import {
   cloneWorkbenchRule,
   createPresetGroup,
+  hasEnabledIncludeRule,
   runWorkbenchTest,
   type FilterWorkbenchGroup,
   type FilterWorkbenchRule,
@@ -97,10 +98,15 @@ export function FiltersPage() {
   }
 
   const enabledGroupsCount = groups.filter((group) => group.enabled).length
+  const includeModeEnabled = hasEnabledIncludeRule(groups)
   const totalRulesCount = groups.reduce(
     (count, group) => count + group.rules.length,
     0
   )
+  const defaultStrategyLabel = includeModeEnabled ? "拦截" : "放行"
+  const currentModeLabel = includeModeEnabled
+    ? "仅保留命中项"
+    : "仅拦截命中项"
 
   const handleGroupDragEnd = (event: DragEndEvent) => {
     const { active, over } = event
@@ -300,7 +306,16 @@ export function FiltersPage() {
 
           <div className="flex flex-wrap gap-3">
             <div className="rounded-full border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-600">
-              默认策略：<span className="font-medium text-zinc-900">放行</span>
+              默认策略：
+              <span className="ml-1 font-medium text-zinc-900">
+                {defaultStrategyLabel}
+              </span>
+            </div>
+            <div className="rounded-full border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-600">
+              当前模式：
+              <span className="ml-1 font-medium text-zinc-900">
+                {currentModeLabel}
+              </span>
             </div>
             <div className="rounded-full border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-600">
               已启用 <span className="font-medium text-zinc-900">{enabledGroupsCount}</span> 个策略组
@@ -323,7 +338,9 @@ export function FiltersPage() {
           </div>
 
           <div className="rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm leading-6 text-blue-900">
-            当前页的策略编排会并入共享设置表单；工作台中的改动会立即反映到规则测试台，点击“保存所有设置”后，同样的配置会用于后台批量提交流程。
+            当前页的策略编排会并入共享设置表单；工作台中的改动会立即反映到规则测试台。
+            一旦存在启用的匹配放行规则，工作台就会切换为“仅保留命中项”；否则保持“仅拦截命中项”。
+            点击“保存所有设置”后，同样的配置会用于后台批量提交流程，并遵循“首条命中即停止 + 动态默认策略”语义。
           </div>
         </div>
       </Card>

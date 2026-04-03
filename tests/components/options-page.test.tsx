@@ -137,6 +137,9 @@ describe("OptionsPage", () => {
     expect(screen.queryByText("已接入")).not.toBeInTheDocument()
     expect(screen.getByRole("button", { name: "新建策略组" })).toBeInTheDocument()
     expect(screen.getByText("规则测试台")).toBeInTheDocument()
+    expect(screen.getByText("默认策略：")).toBeInTheDocument()
+    expect(screen.getByText("放行")).toBeInTheDocument()
+    expect(screen.getByText("仅拦截命中项")).toBeInTheDocument()
 
     secondRender.unmount()
     window.location.hash = "#/overview"
@@ -236,6 +239,7 @@ describe("OptionsPage", () => {
       await user.click(screen.getByRole("button", { name: "保存策略组" }))
 
       await user.click(screen.getByRole("button", { name: "添加规则" }))
+      expect(screen.getByLabelText("执行动作")).toHaveTextContent("匹配拦截")
       await user.type(screen.getByLabelText("规则名称"), "排除 RAW")
       await user.type(screen.getByLabelText("条件值 1"), "RAW")
       await user.click(screen.getByRole("button", { name: "保存规则" }))
@@ -252,7 +256,7 @@ describe("OptionsPage", () => {
         )
       ).toBeInTheDocument()
       expect(
-        screen.getByText("当前结果基于当前工作台中的真实策略配置。")
+        screen.getByText("当前结果基于当前工作台中的真实策略配置，并与后台过滤语义一致。")
       ).toBeInTheDocument()
       expect(screen.getByText("最终结果")).toBeInTheDocument()
       expect(screen.getByText(/最近测试/)).toBeInTheDocument()
@@ -265,6 +269,48 @@ describe("OptionsPage", () => {
     },
     10000
   )
+
+  it("switches to keep-only mode when an enabled include rule is added", async () => {
+    const user = userEvent.setup()
+    const api = createOptionsApi()
+    Object.defineProperty(HTMLElement.prototype, "hasPointerCapture", {
+      configurable: true,
+      value: () => false
+    })
+    Object.defineProperty(HTMLElement.prototype, "setPointerCapture", {
+      configurable: true,
+      value: vi.fn()
+    })
+    Object.defineProperty(HTMLElement.prototype, "releasePointerCapture", {
+      configurable: true,
+      value: vi.fn()
+    })
+    Object.defineProperty(HTMLElement.prototype, "scrollIntoView", {
+      configurable: true,
+      value: vi.fn()
+    })
+
+    render(<OptionsPage api={api} />)
+
+    expect(await screen.findByDisplayValue("http://127.0.0.1:17474")).toBeInTheDocument()
+
+    await user.click(screen.getByRole("button", { name: "过滤规则" }))
+    expect(screen.getByText("仅拦截命中项")).toBeInTheDocument()
+
+    await user.click(screen.getByRole("button", { name: "新建策略组" }))
+    await user.type(screen.getByLabelText("策略组名称"), "字幕组保留")
+    await user.click(screen.getByRole("button", { name: "保存策略组" }))
+
+    await user.click(screen.getByRole("button", { name: "添加规则" }))
+    await user.click(screen.getByLabelText("执行动作"))
+    await user.click(screen.getByRole("option", { name: "匹配放行（保留）" }))
+    await user.type(screen.getByLabelText("规则名称"), "仅保留喵萌")
+    await user.type(screen.getByLabelText("条件值 1"), "喵萌奶茶屋")
+    await user.click(screen.getByRole("button", { name: "保存规则" }))
+
+    expect(screen.getByText("拦截")).toBeInTheDocument()
+    expect(screen.getByText("仅保留命中项")).toBeInTheDocument()
+  })
 
   it("shows a clear empty preview message when a rule has no conditions", async () => {
     const user = userEvent.setup()

@@ -262,6 +262,68 @@ describe("retryFailedItems", () => {
       expect(result.updatedRecord.status).toBe("completed")
     })
 
+    it("uses include-default blocking when include rules are enabled but unmatched", async () => {
+      const failedItem = createFailedItem(
+        "item-1",
+        "[LoliHouse] Episode 01 [1080p]",
+        "magnet:?xt=test"
+      )
+      const record = createMockRecord("batch-1", [failedItem])
+      deps.getHistoryRecord = vi.fn(async () => record)
+      const includeSettings: Settings = {
+        qbBaseUrl: "http://localhost:8080",
+        qbUsername: "admin",
+        qbPassword: "password",
+        concurrency: 3,
+        injectTimeoutMs: 5000,
+        domSettleMs: 1000,
+        retryCount: 3,
+        remoteScriptUrl: "",
+        remoteScriptRevision: "",
+        lastSavePath: "",
+        sourceDeliveryModes: {},
+        enabledSources: { kisssub: true },
+        filterGroups: [
+          {
+            id: "group-include",
+            name: "字幕组保留",
+            description: "",
+            enabled: true,
+            rules: [
+              {
+                id: "rule-include",
+                name: "仅保留喵萌",
+                enabled: true,
+                action: "include",
+                relation: "and",
+                conditions: [
+                  {
+                    id: "condition-subgroup",
+                    field: "subgroup",
+                    operator: "contains",
+                    value: "喵萌奶茶屋"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+      deps.getSettings = vi.fn(async () => includeSettings)
+
+      const result = await retryFailedItems({ recordId: "batch-1" }, deps)
+
+      expect(result.successCount).toBe(0)
+      expect(result.failedCount).toBe(0)
+      expect(deps.loginQb).not.toHaveBeenCalled()
+      expect(deps.addUrlsToQb).not.toHaveBeenCalled()
+      expect(result.updatedRecord.items[0].status).toBe("filtered")
+      expect(result.updatedRecord.items[0].message).toBe(
+        "命中过滤默认策略：存在启用的匹配放行规则，但当前资源未命中任何放行规则。"
+      )
+      expect(result.updatedRecord.status).toBe("completed")
+    })
+
     it("uses savePath from record when available", async () => {
       const failedItem = createFailedItem("item-1", "Failed", "magnet:?xt=test")
       const record = {

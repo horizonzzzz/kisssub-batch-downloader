@@ -48,6 +48,13 @@ export function decideFilterGroupAction(input: {
   }
   const trace: string[] = []
   const errors: string[] = []
+  const includeModeEnabled = hasEnabledIncludeRule(input.groups)
+
+  trace.push(
+    includeModeEnabled
+      ? "检测到已启用的“匹配放行（保留）”规则：未命中时将按默认策略拦截。"
+      : "未检测到已启用的“匹配放行（保留）”规则：未命中时将按默认策略放行。"
+  )
 
   for (const group of input.groups) {
     if (!group.enabled) {
@@ -79,7 +86,8 @@ export function decideFilterGroupAction(input: {
         continue
       }
 
-      const actionLabel = rule.action === "include" ? "优先放行" : "直接拦截"
+      const actionLabel =
+        rule.action === "include" ? "匹配放行（保留）" : "匹配拦截"
       trace.push(`命中规则「${rule.name}」，执行${actionLabel}并停止匹配。`)
 
       return {
@@ -87,7 +95,7 @@ export function decideFilterGroupAction(input: {
         matchedGroup: group,
         matchedRule: rule,
         action: rule.action,
-        message: `Matched filter group: ${group.name} / ${rule.name}`,
+        message: `Matched filter rule: ${group.name} / ${rule.name} (${rule.action})`,
         subgroup,
         trace,
         errors
@@ -95,14 +103,33 @@ export function decideFilterGroupAction(input: {
     }
   }
 
-  trace.push("未命中任何已启用规则，按默认策略放行。")
+  if (includeModeEnabled) {
+    trace.push(
+      "未命中任何已启用规则，且存在已启用的“匹配放行（保留）”规则，按默认策略拦截。"
+    )
+
+    return {
+      accepted: false,
+      matchedGroup: null,
+      matchedRule: null,
+      action: null,
+      message: "命中过滤默认策略：存在启用的匹配放行规则，但当前资源未命中任何放行规则。",
+      subgroup,
+      trace,
+      errors
+    }
+  }
+
+  trace.push(
+    "未命中任何已启用规则，且不存在已启用的“匹配放行（保留）”规则，按默认策略放行。"
+  )
 
   return {
     accepted: true,
     matchedGroup: null,
     matchedRule: null,
     action: null,
-    message: "",
+    message: "未命中任何已启用规则，且当前仅配置拦截规则，按默认策略放行。",
     subgroup,
     trace,
     errors
@@ -180,4 +207,12 @@ function getConditionTargetValue(
   }
 
   return context.title
+}
+
+function hasEnabledIncludeRule(groups: FilterRuleGroup[]): boolean {
+  return groups.some(
+    (group) =>
+      group.enabled &&
+      group.rules.some((rule) => rule.enabled && rule.action === "include")
+  )
 }

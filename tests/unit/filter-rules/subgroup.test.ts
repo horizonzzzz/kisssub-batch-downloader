@@ -28,6 +28,21 @@ describe("extractSubgroup", () => {
       sourceId: "bangumimoe",
       title: "[ANi] Dr.STONE - 01 [1080P][Baha][WEB-DL][AAC AVC][CHT]",
       expected: "ANi"
+    },
+    {
+      sourceId: "kisssub",
+      title: "Frieren - 01 [LoliHouse] [1080p]",
+      expected: "LoliHouse"
+    },
+    {
+      sourceId: "kisssub",
+      title: "[爱恋字幕社][示例资源]",
+      expected: "爱恋字幕社"
+    },
+    {
+      sourceId: "kisssub",
+      title: "[爱恋字幕社][1月新番][金牌得主 第二季][Medalist][08][1080p][MP4][GB][简中]",
+      expected: "爱恋字幕社"
     }
   ])("extracts subgroup for $sourceId titles", ({ sourceId, title, expected }) => {
     expect(extractSubgroup(sourceId, title)).toBe(expected)
@@ -35,5 +50,17 @@ describe("extractSubgroup", () => {
 
   it("returns an empty string when the title has no recognizable subgroup", () => {
     expect(extractSubgroup("kisssub", "Summer Pockets Episode 01")).toBe("")
+  })
+
+  it("ignores later wrapped metadata tokens when no subgroup is present", () => {
+    expect(
+      extractSubgroup("kisssub", "Frieren - 01 [简繁内封字幕] [1080p]")
+    ).toBe("")
+  })
+
+  it("does not treat subtitle metadata as a subgroup when it appears first", () => {
+    expect(
+      extractSubgroup("kisssub", "[简繁内封字幕][1080p]")
+    ).toBe("")
   })
 })

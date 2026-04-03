@@ -185,7 +185,8 @@ export function summarizeWorkbenchRule(rule: FilterWorkbenchRule) {
   }
 
   const relationLabel = rule.relation === "and" ? "且" : "或"
-  const actionLabel = rule.action === "include" ? "优先放行" : "直接拦截"
+  const actionLabel =
+    rule.action === "include" ? "匹配放行（保留）" : "匹配拦截"
   const conditionText = rule.conditions
     .map((condition) => {
       const fieldLabel = getConditionFieldLabel(condition.field)
@@ -201,8 +202,8 @@ export function summarizeWorkbenchRule(rule: FilterWorkbenchRule) {
 export function createPresetGroup(): FilterWorkbenchGroup {
   return {
     id: createWorkbenchId("group"),
-    name: "画质与格式过滤",
-    description: "拦截明显不符合偏好的画质与格式。",
+    name: "先拦截低质资源，再保留目标字幕组",
+    description: "示例：先拦截 720p / RAW，再仅保留命中字幕组的资源。",
     enabled: true,
     rules: [
       {
@@ -232,6 +233,21 @@ export function createPresetGroup(): FilterWorkbenchGroup {
             field: "title",
             operator: "contains",
             value: "RAW"
+          }
+        ]
+      },
+      {
+        id: createWorkbenchId("rule"),
+        name: "保留喵萌奶茶屋",
+        enabled: true,
+        action: "include",
+        relation: "and",
+        conditions: [
+          {
+            id: createWorkbenchId("condition"),
+            field: "subgroup",
+            operator: "contains",
+            value: "喵萌奶茶屋"
           }
         ]
       }
@@ -276,10 +292,20 @@ export function runWorkbenchTest(
       ? `命中策略组「${decision.matchedGroup.name}」中的规则「${decision.matchedRule.name}」，该资源将被${
           decision.accepted ? "放行" : "拦截"
         }。`
-      : "未命中任何已启用规则，该资源将按默认策略放行。",
+      : decision.accepted
+        ? "未命中任何已启用规则，且不存在已启用的匹配放行规则，该资源将按默认策略放行。"
+        : "未命中任何已启用规则，但存在已启用的匹配放行规则，该资源将按默认策略拦截。",
     trace,
     note: decision.errors.length
       ? `有 ${decision.errors.length} 条条件因格式错误被当作未命中处理。`
-      : "当前结果基于当前工作台中的真实策略配置。"
+      : "当前结果基于当前工作台中的真实策略配置，并与后台过滤语义一致。"
   }
+}
+
+export function hasEnabledIncludeRule(groups: FilterWorkbenchGroup[]): boolean {
+  return groups.some(
+    (group) =>
+      group.enabled &&
+      group.rules.some((rule) => rule.enabled && rule.action === "include")
+  )
 }

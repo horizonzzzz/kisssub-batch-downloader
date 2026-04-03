@@ -112,9 +112,7 @@ export async function retryFailedItems(
       filteredItems.push(
         updateItemAfterFiltered(
           item,
-          `Filtered by group: ${ruleDecision.matchedGroup?.name ?? "Unnamed group"} / rule: ${
-            ruleDecision.matchedRule?.name ?? "Unnamed rule"
-          }`
+          getFilterDecisionMessage(ruleDecision)
         )
       )
       continue
@@ -215,4 +213,14 @@ export async function retryFailedItems(
     failedCount,
     updatedRecord
   }
+}
+
+function getFilterDecisionMessage(
+  ruleDecision: ReturnType<typeof decideFilterGroupAction>
+): string {
+  if (ruleDecision.matchedGroup && ruleDecision.matchedRule) {
+    return `Filtered by group: ${ruleDecision.matchedGroup.name} / rule: ${ruleDecision.matchedRule.name}`
+  }
+
+  return ruleDecision.message || "Filtered by default strategy."
 }

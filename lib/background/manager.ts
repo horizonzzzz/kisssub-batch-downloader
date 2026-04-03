@@ -263,10 +263,18 @@ function classifyFilteredBatchResult(
     status: "filtered",
     deliveryMode: preferredDeliveryMode,
     submitUrl: "",
-    message: `Filtered by group: ${ruleDecision.matchedGroup?.name ?? "Unnamed group"} / rule: ${
-      ruleDecision.matchedRule?.name ?? "Unnamed rule"
-    }`
+    message: getFilterDecisionMessage(ruleDecision)
   }
+}
+
+function getFilterDecisionMessage(
+  ruleDecision: ReturnType<typeof decideFilterGroupAction>
+): string {
+  if (ruleDecision.matchedGroup && ruleDecision.matchedRule) {
+    return `Filtered by group: ${ruleDecision.matchedGroup.name} / rule: ${ruleDecision.matchedRule.name}`
+  }
+
+  return ruleDecision.message || "Filtered by default strategy."
 }
 
 function splitPreparedSubmissions(preparedSubmissions: ClassifiedBatchResult[]): {

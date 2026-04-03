@@ -15,7 +15,7 @@ The extension injects selection UI into supported list pages, reuses direct magn
   - `Filter Rules`
     - rendered as the `Strategy Workbench` surface backed by persisted `filterGroups`
     - page interactions now write through the shared settings form, and the rule test bench exercises the real group/condition engine
-    - background/runtime filtering consumes the same `filterGroups` with first-match semantics, so filtering in the UI matches runtime behavior
+    - background/runtime filtering consumes the same `filterGroups` with first-match semantics and a dynamic default strategy derived from enabled include rules, so filtering in the UI matches runtime behavior
   - `Batch History`
   - `Source Overview`
 - Supported popup surface responsibilities:
@@ -31,6 +31,7 @@ The extension injects selection UI into supported list pages, reuses direct magn
 - Supported downloader target: `qBittorrent WebUI` only
 - Optional per-batch save path override is supported
 - Pre-submit filter rules can include or exclude resources by strategy-group order, source field, title field, and extracted subgroup field
+- When any enabled include rule exists, unmatched resources are blocked by default; otherwise unmatched resources are allowed by default
 - Magnet links are preferred; torrent URLs are the fallback
 - Each supported source can be enabled or disabled by the user:
   - disabled sources keep their saved per-site configuration
@@ -80,7 +81,7 @@ The extension injects selection UI into supported list pages, reuses direct magn
   Contents-only Tailwind/shadcn-style primitives for the injected batch panel and selection checkbox visuals. Keep these isolated from `components/ui/` so third-party page injection stays on its own sizing, reset contract, and `data-*` test-anchor surface.
 - `components/options/`
   Source of truth for the options workspace shell, hash-route config, form hooks/schema, shared options-only form fragments under `components/options/form/`, and the `general` / `sites` / `overview` page implementations.
-  Filtering rules UI lives under `components/options/pages/filters/` and now persists strategy-group data through the shared settings form; drawers, test bench, and orchestration cards all reflect the real `filterGroups` model and feed the backend filter engine.
+  Filtering rules UI lives under `components/options/pages/filters/` and now persists strategy-group data through the shared settings form; drawers, test bench, and orchestration cards all reflect the real `filterGroups` model, surface the dynamic default strategy, and feed the backend filter engine.
 - `components/ui/`
   Tailwind-first primitive components used by the options workspace, including buttons, inputs, cards, badges, alerts, switches, and radio groups.
 - `contents/`

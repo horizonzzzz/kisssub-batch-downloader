@@ -278,6 +278,164 @@ describe("createBatchDownloadManager", () => {
     )
   })
 
+  it("applies include-default blocking before qB submission when no include rule matches", async () => {
+    const settings = createSettings({
+      filterGroups: [
+        {
+          id: "group-include",
+          name: "字幕组保留",
+          description: "",
+          enabled: true,
+          rules: [
+            {
+              id: "rule-include",
+              name: "仅保留喵萌",
+              enabled: true,
+              action: "include",
+              relation: "and",
+              conditions: [
+                {
+                  id: "condition-subgroup",
+                  field: "subgroup",
+                  operator: "contains",
+                  value: "喵萌奶茶屋"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    })
+    const { manager, dependencies } = createManager({
+      saveSettings: vi.fn().mockResolvedValue(settings),
+      extractSingleItem: vi.fn().mockResolvedValue({
+        ok: true,
+        title: "[LoliHouse] Episode 01 [1080p]",
+        detailUrl: "https://www.kisssub.org/show-deadbeef.html",
+        hash: "deadbeef",
+        magnetUrl: "magnet:?xt=urn:btih:deadbeef",
+        torrentUrl: "",
+        failureReason: ""
+      })
+    })
+
+    await expect(
+      manager.startBatchDownload(
+        18,
+        [
+          {
+            sourceId: "kisssub",
+            detailUrl: "https://www.kisssub.org/show-deadbeef.html",
+            title: "[LoliHouse] Episode 01 [1080p]"
+          }
+        ],
+        ""
+      )
+    ).resolves.toEqual({
+      ok: true,
+      total: 1
+    })
+
+    await vi.waitFor(() => {
+      expect(dependencies.sendBatchEvent.mock.calls.at(-1)?.[1]).toMatchObject({
+        stage: "completed",
+        summary: {
+          submitted: 0,
+          duplicated: 0,
+          filtered: 1,
+          failed: 0
+        }
+      })
+    })
+
+    expect(dependencies.loginQb).not.toHaveBeenCalled()
+    expect(dependencies.addUrlsToQb).not.toHaveBeenCalled()
+    expect(dependencies.addTorrentFilesToQb).not.toHaveBeenCalled()
+    expect(dependencies.sendBatchEvent.mock.calls.at(-1)?.[1].results).toEqual([
+      {
+        title: "[LoliHouse] Episode 01 [1080p]",
+        detailUrl: "https://www.kisssub.org/show-deadbeef.html",
+        status: "filtered",
+        message: "命中过滤默认策略：存在启用的匹配放行规则，但当前资源未命中任何放行规则。"
+      }
+    ])
+  })
+
+  it("applies include-default blocking to pre-resolved direct-link items before qB submission", async () => {
+    const settings = createSettings({
+      filterGroups: [
+        {
+          id: "group-include",
+          name: "字幕组保留",
+          description: "",
+          enabled: true,
+          rules: [
+            {
+              id: "rule-include",
+              name: "仅保留喵萌",
+              enabled: true,
+              action: "include",
+              relation: "and",
+              conditions: [
+                {
+                  id: "condition-subgroup",
+                  field: "subgroup",
+                  operator: "contains",
+                  value: "喵萌奶茶屋"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    })
+    const { manager, dependencies } = createManager({
+      saveSettings: vi.fn().mockResolvedValue(settings)
+    })
+
+    await expect(
+      manager.startBatchDownload(
+        19,
+        [
+          {
+            sourceId: "kisssub",
+            detailUrl: "https://www.kisssub.org/show-deadbeef.html",
+            title: "[LoliHouse] Episode 01 [1080p]",
+            magnetUrl: "magnet:?xt=urn:btih:deadbeef"
+          }
+        ],
+        ""
+      )
+    ).resolves.toEqual({
+      ok: true,
+      total: 1
+    })
+
+    await vi.waitFor(() => {
+      expect(dependencies.sendBatchEvent.mock.calls.at(-1)?.[1]).toMatchObject({
+        stage: "completed",
+        summary: {
+          submitted: 0,
+          duplicated: 0,
+          filtered: 1,
+          failed: 0
+        }
+      })
+    })
+
+    expect(dependencies.extractSingleItem).not.toHaveBeenCalled()
+    expect(dependencies.loginQb).not.toHaveBeenCalled()
+    expect(dependencies.addUrlsToQb).not.toHaveBeenCalled()
+    expect(dependencies.sendBatchEvent.mock.calls.at(-1)?.[1].results).toEqual([
+      {
+        title: "[LoliHouse] Episode 01 [1080p]",
+        detailUrl: "https://www.kisssub.org/show-deadbeef.html",
+        status: "filtered",
+        message: "命中过滤默认策略：存在启用的匹配放行规则，但当前资源未命中任何放行规则。"
+      }
+    ])
+  })
+
   it("filters extracted items using the extracted detail title and subgroup", async () => {
     const settings = createSettings({
       filterGroups: [

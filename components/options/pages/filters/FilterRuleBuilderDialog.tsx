@@ -136,7 +136,7 @@ export function FilterRuleBuilderDialog({
       .join(` ${relationText} `)
 
     const actionText =
-      rule.action === "include" ? "优先放行" : "直接拦截"
+      rule.action === "include" ? "匹配放行（保留）" : "匹配拦截"
 
     return `当 ${conditionsText} 时，执行${actionText}。`
   }
@@ -248,8 +248,8 @@ export function FilterRuleBuilderDialog({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="exclude">直接拦截</SelectItem>
-                  <SelectItem value="include">优先放行</SelectItem>
+                  <SelectItem value="exclude">匹配拦截</SelectItem>
+                  <SelectItem value="include">匹配放行（保留）</SelectItem>
                 </SelectContent>
               </Select>
             </div>

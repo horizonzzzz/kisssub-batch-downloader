@@ -99,7 +99,7 @@ function RuleCard({
           <div className="min-w-0 flex-1 space-y-2">
             <div className="flex flex-wrap items-center gap-2">
               <Badge variant={rule.action === "include" ? "brand" : "warning"}>
-                {rule.action === "include" ? "优先放行" : "直接拦截"}
+                {rule.action === "include" ? "匹配放行（保留）" : "匹配拦截"}
               </Badge>
               <span className="text-sm font-semibold text-zinc-900">
                 {rule.name || "未命名规则"}
