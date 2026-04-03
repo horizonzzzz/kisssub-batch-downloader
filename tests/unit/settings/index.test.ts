@@ -111,145 +111,180 @@ describe("sanitizeSettings", () => {
     })
   })
 
-  it("defaults filter groups to an empty array", () => {
-    expect(sanitizeSettings({}).filterGroups).toEqual([])
+  it("defaults filters to an empty array", () => {
+    expect(sanitizeSettings({}).filters).toEqual([])
   })
 
-  it("normalizes filter groups and trims valid nested fields", () => {
+  it("normalizes filters and trims valid nested fields", () => {
     expect(
       sanitizeSettings({
-        filterGroups: [
+        filters: [
           {
-            id: " group-1 ",
-            name: " 画质过滤 ",
-            description: " 拦截低画质 ",
+            id: " filter-1 ",
+            name: " 爱恋 1080 简繁 ",
             enabled: true,
-            rules: [
+            must: [
               {
-                id: " rule-1 ",
-                name: " 排除 720p ",
-                enabled: true,
-                action: "exclude",
-                relation: "or",
-                conditions: [
-                  {
-                    id: " condition-1 ",
-                    field: "title",
-                    operator: "contains",
-                    value: " 720p "
-                  },
-                  {
-                    id: " condition-2 ",
-                    field: "source",
-                    operator: "is",
-                    value: " kisssub "
-                  }
-                ]
+                id: " condition-1 ",
+                field: "subgroup",
+                operator: "contains",
+                value: " 爱恋字幕社 "
+              },
+              {
+                id: " condition-2 ",
+                field: "title",
+                operator: "contains",
+                value: " 1080 "
+              }
+            ],
+            any: [
+              {
+                id: " condition-3 ",
+                field: "title",
+                operator: "contains",
+                value: " 简 "
+              },
+              {
+                id: " condition-4 ",
+                field: "title",
+                operator: "contains",
+                value: " 繁 "
               }
             ]
           }
         ]
-      }).filterGroups
+      }).filters
     ).toEqual([
       {
-        id: "group-1",
-        name: "画质过滤",
-        description: "拦截低画质",
+        id: "filter-1",
+        name: "爱恋 1080 简繁",
         enabled: true,
-        rules: [
+        must: [
           {
-            id: "rule-1",
-            name: "排除 720p",
-            enabled: true,
-            action: "exclude",
-            relation: "or",
-            conditions: [
-              {
-                id: "condition-1",
-                field: "title",
-                operator: "contains",
-                value: "720p"
-              },
-              {
-                id: "condition-2",
-                field: "source",
-                operator: "is",
-                value: "kisssub"
-              }
-            ]
+            id: "condition-1",
+            field: "subgroup",
+            operator: "contains",
+            value: "爱恋字幕社"
+          },
+          {
+            id: "condition-2",
+            field: "title",
+            operator: "contains",
+            value: "1080"
+          }
+        ],
+        any: [
+          {
+            id: "condition-3",
+            field: "title",
+            operator: "contains",
+            value: "简"
+          },
+          {
+            id: "condition-4",
+            field: "title",
+            operator: "contains",
+            value: "繁"
           }
         ]
       }
     ])
   })
 
-  it("drops invalid rules and conditions during sanitization", () => {
+  it("drops invalid filters and conditions during sanitization", () => {
     expect(
       sanitizeSettings({
-        filterGroups: [
+        filters: [
           {
-            id: "group-1",
-            name: "规则组",
-            description: "",
+            id: "filter-valid",
+            name: "保留 Kisssub 1080",
             enabled: true,
-            rules: [
-              {
-                id: "rule-valid",
-                name: "保留 Kisssub",
-                enabled: true,
-                action: "include",
-                relation: "and",
-                conditions: [
-                  {
-                    id: "condition-valid",
-                    field: "source",
-                    operator: "is",
-                    value: "kisssub"
-                  },
-                  {
-                    id: "condition-invalid",
-                    field: "title",
-                    operator: "regex",
-                    value: "[RAW"
-                  }
-                ]
-              },
-              {
-                id: "rule-invalid",
-                name: "空规则",
-                enabled: true,
-                action: "exclude",
-                relation: "and",
-                conditions: []
-              }
-            ]
-          }
-        ]
-      }).filterGroups
-    ).toEqual([
-      {
-        id: "group-1",
-        name: "规则组",
-        description: "",
-        enabled: true,
-        rules: [
-          {
-            id: "rule-valid",
-            name: "保留 Kisssub",
-            enabled: true,
-            action: "include",
-            relation: "and",
-            conditions: [
+            must: [
               {
                 id: "condition-valid",
                 field: "source",
                 operator: "is",
                 value: "kisssub"
+              },
+              {
+                id: "condition-invalid",
+                field: "title",
+                operator: "is",
+                value: "1080p"
+              } as never
+            ],
+            any: [
+              {
+                id: "condition-any",
+                field: "title",
+                operator: "contains",
+                value: "1080p"
               }
             ]
+          },
+          {
+            id: "filter-invalid",
+            name: "空筛选器",
+            enabled: true,
+            must: [],
+            any: []
+          }
+        ]
+      }).filters
+    ).toEqual([
+      {
+        id: "filter-valid",
+        name: "保留 Kisssub 1080",
+        enabled: true,
+        must: [
+          {
+            id: "condition-valid",
+            field: "source",
+            operator: "is",
+            value: "kisssub"
+          }
+        ],
+        any: [
+          {
+            id: "condition-any",
+            field: "title",
+            operator: "contains",
+            value: "1080p"
           }
         ]
       }
     ])
+  })
+
+  it("drops legacy filterGroups data instead of migrating it", () => {
+    expect(
+      sanitizeSettings({
+        filterGroups: [
+          {
+            id: "group-1",
+            name: "旧规则组",
+            enabled: true,
+            description: "",
+            rules: [
+              {
+                id: "rule-1",
+                name: "旧规则",
+                enabled: true,
+                action: "include",
+                relation: "and",
+                conditions: [
+                  {
+                    id: "condition-1",
+                    field: "title",
+                    operator: "contains",
+                    value: "1080p"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      } as never).filters
+    ).toEqual([])
   })
 })

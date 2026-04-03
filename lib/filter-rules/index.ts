@@ -1,10 +1,10 @@
 export {
-  decideFilterGroupAction,
+  decideFilterAction,
   matchesCondition,
-  matchesRule,
+  matchesFilter,
   type ConditionMatchResult,
+  type FilterDecision,
   type FilterMatchContext,
-  type FilterRuleDecision,
-  type RuleMatchResult
+  type FilterMatchResult
 } from "./match"
 export { extractSubgroup } from "./subgroup"

@@ -1,29 +1,13 @@
-import { decideFilterGroupAction } from "../../../../lib/filter-rules"
+import { decideFilterAction } from "../../../../lib/filter-rules"
 import type {
   FilterCondition,
-  FilterConditionField,
-  FilterConditionOperator,
-  FilterConditionRelation,
-  FilterRule,
-  FilterRuleAction,
-  FilterRuleGroup,
+  FilterEntry,
   SourceId
 } from "../../../../lib/shared/types"
 
 export type FilterWorkbenchSourceId = SourceId
-export type FilterWorkbenchRuleAction = FilterRuleAction
-export type FilterWorkbenchConditionField = FilterConditionField
-export type FilterWorkbenchConditionOperator = FilterConditionOperator
-export type FilterWorkbenchConditionRelation = FilterConditionRelation
 export type FilterWorkbenchCondition = FilterCondition
-export type FilterWorkbenchRule = FilterRule
-export type FilterWorkbenchGroup = FilterRuleGroup
-
-export type FilterWorkbenchGroupDraft = {
-  name: string
-  description: string
-  enabled: boolean
-}
+export type FilterWorkbenchFilter = FilterEntry
 
 export type FilterWorkbenchTestInput = {
   title: string
@@ -34,16 +18,15 @@ export type FilterWorkbenchTestResult =
   | {
       state: "error"
       summary: string
-      trace: string[]
-      note: string
+      subgroup: string
     }
   | {
       state: "result"
       accepted: boolean
-      label: "放行" | "拦截"
+      label: "保留" | "拦截"
       summary: string
-      trace: string[]
-      note: string
+      subgroup: string
+      matchedFilterName: string | null
     }
 
 export const SOURCE_OPTIONS: Array<{
@@ -57,7 +40,7 @@ export const SOURCE_OPTIONS: Array<{
 ]
 
 export const CONDITION_FIELD_OPTIONS: Array<{
-  value: FilterWorkbenchConditionField
+  value: FilterWorkbenchCondition["field"]
   label: string
 }> = [
   { value: "title", label: "标题" },
@@ -65,247 +48,134 @@ export const CONDITION_FIELD_OPTIONS: Array<{
   { value: "source", label: "站点" }
 ]
 
-export const CONDITION_OPERATOR_OPTIONS: Array<{
-  value: FilterWorkbenchConditionOperator
-  label: string
-}> = [
-  { value: "contains", label: "包含" },
-  { value: "not_contains", label: "不包含" },
-  { value: "is", label: "等于" },
-  { value: "is_not", label: "不等于" },
-  { value: "regex", label: "正则匹配" }
-]
-
-export function getConditionOperatorOptions(
-  field: FilterWorkbenchConditionField
-) {
-  if (field === "source") {
-    return CONDITION_OPERATOR_OPTIONS.filter(
-      (option) => option.value === "is" || option.value === "is_not"
-    )
-  }
-
-  return CONDITION_OPERATOR_OPTIONS
-}
-
-export function getConditionFieldLabel(
-  field: FilterWorkbenchConditionField
-) {
-  return (
-    CONDITION_FIELD_OPTIONS.find((item) => item.value === field)?.label ?? field
-  )
-}
-
-export function getConditionOperatorLabel(
-  operator: FilterWorkbenchConditionOperator
-) {
-  return (
-    CONDITION_OPERATOR_OPTIONS.find((item) => item.value === operator)?.label ??
-    operator
-  )
-}
-
 export function createWorkbenchId(prefix: string) {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
 }
 
-export function createEmptyCondition(): FilterWorkbenchCondition {
+export function createCondition(
+  field: FilterWorkbenchCondition["field"] = "title"
+): FilterWorkbenchCondition {
+  if (field === "source") {
+    return {
+      id: createWorkbenchId("condition"),
+      field: "source",
+      operator: "is",
+      value: "kisssub"
+    }
+  }
+
   return {
     id: createWorkbenchId("condition"),
-    field: "title",
+    field,
     operator: "contains",
     value: ""
   }
 }
 
-export function createEmptyRule(): FilterWorkbenchRule {
-  return {
-    id: createWorkbenchId("rule"),
-    name: "",
-    enabled: true,
-    action: "exclude",
-    relation: "and",
-    conditions: [createEmptyCondition()]
-  }
-}
-
-export function createRuleDraft(
-  rule?: FilterWorkbenchRule
-): FilterWorkbenchRule {
-  if (!rule) {
-    return createEmptyRule()
+export function createFilterDraft(
+  filter?: FilterWorkbenchFilter
+): FilterWorkbenchFilter {
+  if (!filter) {
+    return {
+      id: createWorkbenchId("filter"),
+      name: "",
+      enabled: true,
+      must: [createCondition("title")],
+      any: []
+    }
   }
 
   return {
-    ...rule,
-    conditions: rule.conditions.map((condition) => ({ ...condition }))
+    ...filter,
+    must: filter.must.map((condition) => ({ ...condition })),
+    any: filter.any.map((condition) => ({ ...condition }))
   }
 }
 
-export function createGroupDraft(
-  group?: FilterWorkbenchGroup
-): FilterWorkbenchGroupDraft {
+export function summarizeCondition(condition: FilterWorkbenchCondition) {
+  if (condition.field === "source") {
+    return `站点是 ${getSourceLabel(condition.value)}`
+  }
+
+  return `${getConditionFieldLabel(condition.field)}包含“${condition.value || "..."}”`
+}
+
+export function summarizeConditionList(conditions: FilterWorkbenchCondition[]) {
+  if (!conditions.length) {
+    return "未设置。"
+  }
+
+  return conditions.map(summarizeCondition).join("；")
+}
+
+export function getConditionFieldLabel(
+  field: FilterWorkbenchCondition["field"]
+) {
+  return CONDITION_FIELD_OPTIONS.find((item) => item.value === field)?.label ?? field
+}
+
+export function getSourceLabel(source: FilterWorkbenchSourceId) {
+  return SOURCE_OPTIONS.find((item) => item.value === source)?.label ?? source
+}
+
+export function normalizeConditionField(
+  field: FilterWorkbenchCondition["field"],
+  condition: FilterWorkbenchCondition
+): FilterWorkbenchCondition {
+  if (field === "source") {
+    return {
+      id: condition.id,
+      field: "source",
+      operator: "is",
+      value: "kisssub"
+    }
+  }
+
   return {
-    name: group?.name ?? "",
-    description: group?.description ?? "",
-    enabled: group?.enabled ?? true
-  }
-}
-
-export function toWorkbenchGroup(
-  draft: FilterWorkbenchGroupDraft,
-  initialGroup?: FilterWorkbenchGroup
-): FilterWorkbenchGroup {
-  return {
-    id: initialGroup?.id ?? createWorkbenchId("group"),
-    name: draft.name.trim(),
-    description: draft.description.trim(),
-    enabled: draft.enabled,
-    rules: initialGroup?.rules ?? []
-  }
-}
-
-export function cloneWorkbenchRule(
-  rule: FilterWorkbenchRule
-): FilterWorkbenchRule {
-  return {
-    ...rule,
-    id: createWorkbenchId("rule"),
-    name: `${rule.name}（副本）`,
-    conditions: rule.conditions.map((condition) => ({
-      ...condition,
-      id: createWorkbenchId("condition")
-    }))
-  }
-}
-
-export function summarizeWorkbenchRule(rule: FilterWorkbenchRule) {
-  if (!rule.conditions.length) {
-    return "暂无匹配条件。"
-  }
-
-  const relationLabel = rule.relation === "and" ? "且" : "或"
-  const actionLabel =
-    rule.action === "include" ? "匹配放行（保留）" : "匹配拦截"
-  const conditionText = rule.conditions
-    .map((condition) => {
-      const fieldLabel = getConditionFieldLabel(condition.field)
-      const operatorLabel = getConditionOperatorLabel(condition.operator)
-
-      return `${fieldLabel}${operatorLabel}“${condition.value || "..."}”`
-    })
-    .join(` ${relationLabel} `)
-
-  return `当 ${conditionText} 时，执行${actionLabel}`
-}
-
-export function createPresetGroup(): FilterWorkbenchGroup {
-  return {
-    id: createWorkbenchId("group"),
-    name: "先拦截低质资源，再保留目标字幕组",
-    description: "示例：先拦截 720p / RAW，再仅保留命中字幕组的资源。",
-    enabled: true,
-    rules: [
-      {
-        id: createWorkbenchId("rule"),
-        name: "拦截 720p",
-        enabled: true,
-        action: "exclude",
-        relation: "and",
-        conditions: [
-          {
-            id: createWorkbenchId("condition"),
-            field: "title",
-            operator: "contains",
-            value: "720p"
-          }
-        ]
-      },
-      {
-        id: createWorkbenchId("rule"),
-        name: "拦截 RAW",
-        enabled: true,
-        action: "exclude",
-        relation: "and",
-        conditions: [
-          {
-            id: createWorkbenchId("condition"),
-            field: "title",
-            operator: "contains",
-            value: "RAW"
-          }
-        ]
-      },
-      {
-        id: createWorkbenchId("rule"),
-        name: "保留喵萌奶茶屋",
-        enabled: true,
-        action: "include",
-        relation: "and",
-        conditions: [
-          {
-            id: createWorkbenchId("condition"),
-            field: "subgroup",
-            operator: "contains",
-            value: "喵萌奶茶屋"
-          }
-        ]
-      }
-    ]
+    id: condition.id,
+    field,
+    operator: "contains",
+    value: condition.field === "source" ? "" : condition.value
   }
 }
 
 export function runWorkbenchTest(
   input: FilterWorkbenchTestInput,
-  groups: FilterWorkbenchGroup[]
+  filters: FilterWorkbenchFilter[]
 ): FilterWorkbenchTestResult {
   if (!input.title.trim()) {
     return {
       state: "error",
-      summary: "请输入资源标题进行测试",
-      trace: ["当前没有可供分析的资源标题。"],
-      note: "测试台仅在输入完整资源信息后才会运行。"
+      summary: "请输入资源标题后再测试。",
+      subgroup: ""
     }
   }
 
-  const decision = decideFilterGroupAction({
+  const decision = decideFilterAction({
     sourceId: input.source,
     title: input.title,
-    groups
+    filters
   })
-  const sourceLabel =
-    SOURCE_OPTIONS.find((item) => item.value === input.source)?.label ??
-    input.source
-  const trace = [
-    `测试来源站点：${sourceLabel}。`,
-    decision.subgroup
-      ? `参与匹配的字幕组：${decision.subgroup}。`
-      : "当前未识别出字幕组信息。",
-    ...decision.trace
-  ]
+
+  if (decision.accepted) {
+    return {
+      state: "result",
+      accepted: true,
+      label: "保留",
+      summary: decision.matchedFilter
+        ? `命中筛选器「${decision.matchedFilter.name}」，该资源会被保留。`
+        : "当前没有启用筛选器，该资源会直接保留。",
+      subgroup: decision.subgroup,
+      matchedFilterName: decision.matchedFilter?.name ?? null
+    }
+  }
 
   return {
     state: "result",
-    accepted: decision.accepted,
-    label: decision.accepted ? "放行" : "拦截",
-    summary: decision.matchedGroup && decision.matchedRule
-      ? `命中策略组「${decision.matchedGroup.name}」中的规则「${decision.matchedRule.name}」，该资源将被${
-          decision.accepted ? "放行" : "拦截"
-        }。`
-      : decision.accepted
-        ? "未命中任何已启用规则，且不存在已启用的匹配放行规则，该资源将按默认策略放行。"
-        : "未命中任何已启用规则，但存在已启用的匹配放行规则，该资源将按默认策略拦截。",
-    trace,
-    note: decision.errors.length
-      ? `有 ${decision.errors.length} 条条件因格式错误被当作未命中处理。`
-      : "当前结果基于当前工作台中的真实策略配置，并与后台过滤语义一致。"
+    accepted: false,
+    label: "拦截",
+    summary: "未命中任何启用中的筛选器，该资源会被拦截。",
+    subgroup: decision.subgroup,
+    matchedFilterName: null
   }
-}
-
-export function hasEnabledIncludeRule(groups: FilterWorkbenchGroup[]): boolean {
-  return groups.some(
-    (group) =>
-      group.enabled &&
-      group.rules.some((rule) => rule.enabled && rule.action === "include")
-  )
 }

@@ -102,7 +102,7 @@ describe("settings storage helpers", () => {
       qbBaseUrl: "http://127.0.0.1:17474",
       qbUsername: "admin",
       lastSavePath: "D:\\Anime",
-      filterGroups: [],
+      filters: [],
       enabledSources: {
         kisssub: false,
         dongmanhuayuan: true,
@@ -147,33 +147,25 @@ describe("settings storage helpers", () => {
         enabledSources: {
           acgrip: false
         },
-        filterGroups: [
+        filters: [
           {
-            id: " group-1 ",
-            name: " 场景过滤 ",
-            description: " 描述 ",
+            id: " filter-1 ",
+            name: " Bangumi 1080 ",
             enabled: true,
-            rules: [
+            must: [
               {
-                id: " rule-1 ",
-                name: " 保留 Bangumi ",
-                enabled: true,
-                action: "include",
-                relation: "and",
-                conditions: [
-                  {
-                    id: " condition-1 ",
-                    field: "source",
-                    operator: "is",
-                    value: " bangumimoe "
-                  },
-                  {
-                    id: " condition-2 ",
-                    field: "title",
-                    operator: "contains",
-                    value: " 1080p "
-                  }
-                ]
+                id: " condition-1 ",
+                field: "source",
+                operator: "is",
+                value: "bangumimoe"
+              }
+            ],
+            any: [
+              {
+                id: " condition-2 ",
+                field: "title",
+                operator: "contains",
+                value: " 1080p "
               }
             ]
           }
@@ -184,33 +176,25 @@ describe("settings storage helpers", () => {
       qbBaseUrl: "http://127.0.0.1:17474",
       qbUsername: "admin",
       lastSavePath: "D:\\Downloads\\Anime",
-      filterGroups: [
+      filters: [
         {
-          id: "group-1",
-          name: "场景过滤",
-          description: "描述",
+          id: "filter-1",
+          name: "Bangumi 1080",
           enabled: true,
-          rules: [
+          must: [
             {
-              id: "rule-1",
-              name: "保留 Bangumi",
-              enabled: true,
-              action: "include",
-              relation: "and",
-              conditions: [
-                {
-                  id: "condition-1",
-                  field: "source",
-                  operator: "is",
-                  value: "bangumimoe"
-                },
-                {
-                  id: "condition-2",
-                  field: "title",
-                  operator: "contains",
-                  value: "1080p"
-                }
-              ]
+              id: "condition-1",
+              field: "source",
+              operator: "is",
+              value: "bangumimoe"
+            }
+          ],
+          any: [
+            {
+              id: "condition-2",
+              field: "title",
+              operator: "contains",
+              value: "1080p"
             }
           ]
         }
@@ -229,33 +213,25 @@ describe("settings storage helpers", () => {
         qbBaseUrl: "http://127.0.0.1:17474",
         qbUsername: "admin",
         lastSavePath: "D:\\Downloads\\Anime",
-        filterGroups: [
+        filters: [
           {
-            id: "group-1",
-            name: "场景过滤",
-            description: "描述",
+            id: "filter-1",
+            name: "Bangumi 1080",
             enabled: true,
-            rules: [
+            must: [
               {
-                id: "rule-1",
-                name: "保留 Bangumi",
-                enabled: true,
-                action: "include",
-                relation: "and",
-                conditions: [
-                  {
-                    id: "condition-1",
-                    field: "source",
-                    operator: "is",
-                    value: "bangumimoe"
-                  },
-                  {
-                    id: "condition-2",
-                    field: "title",
-                    operator: "contains",
-                    value: "1080p"
-                  }
-                ]
+                id: "condition-1",
+                field: "source",
+                operator: "is",
+                value: "bangumimoe"
+              }
+            ],
+            any: [
+              {
+                id: "condition-2",
+                field: "title",
+                operator: "contains",
+                value: "1080p"
               }
             ]
           }

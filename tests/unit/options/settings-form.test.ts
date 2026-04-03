@@ -70,114 +70,84 @@ describe("options settings form helpers", () => {
     )
   })
 
-  it("hydrates filter groups from stored settings", () => {
+  it("hydrates filters from stored settings", () => {
     expect(
       createSettingsFormDefaults({
-        filterGroups: [
+        filters: [
           {
-            id: "group-1",
-            name: "画质过滤",
-            description: "拦截低画质",
+            id: "filter-1",
+            name: "爱恋 1080 简繁",
             enabled: true,
-            rules: [
-              {
-                id: "rule-1",
-                name: "排除 RAW",
-                enabled: true,
-                action: "exclude",
-                relation: "and",
-                conditions: [
-                  {
-                    id: "condition-1",
-                    field: "title",
-                    operator: "contains",
-                    value: "RAW"
-                  }
-                ]
-              }
-            ]
-          }
-        ]
-      }).filterGroups
-    ).toEqual([
-      {
-        id: "group-1",
-        name: "画质过滤",
-        description: "拦截低画质",
-        enabled: true,
-        rules: [
-          {
-            id: "rule-1",
-            name: "排除 RAW",
-            enabled: true,
-            action: "exclude",
-            relation: "and",
-            conditions: [
+            must: [
               {
                 id: "condition-1",
+                field: "subgroup",
+                operator: "contains",
+                value: "爱恋字幕社"
+              }
+            ],
+            any: [
+              {
+                id: "condition-2",
                 field: "title",
                 operator: "contains",
-                value: "RAW"
+                value: "1080"
               }
             ]
           }
         ]
-      }
-    ])
-  })
-
-  it("drops invalid stored rules when creating defaults", () => {
-    expect(
-      createSettingsFormDefaults({
-        filterGroups: [
-          {
-            id: "group-1",
-            name: "空规则组",
-            description: "",
-            enabled: true,
-            rules: [
-              {
-                id: "rule-empty",
-                name: "空规则",
-                enabled: true,
-                action: "exclude",
-                relation: "and",
-                conditions: []
-              }
-            ]
-          }
-        ]
-      }).filterGroups
+      }).filters
     ).toEqual([
       {
-        id: "group-1",
-        name: "空规则组",
-        description: "",
+        id: "filter-1",
+        name: "爱恋 1080 简繁",
         enabled: true,
-        rules: []
+        must: [
+          {
+            id: "condition-1",
+            field: "subgroup",
+            operator: "contains",
+            value: "爱恋字幕社"
+          }
+        ],
+        any: [
+          {
+            id: "condition-2",
+            field: "title",
+            operator: "contains",
+            value: "1080"
+          }
+        ]
       }
     ])
   })
 
-  it("rejects rules without any conditions", () => {
+  it("drops invalid stored filters when creating defaults", () => {
+    expect(
+      createSettingsFormDefaults({
+        filters: [
+          {
+            id: "filter-1",
+            name: "空筛选器",
+            enabled: true,
+            must: [],
+            any: []
+          }
+        ]
+      }).filters
+    ).toEqual([])
+  })
+
+  it("rejects filters without any must conditions", () => {
     const result = settingsFormSchema.safeParse({
       ...createSettingsFormDefaults(),
-      filterGroups: [
+      filters: [
         {
-          id: "group-1",
-          name: "规则组",
-          description: "",
+          id: "filter-1",
+          name: "空筛选器",
           enabled: true,
-          rules: [
-            {
-              id: "rule-empty",
-              name: "空规则",
-              enabled: true,
-              action: "exclude",
-              relation: "and",
-              conditions: []
-            }
-          ]
+          must: [],
+          any: []
         }
       ]
     })
@@ -185,32 +155,23 @@ describe("options settings form helpers", () => {
     expect(result.success).toBe(false)
   })
 
-  it("rejects invalid regex conditions", () => {
+  it("rejects source conditions without a supported source id", () => {
     const result = settingsFormSchema.safeParse({
       ...createSettingsFormDefaults(),
-      filterGroups: [
+      filters: [
         {
-          id: "group-1",
-          name: "规则组",
-          description: "",
+          id: "filter-1",
+          name: "非法站点",
           enabled: true,
-          rules: [
+          must: [
             {
-              id: "rule-regex",
-              name: "非法正则",
-              enabled: true,
-              action: "exclude",
-              relation: "and",
-              conditions: [
-                {
-                  id: "condition-1",
-                  field: "title",
-                  operator: "regex",
-                  value: "[RAW"
-                }
-              ]
+              id: "condition-1",
+              field: "source",
+              operator: "is",
+              value: "invalid-source"
             }
-          ]
+          ],
+          any: []
         }
       ]
     })

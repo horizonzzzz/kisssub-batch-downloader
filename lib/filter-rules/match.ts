@@ -1,8 +1,6 @@
 import type {
   FilterCondition,
-  FilterRule,
-  FilterRuleAction,
-  FilterRuleGroup,
+  FilterEntry,
   SourceId
 } from "../shared/types"
 import { extractSubgroup } from "./subgroup"
@@ -15,31 +13,26 @@ export type FilterMatchContext = {
 
 export type ConditionMatchResult = {
   matched: boolean
-  error?: string
 }
 
-export type RuleMatchResult = {
+export type FilterMatchResult = {
   matched: boolean
-  errors: string[]
 }
 
-export type FilterRuleDecision = {
+export type FilterDecision = {
   accepted: boolean
-  matchedGroup: FilterRuleGroup | null
-  matchedRule: FilterRule | null
-  action: FilterRuleAction | null
+  matchedFilter: FilterEntry | null
   message: string
   subgroup: string
   trace: string[]
-  errors: string[]
 }
 
-export function decideFilterGroupAction(input: {
+export function decideFilterAction(input: {
   sourceId: SourceId
   title: string
   subgroup?: string
-  groups: FilterRuleGroup[]
-}): FilterRuleDecision {
+  filters: FilterEntry[]
+}): FilterDecision {
   const subgroup = input.subgroup?.trim() || extractSubgroup(input.sourceId, input.title)
   const context: FilterMatchContext = {
     sourceId: input.sourceId,
@@ -47,111 +40,71 @@ export function decideFilterGroupAction(input: {
     subgroup
   }
   const trace: string[] = []
-  const errors: string[] = []
-  const includeModeEnabled = hasEnabledIncludeRule(input.groups)
+  const enabledFilters = input.filters.filter((filter) => filter.enabled)
 
-  trace.push(
-    includeModeEnabled
-      ? "检测到已启用的“匹配放行（保留）”规则：未命中时将按默认策略拦截。"
-      : "未检测到已启用的“匹配放行（保留）”规则：未命中时将按默认策略放行。"
-  )
-
-  for (const group of input.groups) {
-    if (!group.enabled) {
-      trace.push(`跳过策略组「${group.name}」：已停用。`)
-      continue
-    }
-
-    trace.push(`进入策略组「${group.name}」。`)
-
-    if (!group.rules.length) {
-      trace.push(`策略组「${group.name}」下没有规则。`)
-      continue
-    }
-
-    for (const rule of group.rules) {
-      if (!rule.enabled) {
-        trace.push(`跳过规则「${rule.name}」：已停用。`)
-        continue
-      }
-
-      const result = matchesRule(rule, context)
-      if (result.errors.length) {
-        errors.push(...result.errors)
-        trace.push(...result.errors.map((error) => `规则「${rule.name}」存在条件错误：${error}`))
-      }
-
-      if (!result.matched) {
-        trace.push(`未命中规则「${rule.name}」。`)
-        continue
-      }
-
-      const actionLabel =
-        rule.action === "include" ? "匹配放行（保留）" : "匹配拦截"
-      trace.push(`命中规则「${rule.name}」，执行${actionLabel}并停止匹配。`)
-
-      return {
-        accepted: rule.action === "include",
-        matchedGroup: group,
-        matchedRule: rule,
-        action: rule.action,
-        message: `Matched filter rule: ${group.name} / ${rule.name} (${rule.action})`,
-        subgroup,
-        trace,
-        errors
-      }
-    }
-  }
-
-  if (includeModeEnabled) {
-    trace.push(
-      "未命中任何已启用规则，且存在已启用的“匹配放行（保留）”规则，按默认策略拦截。"
-    )
+  if (!enabledFilters.length) {
+    trace.push("未检测到启用的筛选器。")
+    trace.push("未启用任何筛选器，默认放行。")
 
     return {
-      accepted: false,
-      matchedGroup: null,
-      matchedRule: null,
-      action: null,
-      message: "命中过滤默认策略：存在启用的匹配放行规则，但当前资源未命中任何放行规则。",
+      accepted: true,
+      matchedFilter: null,
+      message: "No enabled filters. Accepted by default.",
       subgroup,
-      trace,
-      errors
+      trace
     }
   }
 
-  trace.push(
-    "未命中任何已启用规则，且不存在已启用的“匹配放行（保留）”规则，按默认策略放行。"
-  )
+  trace.push(`共检测到 ${enabledFilters.length} 条已启用筛选器。`)
+
+  for (const filter of enabledFilters) {
+    trace.push(`检查筛选器「${filter.name}」。`)
+
+    const result = matchesFilter(filter, context)
+    if (!result.matched) {
+      trace.push(`未命中筛选器「${filter.name}」。`)
+      continue
+    }
+
+    trace.push(`命中筛选器「${filter.name}」，资源将被保留。`)
+
+    return {
+      accepted: true,
+      matchedFilter: filter,
+      message: `Matched filter: ${filter.name}`,
+      subgroup,
+      trace
+    }
+  }
+
+  trace.push("未命中任何筛选器，按当前筛选配置拦截。")
 
   return {
-    accepted: true,
-    matchedGroup: null,
-    matchedRule: null,
-    action: null,
-    message: "未命中任何已启用规则，且当前仅配置拦截规则，按默认策略放行。",
+    accepted: false,
+    matchedFilter: null,
+    message: "Blocked by filters: no filter matched",
     subgroup,
-    trace,
-    errors
+    trace
   }
 }
 
-export function matchesRule(
-  rule: FilterRule,
+export function matchesFilter(
+  filter: FilterEntry,
   context: FilterMatchContext
-): RuleMatchResult {
-  const results = rule.conditions.map((condition) =>
-    matchesCondition(condition, context)
+): FilterMatchResult {
+  const mustMatched = filter.must.every((condition) =>
+    matchesCondition(condition, context).matched
   )
-  const errors = results.flatMap((result) => (result.error ? [result.error] : []))
-  const matched =
-    rule.relation === "or"
-      ? results.some((result) => result.matched)
-      : results.every((result) => result.matched)
+  if (!mustMatched) {
+    return { matched: false }
+  }
+
+  if (!filter.any.length) {
+    return { matched: true }
+  }
 
   return {
-    matched,
-    errors
+    matched: filter.any.some((condition) => matchesCondition(condition, context).matched)
   }
 }
 
@@ -160,37 +113,15 @@ export function matchesCondition(
   context: FilterMatchContext
 ): ConditionMatchResult {
   const targetValue = getConditionTargetValue(condition.field, context)
-  const normalizedTarget = targetValue.toLowerCase()
-  const normalizedExpected = condition.value.toLowerCase()
 
-  switch (condition.operator) {
-    case "contains":
-      return {
-        matched: normalizedTarget.includes(normalizedExpected)
-      }
-    case "not_contains":
-      return {
-        matched: !normalizedTarget.includes(normalizedExpected)
-      }
-    case "is":
-      return {
-        matched: normalizedTarget === normalizedExpected
-      }
-    case "is_not":
-      return {
-        matched: normalizedTarget !== normalizedExpected
-      }
-    case "regex":
-      try {
-        return {
-          matched: new RegExp(condition.value).test(targetValue)
-        }
-      } catch {
-        return {
-          matched: false,
-          error: `无效正则：${condition.value}`
-        }
-      }
+  if (condition.operator === "is") {
+    return {
+      matched: targetValue.toLowerCase() === condition.value.toLowerCase()
+    }
+  }
+
+  return {
+    matched: targetValue.toLowerCase().includes(condition.value.toLowerCase())
   }
 }
 
@@ -207,12 +138,4 @@ function getConditionTargetValue(
   }
 
   return context.title
-}
-
-function hasEnabledIncludeRule(groups: FilterRuleGroup[]): boolean {
-  return groups.some(
-    (group) =>
-      group.enabled &&
-      group.rules.some((rule) => rule.enabled && rule.action === "include")
-  )
 }

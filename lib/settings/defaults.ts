@@ -15,5 +15,5 @@ export const DEFAULT_SETTINGS: Settings = Object.freeze({
   lastSavePath: "",
   sourceDeliveryModes: DEFAULT_SOURCE_DELIVERY_MODES,
   enabledSources: DEFAULT_ENABLED_SOURCES,
-  filterGroups: []
+  filters: []
 })

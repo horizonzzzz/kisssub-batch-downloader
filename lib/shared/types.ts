@@ -2,41 +2,28 @@ export type SourceId = "kisssub" | "dongmanhuayuan" | "acgrip" | "bangumimoe"
 
 export type DeliveryMode = "magnet" | "torrent-url" | "torrent-file"
 
-export type FilterRuleAction = "include" | "exclude"
-
 export type FilterConditionField = "title" | "subgroup" | "source"
-
-export type FilterConditionOperator =
-  | "contains"
-  | "not_contains"
-  | "is"
-  | "is_not"
-  | "regex"
-
-export type FilterConditionRelation = "and" | "or"
 
 export type FilterCondition = {
   id: string
-  field: FilterConditionField
-  operator: FilterConditionOperator
+  field: "title" | "subgroup"
+  operator: "contains"
   value: string
+} | {
+  id: string
+  field: "source"
+  operator: "is"
+  value: SourceId
 }
 
-export type FilterRule = {
+export type FilterConditionOperator = FilterCondition["operator"]
+
+export type FilterEntry = {
   id: string
   name: string
   enabled: boolean
-  action: FilterRuleAction
-  relation: FilterConditionRelation
-  conditions: FilterCondition[]
-}
-
-export type FilterRuleGroup = {
-  id: string
-  name: string
-  description: string
-  enabled: boolean
-  rules: FilterRule[]
+  must: FilterCondition[]
+  any: FilterCondition[]
 }
 
 export type BatchEventStage =
@@ -87,7 +74,7 @@ export type Settings = {
   lastSavePath: string
   sourceDeliveryModes: Partial<Record<SourceId, DeliveryMode>>
   enabledSources: Partial<Record<SourceId, boolean>>
-  filterGroups: FilterRuleGroup[]
+  filters: FilterEntry[]
 }
 
 export type TestQbConnectionResult = {

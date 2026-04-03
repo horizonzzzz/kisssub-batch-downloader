@@ -45,7 +45,7 @@ export const OPTIONS_ROUTES: OptionsRouteMeta[] = [
     path: FILTERS_ROUTE,
     label: "过滤规则",
     title: "过滤规则",
-    description: "在批量提交到 qBittorrent 之前，按规则自动保留或排除资源。",
+    description: "只保留命中筛选器的资源，让批量提交更贴近真实使用场景。",
     footerLabel: "正在编辑过滤规则",
     mode: "form"
   },

@@ -1,4 +1,4 @@
-import { render, screen, waitFor, within } from "@testing-library/react"
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
@@ -27,7 +27,7 @@ const settings = {
     acgrip: true,
     bangumimoe: true
   },
-  filterGroups: []
+  filters: []
 }
 
 function createOptionsApi(overrides: Partial<OptionsApi> = {}): OptionsApi {
@@ -45,6 +45,22 @@ function createOptionsApi(overrides: Partial<OptionsApi> = {}): OptionsApi {
 describe("OptionsPage", () => {
   beforeEach(() => {
     window.location.hash = ""
+    Object.defineProperty(HTMLElement.prototype, "hasPointerCapture", {
+      configurable: true,
+      value: () => false
+    })
+    Object.defineProperty(HTMLElement.prototype, "setPointerCapture", {
+      configurable: true,
+      value: vi.fn()
+    })
+    Object.defineProperty(HTMLElement.prototype, "releasePointerCapture", {
+      configurable: true,
+      value: vi.fn()
+    })
+    Object.defineProperty(HTMLElement.prototype, "scrollIntoView", {
+      configurable: true,
+      value: vi.fn()
+    })
   })
 
   it("redirects empty and invalid hashes to the default general route", async () => {
@@ -133,13 +149,10 @@ describe("OptionsPage", () => {
     const secondRender = render(<OptionsPage api={api} />)
 
     expect(await screen.findByRole("heading", { name: "过滤规则" })).toBeInTheDocument()
-    expect(screen.getByText("策略工作台")).toBeInTheDocument()
-    expect(screen.queryByText("已接入")).not.toBeInTheDocument()
-    expect(screen.getByRole("button", { name: "新建策略组" })).toBeInTheDocument()
-    expect(screen.getByText("规则测试台")).toBeInTheDocument()
-    expect(screen.getByText("默认策略：")).toBeInTheDocument()
-    expect(screen.getByText("放行")).toBeInTheDocument()
-    expect(screen.getByText("仅拦截命中项")).toBeInTheDocument()
+    expect(screen.getByText("筛选器")).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "新增筛选器" })).toBeInTheDocument()
+    expect(screen.getByText("快速测试")).toBeInTheDocument()
+    expect(screen.getByText("还没有筛选器")).toBeInTheDocument()
 
     secondRender.unmount()
     window.location.hash = "#/overview"
@@ -150,7 +163,7 @@ describe("OptionsPage", () => {
   })
 
   it(
-    "includes filter workbench edits when saving settings",
+    "includes filter edits when saving settings",
     async () => {
       const user = userEvent.setup()
       const api = createOptionsApi({
@@ -162,35 +175,37 @@ describe("OptionsPage", () => {
       expect(await screen.findByDisplayValue("http://127.0.0.1:17474")).toBeInTheDocument()
 
       await user.click(screen.getByRole("button", { name: "过滤规则" }))
+      await user.click(screen.getByRole("button", { name: "新增筛选器" }))
+      await user.type(screen.getByLabelText("筛选器名称"), "爱恋 1080 简繁")
+      await user.click(screen.getByLabelText("必须条件字段 1"))
+      await user.click(await screen.findByRole("option", { name: "字幕组" }))
+      await user.clear(screen.getByLabelText("必须条件值 1"))
+      await user.type(screen.getByLabelText("必须条件值 1"), "爱恋字幕社")
+      await user.click(screen.getByRole("button", { name: "添加任一条件" }))
+      await user.clear(screen.getByLabelText("任一条件值 1"))
+      await user.type(screen.getByLabelText("任一条件值 1"), "简")
+      await user.click(screen.getByRole("button", { name: "保存筛选器" }))
 
-      expect(screen.getByRole("heading", { name: "过滤规则" })).toBeInTheDocument()
-      await user.click(screen.getByRole("button", { name: "新建策略组" }))
-
-      await user.type(screen.getByLabelText("策略组名称"), "画质过滤")
-      await user.click(screen.getByRole("button", { name: "保存策略组" }))
-
-      expect(screen.getByText("画质过滤")).toBeInTheDocument()
-
-      await user.click(screen.getByRole("button", { name: "添加规则" }))
-
-      await user.type(screen.getByLabelText("规则名称"), "排除 RAW")
-      await user.type(screen.getByLabelText("条件值 1"), "RAW")
-
-      await user.click(screen.getByRole("button", { name: "保存规则" }))
-
-      expect(screen.getByText("排除 RAW")).toBeInTheDocument()
+      expect(screen.getByText("爱恋 1080 简繁")).toBeInTheDocument()
 
       await user.click(screen.getByRole("button", { name: "保存所有设置" }))
 
       await waitFor(() => {
         expect(api.saveSettings).toHaveBeenCalledWith(
           expect.objectContaining({
-            filterGroups: expect.arrayContaining([
+            filters: expect.arrayContaining([
               expect.objectContaining({
-                name: "画质过滤",
-                rules: expect.arrayContaining([
+                name: "爱恋 1080 简繁",
+                must: expect.arrayContaining([
                   expect.objectContaining({
-                    name: "排除 RAW"
+                    field: "subgroup",
+                    value: "爱恋字幕社"
+                  })
+                ]),
+                any: expect.arrayContaining([
+                  expect.objectContaining({
+                    field: "title",
+                    value: "简"
                   })
                 ])
               })
@@ -202,7 +217,7 @@ describe("OptionsPage", () => {
     10000
   )
 
-  it("focuses and closes the strategy-group sheet with keyboard controls", async () => {
+  it("focuses and closes the filter sheet with keyboard controls", async () => {
     const user = userEvent.setup()
     const api = createOptionsApi()
 
@@ -211,20 +226,20 @@ describe("OptionsPage", () => {
     expect(await screen.findByDisplayValue("http://127.0.0.1:17474")).toBeInTheDocument()
 
     await user.click(screen.getByRole("button", { name: "过滤规则" }))
-    await user.click(screen.getByRole("button", { name: "新建策略组" }))
+    await user.click(screen.getByRole("button", { name: "新增筛选器" }))
 
-    expect(await screen.findByRole("dialog", { name: "新建策略组" })).toBeInTheDocument()
-    expect(screen.getByLabelText("策略组名称")).toHaveFocus()
+    expect(await screen.findByRole("dialog", { name: "新增筛选器" })).toBeInTheDocument()
+    expect(screen.getByLabelText("筛选器名称")).toHaveFocus()
 
     await user.keyboard("{Escape}")
 
     await waitFor(() => {
-      expect(screen.queryByRole("dialog", { name: "新建策略组" })).not.toBeInTheDocument()
+      expect(screen.queryByRole("dialog", { name: "新增筛选器" })).not.toBeInTheDocument()
     })
   })
 
   it(
-    "runs the real test bench against current filter workbench values",
+    "runs the simplified test bench against current filter values",
     async () => {
       const user = userEvent.setup()
       const api = createOptionsApi()
@@ -234,85 +249,55 @@ describe("OptionsPage", () => {
       expect(await screen.findByDisplayValue("http://127.0.0.1:17474")).toBeInTheDocument()
 
       await user.click(screen.getByRole("button", { name: "过滤规则" }))
-      await user.click(screen.getByRole("button", { name: "新建策略组" }))
-      await user.type(screen.getByLabelText("策略组名称"), "画质过滤")
-      await user.click(screen.getByRole("button", { name: "保存策略组" }))
+      await user.click(screen.getByRole("button", { name: "新增筛选器" }))
+      await user.type(screen.getByLabelText("筛选器名称"), "爱恋 1080 简繁")
+      await user.click(screen.getByLabelText("必须条件字段 1"))
+      await user.click(await screen.findByRole("option", { name: "字幕组" }))
+      await user.clear(screen.getByLabelText("必须条件值 1"))
+      await user.type(screen.getByLabelText("必须条件值 1"), "爱恋字幕社")
+      await user.click(screen.getByRole("button", { name: "添加必须条件" }))
+      await user.clear(screen.getByLabelText("必须条件值 2"))
+      await user.type(screen.getByLabelText("必须条件值 2"), "1080")
+      await user.click(screen.getByRole("button", { name: "添加任一条件" }))
+      await user.clear(screen.getByLabelText("任一条件值 1"))
+      await user.type(screen.getByLabelText("任一条件值 1"), "简")
+      await user.click(screen.getByRole("button", { name: "保存筛选器" }))
 
-      await user.click(screen.getByRole("button", { name: "添加规则" }))
-      expect(screen.getByLabelText("执行动作")).toHaveTextContent("匹配拦截")
-      await user.type(screen.getByLabelText("规则名称"), "排除 RAW")
-      await user.type(screen.getByLabelText("条件值 1"), "RAW")
-      await user.click(screen.getByRole("button", { name: "保存规则" }))
-
-      await user.type(
-        screen.getByLabelText("资源标题"),
-        "SubsPlease Frieren - 01 (720p) RAW.mkv"
-      )
+      fireEvent.change(screen.getByLabelText("资源标题"), {
+        target: {
+          value:
+            "[爱恋字幕社][1月新番][金牌得主 第二季][Medalist][08][1080p][MP4][GB][简中]"
+        }
+      })
       await user.click(screen.getByRole("button", { name: "开始测试" }))
 
       expect(
         await screen.findByText((content) =>
-          content.includes("命中策略组「画质过滤」中的规则「排除 RAW」")
+          content.includes("命中筛选器「爱恋 1080 简繁」")
         )
       ).toBeInTheDocument()
-      expect(
-        screen.getByText("当前结果基于当前工作台中的真实策略配置，并与后台过滤语义一致。")
-      ).toBeInTheDocument()
-      expect(screen.getByText("最终结果")).toBeInTheDocument()
-      expect(screen.getByText(/最近测试/)).toBeInTheDocument()
-      expect(
-        screen.getByText("字幕组会根据资源标题自动提取，测试结果会和后台实际过滤保持一致。")
-      ).toBeInTheDocument()
-      expect(
-        screen.queryByLabelText("提取字幕组（可选）")
-      ).not.toBeInTheDocument()
+      expect(screen.getByText("测试结果")).toBeInTheDocument()
+      expect(screen.getByText("自动识别的字幕组：爱恋字幕社")).toBeInTheDocument()
+      expect(screen.getByText("命中筛选器：爱恋 1080 简繁")).toBeInTheDocument()
     },
     10000
   )
 
-  it("switches to keep-only mode when an enabled include rule is added", async () => {
+  it("shows the simplified filters copy instead of strategy-mode copy", async () => {
     const user = userEvent.setup()
     const api = createOptionsApi()
-    Object.defineProperty(HTMLElement.prototype, "hasPointerCapture", {
-      configurable: true,
-      value: () => false
-    })
-    Object.defineProperty(HTMLElement.prototype, "setPointerCapture", {
-      configurable: true,
-      value: vi.fn()
-    })
-    Object.defineProperty(HTMLElement.prototype, "releasePointerCapture", {
-      configurable: true,
-      value: vi.fn()
-    })
-    Object.defineProperty(HTMLElement.prototype, "scrollIntoView", {
-      configurable: true,
-      value: vi.fn()
-    })
 
     render(<OptionsPage api={api} />)
 
     expect(await screen.findByDisplayValue("http://127.0.0.1:17474")).toBeInTheDocument()
 
     await user.click(screen.getByRole("button", { name: "过滤规则" }))
-    expect(screen.getByText("仅拦截命中项")).toBeInTheDocument()
-
-    await user.click(screen.getByRole("button", { name: "新建策略组" }))
-    await user.type(screen.getByLabelText("策略组名称"), "字幕组保留")
-    await user.click(screen.getByRole("button", { name: "保存策略组" }))
-
-    await user.click(screen.getByRole("button", { name: "添加规则" }))
-    await user.click(screen.getByLabelText("执行动作"))
-    await user.click(screen.getByRole("option", { name: "匹配放行（保留）" }))
-    await user.type(screen.getByLabelText("规则名称"), "仅保留喵萌")
-    await user.type(screen.getByLabelText("条件值 1"), "喵萌奶茶屋")
-    await user.click(screen.getByRole("button", { name: "保存规则" }))
-
-    expect(screen.getByText("拦截")).toBeInTheDocument()
-    expect(screen.getByText("仅保留命中项")).toBeInTheDocument()
+    expect(screen.getByText(/只配置你想保留的资源特征/)).toBeInTheDocument()
+    expect(screen.queryByText("策略工作台")).not.toBeInTheDocument()
+    expect(screen.queryByText("默认策略：")).not.toBeInTheDocument()
   })
 
-  it("shows a clear empty preview message when a rule has no conditions", async () => {
+  it("shows a clear empty state for optional any conditions", async () => {
     const user = userEvent.setup()
     const api = createOptionsApi()
 
@@ -321,64 +306,31 @@ describe("OptionsPage", () => {
     expect(await screen.findByDisplayValue("http://127.0.0.1:17474")).toBeInTheDocument()
 
     await user.click(screen.getByRole("button", { name: "过滤规则" }))
-    await user.click(screen.getByRole("button", { name: "新建策略组" }))
-    await user.type(screen.getByLabelText("策略组名称"), "交互验证")
-    await user.click(screen.getByRole("button", { name: "保存策略组" }))
-
-    await user.click(screen.getByRole("button", { name: "添加规则" }))
-    await user.click(screen.getByRole("button", { name: "删除条件 1" }))
+    await user.click(screen.getByRole("button", { name: "新增筛选器" }))
 
     expect(
-      screen.getByText("暂无条件，请至少添加一个匹配条件。")
+      screen.getByText("未设置额外的“任一”条件。")
     ).toBeInTheDocument()
   })
 
-  it("limits source conditions to equality operators and resets unsupported operators", async () => {
+  it("switches source conditions to a site selector", async () => {
     const user = userEvent.setup()
     const api = createOptionsApi()
-    Object.defineProperty(HTMLElement.prototype, "hasPointerCapture", {
-      configurable: true,
-      value: () => false
-    })
-    Object.defineProperty(HTMLElement.prototype, "setPointerCapture", {
-      configurable: true,
-      value: vi.fn()
-    })
-    Object.defineProperty(HTMLElement.prototype, "releasePointerCapture", {
-      configurable: true,
-      value: vi.fn()
-    })
-    Object.defineProperty(HTMLElement.prototype, "scrollIntoView", {
-      configurable: true,
-      value: vi.fn()
-    })
 
     render(<OptionsPage api={api} />)
 
     expect(await screen.findByDisplayValue("http://127.0.0.1:17474")).toBeInTheDocument()
 
     await user.click(screen.getByRole("button", { name: "过滤规则" }))
-    await user.click(screen.getByRole("button", { name: "新建策略组" }))
-    await user.type(screen.getByLabelText("策略组名称"), "站点验证")
-    await user.click(screen.getByRole("button", { name: "保存策略组" }))
+    await user.click(screen.getByRole("button", { name: "新增筛选器" }))
 
-    await user.click(screen.getByRole("button", { name: "添加规则" }))
+    await user.click(screen.getByLabelText("必须条件字段 1"))
+    await user.click(await screen.findByRole("option", { name: "站点" }))
 
-    await user.click(screen.getByLabelText("条件操作 1"))
-    await user.click(screen.getByRole("option", { name: "正则匹配" }))
-    expect(screen.getByLabelText("条件操作 1")).toHaveTextContent("正则匹配")
-
-    await user.click(screen.getByLabelText("条件字段 1"))
-    await user.click(screen.getByRole("option", { name: "站点" }))
-
-    expect(screen.getByLabelText("条件操作 1")).toHaveTextContent("等于")
-
-    await user.click(screen.getByLabelText("条件操作 1"))
-    expect(screen.getByRole("option", { name: "等于" })).toBeInTheDocument()
-    expect(screen.getByRole("option", { name: "不等于" })).toBeInTheDocument()
-    expect(screen.queryByRole("option", { name: "包含" })).not.toBeInTheDocument()
-    expect(screen.queryByRole("option", { name: "不包含" })).not.toBeInTheDocument()
-    expect(screen.queryByRole("option", { name: "正则匹配" })).not.toBeInTheDocument()
+    await user.click(screen.getByLabelText("必须条件值 1"))
+    expect(await screen.findByRole("option", { name: "Kisssub" })).toBeInTheDocument()
+    expect(screen.getByRole("option", { name: "ACG.RIP" })).toBeInTheDocument()
+    expect(screen.queryByDisplayValue("kisssub")).not.toBeInTheDocument()
   })
 
   it("renders a real site icon for each site in the site management cards", async () => {

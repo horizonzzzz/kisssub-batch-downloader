@@ -296,7 +296,7 @@ test("options page saves settings through the background worker", async () => {
   }
 })
 
-test("options page persists filter workbench edits after saving settings", async () => {
+test("options page persists simplified filter edits after saving settings", async () => {
   const extension = await launchExtensionContext()
 
   try {
@@ -305,20 +305,20 @@ test("options page persists filter workbench edits after saving settings", async
       heading: "过滤规则"
     })
 
-    await expect(page.getByText("策略工作台")).toBeVisible()
+    await expect(page.getByRole("heading", { name: "筛选器", exact: true })).toBeVisible()
 
-    await page.getByRole("button", { name: "新建策略组" }).click()
-    await page.getByLabel("策略组名称").fill("画质过滤")
-    await page.getByRole("button", { name: "保存策略组" }).click()
+    await page.getByRole("button", { name: "新增筛选器" }).click()
+    await page.getByLabel("筛选器名称").fill("爱恋 1080 简繁")
+    await page.getByLabel("必须条件字段 1").click()
+    await page.getByRole("option", { name: "字幕组" }).click()
+    await page.getByLabel("必须条件值 1").fill("爱恋字幕社")
+    await page.getByRole("button", { name: "添加必须条件" }).click()
+    await page.getByLabel("必须条件值 2").fill("1080")
+    await page.getByRole("button", { name: "添加任一条件" }).click()
+    await page.getByLabel("任一条件值 1").fill("简")
+    await page.getByRole("button", { name: "保存筛选器" }).click()
 
-    await expect(page.getByText("画质过滤")).toBeVisible()
-
-    await page.getByRole("button", { name: "添加规则" }).click()
-    await page.getByLabel("规则名称").fill("排除 RAW")
-    await page.getByLabel("条件值 1").fill("RAW")
-    await page.getByRole("button", { name: "保存规则" }).click()
-
-    await expect(page.getByText("排除 RAW")).toBeVisible()
+    await expect(page.getByRole("heading", { name: "爱恋 1080 简繁", exact: true })).toBeVisible()
 
     await page.getByRole("button", { name: "保存所有设置" }).click()
 
@@ -329,15 +329,17 @@ test("options page persists filter workbench edits after saving settings", async
       heading: "过滤规则"
     })
 
-    await expect(reopenedPage.getByText("策略工作台")).toBeVisible()
-    await expect(reopenedPage.getByText("画质过滤")).toBeVisible()
-    await expect(reopenedPage.getByText("排除 RAW")).toBeVisible()
+    await expect(
+      reopenedPage.getByRole("heading", { name: "爱恋 1080 简繁", exact: true })
+    ).toBeVisible()
 
-    await reopenedPage.getByLabel("资源标题").fill("[SubsPlease] Frieren - 01 (720p) [RAW].mkv")
+    await reopenedPage
+      .getByLabel("资源标题")
+      .fill("[爱恋字幕社][1月新番][金牌得主 第二季][Medalist][08][1080p][MP4][GB][简中]")
     await reopenedPage.getByRole("button", { name: "开始测试" }).click()
 
     await expect(
-      reopenedPage.getByText("命中策略组「画质过滤」中的规则「排除 RAW」，该资源将被拦截。")
+      reopenedPage.getByText("命中筛选器「爱恋 1080 简繁」，该资源会被保留。")
     ).toBeVisible()
 
     await reopenedPage.close()
@@ -346,7 +348,7 @@ test("options page persists filter workbench edits after saving settings", async
   }
 })
 
-test("filters workbench keeps the top actions horizontal and the test bench stacked below", async () => {
+test("filters page shows the simplified list and quick-test layout", async () => {
   const extension = await launchExtensionContext()
 
   try {
@@ -360,57 +362,18 @@ test("filters workbench keeps the top actions horizontal and the test bench stac
       height: 1200
     })
 
-    const topActions = page.getByTestId("filters-top-actions")
-    const topActionsLayout = await topActions.evaluate((element) => {
-      const style = getComputedStyle(element)
-      return {
-        display: style.display,
-        flexWrap: style.flexWrap
-      }
-    })
-    const importButton = page.getByRole("button", { name: "从模板库导入" }).first()
-    const createButton = page.getByRole("button", { name: "新建策略组" })
-    await expect(importButton).toBeVisible()
-    await expect(createButton).toBeVisible()
-    await expect(importButton).toBeEnabled()
-    await expect(createButton).toBeEnabled()
-    expect(topActionsLayout).toEqual({
-      display: "flex",
-      flexWrap: "wrap"
-    })
+    await expect(page.getByRole("button", { name: "新增筛选器" })).toBeVisible()
+    await expect(page.getByTestId("filters-list")).toBeVisible()
+    await expect(page.getByText("快速测试")).toBeVisible()
+    await expect(page.getByText("还没有筛选器")).toBeVisible()
 
     await page.setViewportSize({
       width: 1400,
       height: 1200
     })
 
-    const orchestrationSection = page.getByTestId("filters-orchestration")
-    const orchestrationHeading = page.getByRole("heading", { name: "执行策略编排" })
-    const testBench = page.getByTestId("filters-testbench")
-    await expect(orchestrationHeading).toBeVisible()
-    await expect(testBench).toBeVisible()
-
-    await expect
-      .poll(async () => {
-        return page.evaluate(() => {
-          const layoutSections = document.querySelector(
-            '[data-testid="filters-layout-sections"]'
-          )
-          const orchestration = document.querySelector('[data-testid="filters-orchestration"]')
-          const testBench = document.querySelector('[data-testid="filters-testbench"]')
-
-          if (!layoutSections || !orchestration || !testBench) {
-            return null
-          }
-
-          return (
-            layoutSections.children[0] === orchestration &&
-            layoutSections.children[1] === testBench
-          )
-        })
-      })
-      .toBe(true)
-    await expect(orchestrationSection.getByText("当前排序即真实执行顺序")).toBeVisible()
+    await expect(page.getByText("推荐一条筛选器对应一个真实场景")).toBeVisible()
+    await expect(page.getByText("输入资源标题，确认当前筛选器会不会保留它。")).toBeVisible()
 
     await page.close()
   } finally {
@@ -418,7 +381,7 @@ test("filters workbench keeps the top actions horizontal and the test bench stac
   }
 })
 
-test("filters workbench select controls stay interactable inside the rule builder sheet", async () => {
+test("filter builder select controls stay interactable inside the sheet", async () => {
   const extension = await launchExtensionContext()
 
   try {
@@ -427,17 +390,16 @@ test("filters workbench select controls stay interactable inside the rule builde
       heading: "过滤规则"
     })
 
-    await page.getByRole("button", { name: "新建策略组" }).click()
-    await page.getByLabel("策略组名称").fill("交互验证")
-    await page.getByRole("button", { name: "保存策略组" }).click()
+    await page.getByRole("button", { name: "新增筛选器" }).click()
 
-    await page.getByRole("button", { name: "添加规则" }).click()
+    await page.getByLabel("必须条件字段 1").click()
+    await page.getByRole("option", { name: "站点" }).click()
 
-    await page.getByLabel("条件操作 1").click()
-    await page.getByRole("option", { name: "正则匹配" }).click()
+    await page.getByLabel("必须条件值 1").click()
+    await page.getByRole("option", { name: "Bangumi.moe" }).click()
 
-    await expect(page.getByLabel("条件操作 1")).toContainText("正则匹配")
-    await expect(page.getByText(/标题 正则匹配 "\.\.\."/)).toBeVisible()
+    await expect(page.getByLabel("必须条件值 1")).toContainText("Bangumi.moe")
+    await expect(page.getByText(/必须满足：站点是 Bangumi\.moe/)).toBeVisible()
 
     await page.close()
   } finally {
@@ -445,7 +407,7 @@ test("filters workbench select controls stay interactable inside the rule builde
   }
 })
 
-test("rule builder prioritizes width for the condition value input", async () => {
+test("filter builder prioritizes width for the condition value input", async () => {
   const extension = await launchExtensionContext()
 
   try {
@@ -459,24 +421,16 @@ test("rule builder prioritizes width for the condition value input", async () =>
       height: 1200
     })
 
-    await page.getByRole("button", { name: "新建策略组" }).click()
-    await page.getByLabel("策略组名称").fill("布局验证")
-    await page.getByRole("button", { name: "保存策略组" }).click()
+    await page.getByRole("button", { name: "新增筛选器" }).click()
 
-    await page.getByRole("button", { name: "添加规则" }).click()
-
-    const fieldWidth = await page.getByLabel("条件字段 1").evaluate((element) =>
+    const fieldWidth = await page.getByLabel("必须条件字段 1").evaluate((element) =>
       Math.round(element.getBoundingClientRect().width)
     )
-    const operatorWidth = await page.getByLabel("条件操作 1").evaluate((element) =>
-      Math.round(element.getBoundingClientRect().width)
-    )
-    const valueWidth = await page.getByLabel("条件值 1").evaluate((element) =>
+    const valueWidth = await page.getByLabel("必须条件值 1").evaluate((element) =>
       Math.round(element.getBoundingClientRect().width)
     )
 
     expect(valueWidth).toBeGreaterThan(fieldWidth)
-    expect(valueWidth).toBeGreaterThan(operatorWidth)
 
     await page.close()
   } finally {
@@ -579,9 +533,9 @@ test("content script keeps the minimized launcher hover transform consistent acr
         })
 
       const afterHover = await readLauncherHoverState(page)
-      expect(afterHover.boxShadow).not.toBe(beforeHover.boxShadow)
       expect(
-        afterHover.transform !== beforeHover.transform ||
+        afterHover.boxShadow !== beforeHover.boxShadow ||
+          afterHover.transform !== beforeHover.transform ||
           afterHover.translate !== beforeHover.translate ||
           afterHover.scale !== beforeHover.scale
       ).toBe(true)

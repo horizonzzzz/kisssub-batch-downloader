@@ -3,6 +3,7 @@ import { retryFailedItems, type RetryDependencies, type RetryRequest } from "../
 import type { Settings } from "../../../lib/shared/types"
 import type { TaskHistoryItem, TaskHistoryRecord } from "../../../lib/history/types"
 import type { QbTorrentFile } from "../../../lib/downloader/qb"
+import { DEFAULT_SETTINGS } from "../../../lib/settings/defaults"
 
 function createMockRecord(id: string, items: TaskHistoryItem[]): TaskHistoryRecord {
   return {
@@ -87,19 +88,11 @@ function createMockDeps(
 ): RetryDependencies {
   return {
     getSettings: vi.fn(async () => ({
+      ...DEFAULT_SETTINGS,
       qbBaseUrl: "http://localhost:8080",
       qbUsername: "admin",
       qbPassword: "password",
-      concurrency: 3,
-      injectTimeoutMs: 5000,
-      domSettleMs: 1000,
-      retryCount: 3,
-      remoteScriptUrl: "",
-      remoteScriptRevision: "",
-      lastSavePath: "",
-      sourceDeliveryModes: {},
-      enabledSources: { kisssub: true },
-      filterGroups: []
+      filters: []
     })),
     getHistoryRecord: vi.fn(async () => null),
     updateHistoryRecord: vi.fn(async () => {}),
@@ -193,7 +186,7 @@ describe("retryFailedItems", () => {
       expect(updatedRecord.status).toBe("completed")
     })
 
-    it("re-applies current filter rules before retry submission", async () => {
+    it("re-applies current filters before retry submission", async () => {
       const failedItem = createFailedItem(
         "item-1",
         "[喵萌奶茶屋] Episode 01 [1080p][RAW]",
@@ -202,41 +195,24 @@ describe("retryFailedItems", () => {
       const record = createMockRecord("batch-1", [failedItem])
       deps.getHistoryRecord = vi.fn(async () => record)
       const filteredSettings: Settings = {
+        ...DEFAULT_SETTINGS,
         qbBaseUrl: "http://localhost:8080",
         qbUsername: "admin",
         qbPassword: "password",
-        concurrency: 3,
-        injectTimeoutMs: 5000,
-        domSettleMs: 1000,
-        retryCount: 3,
-        remoteScriptUrl: "",
-        remoteScriptRevision: "",
-        lastSavePath: "",
-        sourceDeliveryModes: {},
-        enabledSources: { kisssub: true },
-        filterGroups: [
+        filters: [
           {
-            id: "group-raw",
-            name: "RAW 过滤器",
-            description: "",
+            id: "filter-subgroup",
+            name: "仅保留爱恋",
             enabled: true,
-            rules: [
+            must: [
               {
-                id: "rule-raw",
-                name: "排除 RAW",
-                enabled: true,
-                action: "exclude",
-                relation: "and",
-                conditions: [
-                  {
-                    id: "condition-raw",
-                    field: "title",
-                    operator: "contains",
-                    value: "RAW"
-                  }
-                ]
+                id: "condition-subgroup",
+                field: "subgroup",
+                operator: "contains",
+                value: "爱恋字幕社"
               }
-            ]
+            ],
+            any: []
           }
         ]
       }
@@ -250,7 +226,7 @@ describe("retryFailedItems", () => {
       expect(deps.addUrlsToQb).not.toHaveBeenCalled()
       expect(result.updatedRecord.items[0].status).toBe("filtered")
       expect(result.updatedRecord.items[0].message).toBe(
-        "Filtered by group: RAW 过滤器 / rule: 排除 RAW"
+        "Blocked by filters: no filter matched"
       )
       expect(result.updatedRecord.stats).toEqual({
         total: 1,
@@ -262,7 +238,7 @@ describe("retryFailedItems", () => {
       expect(result.updatedRecord.status).toBe("completed")
     })
 
-    it("uses include-default blocking when include rules are enabled but unmatched", async () => {
+    it("blocks retries when enabled filters exist but the item matches none of them", async () => {
       const failedItem = createFailedItem(
         "item-1",
         "[LoliHouse] Episode 01 [1080p]",
@@ -271,41 +247,24 @@ describe("retryFailedItems", () => {
       const record = createMockRecord("batch-1", [failedItem])
       deps.getHistoryRecord = vi.fn(async () => record)
       const includeSettings: Settings = {
+        ...DEFAULT_SETTINGS,
         qbBaseUrl: "http://localhost:8080",
         qbUsername: "admin",
         qbPassword: "password",
-        concurrency: 3,
-        injectTimeoutMs: 5000,
-        domSettleMs: 1000,
-        retryCount: 3,
-        remoteScriptUrl: "",
-        remoteScriptRevision: "",
-        lastSavePath: "",
-        sourceDeliveryModes: {},
-        enabledSources: { kisssub: true },
-        filterGroups: [
+        filters: [
           {
-            id: "group-include",
-            name: "字幕组保留",
-            description: "",
+            id: "filter-include",
+            name: "仅保留喵萌",
             enabled: true,
-            rules: [
+            must: [
               {
-                id: "rule-include",
-                name: "仅保留喵萌",
-                enabled: true,
-                action: "include",
-                relation: "and",
-                conditions: [
-                  {
-                    id: "condition-subgroup",
-                    field: "subgroup",
-                    operator: "contains",
-                    value: "喵萌奶茶屋"
-                  }
-                ]
+                id: "condition-subgroup",
+                field: "subgroup",
+                operator: "contains",
+                value: "喵萌奶茶屋"
               }
-            ]
+            ],
+            any: []
           }
         ]
       }
@@ -319,7 +278,7 @@ describe("retryFailedItems", () => {
       expect(deps.addUrlsToQb).not.toHaveBeenCalled()
       expect(result.updatedRecord.items[0].status).toBe("filtered")
       expect(result.updatedRecord.items[0].message).toBe(
-        "命中过滤默认策略：存在启用的匹配放行规则，但当前资源未命中任何放行规则。"
+        "Blocked by filters: no filter matched"
       )
       expect(result.updatedRecord.status).toBe("completed")
     })

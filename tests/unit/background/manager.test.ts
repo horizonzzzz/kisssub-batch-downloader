@@ -176,31 +176,22 @@ describe("createBatchDownloadManager", () => {
     })
   })
 
-  it("filters excluded items before submitting them to qBittorrent", async () => {
+  it("blocks items that do not match any enabled filter before submitting them to qBittorrent", async () => {
     const settings = createSettings({
-      filterGroups: [
+      filters: [
         {
-          id: "group-raw",
-          name: "RAW 过滤器",
-          description: "",
+          id: "filter-subgroup",
+          name: "爱恋 1080 简繁",
           enabled: true,
-          rules: [
+          must: [
             {
-              id: "rule-raw",
-              name: "排除 RAW",
-              enabled: true,
-              action: "exclude",
-              relation: "and",
-              conditions: [
-                {
-                  id: "condition-title",
-                  field: "title",
-                  operator: "contains",
-                  value: "RAW"
-                }
-              ]
+              id: "condition-subgroup",
+              field: "subgroup",
+              operator: "contains",
+              value: "爱恋字幕社"
             }
-          ]
+          ],
+          any: []
         }
       ]
     })
@@ -255,7 +246,7 @@ describe("createBatchDownloadManager", () => {
         title: "[喵萌奶茶屋] Episode 01 [1080p][RAW]",
         detailUrl: "https://www.kisssub.org/show-deadbeef.html",
         status: "filtered",
-        message: "Filtered by group: RAW 过滤器 / rule: 排除 RAW"
+        message: "Blocked by filters: no filter matched"
       }
     ])
     expect(persistBatchHistoryMock).toHaveBeenCalledTimes(1)
@@ -270,7 +261,7 @@ describe("createBatchDownloadManager", () => {
         results: expect.arrayContaining([
           expect.objectContaining({
             status: "filtered",
-            message: "Filtered by group: RAW 过滤器 / rule: 排除 RAW"
+            message: "Blocked by filters: no filter matched"
           })
         ])
       }),
@@ -278,31 +269,22 @@ describe("createBatchDownloadManager", () => {
     )
   })
 
-  it("applies include-default blocking before qB submission when no include rule matches", async () => {
+  it("blocks unmatched extracted items when enabled filters exist", async () => {
     const settings = createSettings({
-      filterGroups: [
+      filters: [
         {
-          id: "group-include",
-          name: "字幕组保留",
-          description: "",
+          id: "filter-include",
+          name: "仅保留喵萌",
           enabled: true,
-          rules: [
+          must: [
             {
-              id: "rule-include",
-              name: "仅保留喵萌",
-              enabled: true,
-              action: "include",
-              relation: "and",
-              conditions: [
-                {
-                  id: "condition-subgroup",
-                  field: "subgroup",
-                  operator: "contains",
-                  value: "喵萌奶茶屋"
-                }
-              ]
+              id: "condition-subgroup",
+              field: "subgroup",
+              operator: "contains",
+              value: "喵萌奶茶屋"
             }
-          ]
+          ],
+          any: []
         }
       ]
     })
@@ -356,36 +338,27 @@ describe("createBatchDownloadManager", () => {
         title: "[LoliHouse] Episode 01 [1080p]",
         detailUrl: "https://www.kisssub.org/show-deadbeef.html",
         status: "filtered",
-        message: "命中过滤默认策略：存在启用的匹配放行规则，但当前资源未命中任何放行规则。"
+        message: "Blocked by filters: no filter matched"
       }
     ])
   })
 
-  it("applies include-default blocking to pre-resolved direct-link items before qB submission", async () => {
+  it("blocks unmatched pre-resolved direct-link items before qB submission", async () => {
     const settings = createSettings({
-      filterGroups: [
+      filters: [
         {
-          id: "group-include",
-          name: "字幕组保留",
-          description: "",
+          id: "filter-include",
+          name: "仅保留喵萌",
           enabled: true,
-          rules: [
+          must: [
             {
-              id: "rule-include",
-              name: "仅保留喵萌",
-              enabled: true,
-              action: "include",
-              relation: "and",
-              conditions: [
-                {
-                  id: "condition-subgroup",
-                  field: "subgroup",
-                  operator: "contains",
-                  value: "喵萌奶茶屋"
-                }
-              ]
+              id: "condition-subgroup",
+              field: "subgroup",
+              operator: "contains",
+              value: "喵萌奶茶屋"
             }
-          ]
+          ],
+          any: []
         }
       ]
     })
@@ -431,36 +404,27 @@ describe("createBatchDownloadManager", () => {
         title: "[LoliHouse] Episode 01 [1080p]",
         detailUrl: "https://www.kisssub.org/show-deadbeef.html",
         status: "filtered",
-        message: "命中过滤默认策略：存在启用的匹配放行规则，但当前资源未命中任何放行规则。"
+        message: "Blocked by filters: no filter matched"
       }
     ])
   })
 
-  it("filters extracted items using the extracted detail title and subgroup", async () => {
+  it("keeps extracted items when they match the filter using extracted subgroup", async () => {
     const settings = createSettings({
-      filterGroups: [
+      filters: [
         {
-          id: "group-subgroup",
-          name: "字幕组规则",
-          description: "",
+          id: "filter-subgroup",
+          name: "仅保留喵萌",
           enabled: true,
-          rules: [
+          must: [
             {
-              id: "rule-subgroup",
-              name: "排除喵萌",
-              enabled: true,
-              action: "exclude",
-              relation: "and",
-              conditions: [
-                {
-                  id: "condition-subgroup",
-                  field: "subgroup",
-                  operator: "contains",
-                  value: "喵萌奶茶屋"
-                }
-              ]
+              id: "condition-subgroup",
+              field: "subgroup",
+              operator: "contains",
+              value: "喵萌奶茶屋"
             }
-          ]
+          ],
+          any: []
         }
       ]
     })
@@ -495,29 +459,22 @@ describe("createBatchDownloadManager", () => {
     })
 
     await vi.waitFor(() => {
-      expect(dependencies.sendBatchEvent.mock.calls.at(-1)?.[1]).toMatchObject({
-        stage: "completed",
-        summary: {
-          submitted: 0,
-          duplicated: 0,
-          filtered: 1,
-          failed: 0
-        }
-      })
+      expect(dependencies.addUrlsToQb).toHaveBeenCalledTimes(1)
     })
 
     expect(dependencies.extractSingleItem).toHaveBeenCalledTimes(1)
-    expect(dependencies.loginQb).not.toHaveBeenCalled()
-    expect(dependencies.addUrlsToQb).not.toHaveBeenCalled()
-    expect(dependencies.sendBatchEvent.mock.calls.at(-1)?.[1].results).toEqual([
-      {
-        title: "[喵萌奶茶屋] Episode 01 [1080p]",
-        detailUrl: "https://www.kisssub.org/show-deadbeef.html",
-        status: "filtered",
-        message:
-          "Filtered by group: 字幕组规则 / rule: 排除喵萌"
-      }
-    ])
+    expect(dependencies.loginQb).toHaveBeenCalledTimes(1)
+    expect(dependencies.addUrlsToQb).toHaveBeenCalledWith(
+      expect.any(Object),
+      ["magnet:?xt=urn:btih:deadbeef"],
+      undefined
+    )
+    expect(dependencies.sendBatchEvent.mock.calls.at(-1)?.[1].summary).toEqual({
+      submitted: 1,
+      duplicated: 0,
+      filtered: 0,
+      failed: 0
+    })
   })
 
   it("prevents concurrent jobs from starting in the same tab", async () => {

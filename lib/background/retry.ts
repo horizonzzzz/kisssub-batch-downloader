@@ -1,4 +1,4 @@
-import { decideFilterGroupAction } from "../filter-rules"
+import { decideFilterAction } from "../filter-rules"
 import type { QbTorrentFile } from "../downloader/qb"
 import type { TaskHistoryItem, TaskHistoryRecord } from "../history/types"
 import type { Settings } from "../shared/types"
@@ -103,16 +103,16 @@ export async function retryFailedItems(
   const itemsWithoutUrls: TaskHistoryItem[] = []
 
   for (const item of targetItems) {
-    const ruleDecision = decideFilterGroupAction({
+    const filterDecision = decideFilterAction({
       sourceId: item.sourceId,
       title: item.title,
-      groups: settings.filterGroups
+      filters: settings.filters
     })
-    if (!ruleDecision.accepted) {
+    if (!filterDecision.accepted) {
       filteredItems.push(
         updateItemAfterFiltered(
           item,
-          getFilterDecisionMessage(ruleDecision)
+          getFilterDecisionMessage(filterDecision)
         )
       )
       continue
@@ -216,11 +216,11 @@ export async function retryFailedItems(
 }
 
 function getFilterDecisionMessage(
-  ruleDecision: ReturnType<typeof decideFilterGroupAction>
+  filterDecision: ReturnType<typeof decideFilterAction>
 ): string {
-  if (ruleDecision.matchedGroup && ruleDecision.matchedRule) {
-    return `Filtered by group: ${ruleDecision.matchedGroup.name} / rule: ${ruleDecision.matchedRule.name}`
+  if (filterDecision.matchedFilter) {
+    return `Matched filter: ${filterDecision.matchedFilter.name}`
   }
 
-  return ruleDecision.message || "Filtered by default strategy."
+  return filterDecision.message || "Blocked by filters: no filter matched"
 }

@@ -31,7 +31,7 @@ describe("buildHistoryRecord", () => {
           status: "filtered",
           deliveryMode: "",
           submitUrl: "",
-          message: "Filtered by group: RAW 过滤器 / rule: 排除 RAW"
+          message: "Blocked by filters: no filter matched"
         }
       ]
     }

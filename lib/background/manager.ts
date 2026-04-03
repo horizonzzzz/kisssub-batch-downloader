@@ -1,4 +1,4 @@
-import { decideFilterGroupAction } from "../filter-rules"
+import { decideFilterAction } from "../filter-rules"
 import { getDisabledSources, normalizeSavePath } from "../settings"
 import type { StartBatchDownloadSuccessResponse } from "../shared/messages"
 import type { BatchItem, ClassifiedBatchResult } from "../shared/types"
@@ -239,14 +239,14 @@ export function createBatchDownloadManager(dependencies: BackgroundBatchDependen
 function classifyFilteredBatchResult(
   sourceId: BatchItem["sourceId"],
   item: Pick<ClassifiedBatchResult, "title" | "detailUrl" | "hash" | "magnetUrl" | "torrentUrl">,
-  settings: BatchJob["settings"],
+  settings: BatchJob["settings"]
 ): ClassifiedBatchResult | null {
-  const ruleDecision = decideFilterGroupAction({
+  const filterDecision = decideFilterAction({
     sourceId,
     title: item.title,
-    groups: settings.filterGroups
+    filters: settings.filters
   })
-  if (ruleDecision.accepted) {
+  if (filterDecision.accepted) {
     return null
   }
 
@@ -263,18 +263,18 @@ function classifyFilteredBatchResult(
     status: "filtered",
     deliveryMode: preferredDeliveryMode,
     submitUrl: "",
-    message: getFilterDecisionMessage(ruleDecision)
+    message: getFilterDecisionMessage(filterDecision)
   }
 }
 
 function getFilterDecisionMessage(
-  ruleDecision: ReturnType<typeof decideFilterGroupAction>
+  filterDecision: ReturnType<typeof decideFilterAction>
 ): string {
-  if (ruleDecision.matchedGroup && ruleDecision.matchedRule) {
-    return `Filtered by group: ${ruleDecision.matchedGroup.name} / rule: ${ruleDecision.matchedRule.name}`
+  if (filterDecision.matchedFilter) {
+    return `Matched filter: ${filterDecision.matchedFilter.name}`
   }
 
-  return ruleDecision.message || "Filtered by default strategy."
+  return filterDecision.message || "Blocked by filters: no filter matched"
 }
 
 function splitPreparedSubmissions(preparedSubmissions: ClassifiedBatchResult[]): {
