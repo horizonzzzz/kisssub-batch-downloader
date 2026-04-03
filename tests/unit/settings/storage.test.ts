@@ -4,15 +4,25 @@ import { DEFAULT_SETTINGS } from "../../../lib/settings/defaults"
 import { ensureSettings, getSettings, saveSettings } from "../../../lib/settings/storage"
 
 type StoredState = {
-  settings?: unknown
+  values: Record<string, unknown>
 }
 
 function installChromeStorageMock(state: StoredState) {
-  const get = vi.fn(async () => ({
-    settings: state.settings
-  }))
-  const set = vi.fn(async (value: { settings: unknown }) => {
-    state.settings = value.settings
+  const get = vi.fn(async (keys?: string | string[]) => {
+    if (typeof keys === "string") {
+      return {
+        [keys]: state.values[keys]
+      }
+    }
+
+    if (Array.isArray(keys)) {
+      return Object.fromEntries(keys.map((key) => [key, state.values[key]]))
+    }
+
+    return { ...state.values }
+  })
+  const set = vi.fn(async (value: Record<string, unknown>) => {
+    Object.assign(state.values, value)
   })
 
   Object.defineProperty(globalThis, "chrome", {
@@ -36,7 +46,9 @@ describe("settings storage helpers", () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
-    state = {}
+    state = {
+      values: {}
+    }
     storage = installChromeStorageMock(state)
   })
 
@@ -44,13 +56,13 @@ describe("settings storage helpers", () => {
     await ensureSettings()
 
     expect(storage.set).toHaveBeenCalledWith({
-      settings: DEFAULT_SETTINGS
+      settings_v2: DEFAULT_SETTINGS
     })
-    expect(state.settings).toEqual(DEFAULT_SETTINGS)
+    expect(state.values.settings_v2).toEqual(DEFAULT_SETTINGS)
   })
 
   it("does not overwrite existing settings during ensureSettings", async () => {
-    state.settings = {
+    state.values.settings_v2 = {
       qbBaseUrl: "http://127.0.0.1:17474"
     }
 
@@ -59,8 +71,24 @@ describe("settings storage helpers", () => {
     expect(storage.set).not.toHaveBeenCalled()
   })
 
+  it("initializes the new storage key even when the legacy key still exists", async () => {
+    state.values.settings = {
+      qbBaseUrl: "http://127.0.0.1:17474"
+    }
+
+    await ensureSettings()
+
+    expect(storage.set).toHaveBeenCalledWith({
+      settings_v2: DEFAULT_SETTINGS
+    })
+    expect(state.values.settings).toEqual({
+      qbBaseUrl: "http://127.0.0.1:17474"
+    })
+    expect(state.values.settings_v2).toEqual(DEFAULT_SETTINGS)
+  })
+
   it("hydrates missing defaults and sanitizes stored values when reading settings", async () => {
-    state.settings = {
+    state.values.settings_v2 = {
       qbBaseUrl: " http://127.0.0.1:17474/// ",
       qbUsername: " admin ",
       lastSavePath: "  D:\\Anime  ",
@@ -86,25 +114,27 @@ describe("settings storage helpers", () => {
     expect(storage.set).not.toHaveBeenCalled()
   })
 
+  it("ignores the legacy storage key when reading settings", async () => {
+    state.values.settings = {
+      qbBaseUrl: "http://legacy-host:9090",
+      qbUsername: "legacy-user"
+    }
+    state.values.settings_v2 = {
+      qbBaseUrl: " http://127.0.0.1:17474/// ",
+      qbUsername: " admin "
+    }
+
+    await expect(getSettings()).resolves.toEqual({
+      ...DEFAULT_SETTINGS,
+      qbBaseUrl: "http://127.0.0.1:17474",
+      qbUsername: "admin"
+    })
+  })
+
   it("merges partial updates into the sanitized stored settings before persisting", async () => {
-    state.settings = {
+    state.values.settings_v2 = {
       qbBaseUrl: " http://127.0.0.1:7474/// ",
       qbUsername: " admin ",
-      filterRules: [
-        {
-          id: "rule-old",
-          name: "  排除 RAW  ",
-          enabled: true,
-          action: "exclude",
-          sourceIds: ["kisssub"],
-          order: 0,
-          conditions: {
-            titleIncludes: [],
-            titleExcludes: [" RAW "],
-            subgroupIncludes: []
-          }
-        }
-      ],
       enabledSources: {
         kisssub: false
       }
@@ -194,7 +224,7 @@ describe("settings storage helpers", () => {
     })
 
     expect(storage.set).toHaveBeenCalledWith({
-      settings: {
+      settings_v2: {
         ...DEFAULT_SETTINGS,
         qbBaseUrl: "http://127.0.0.1:17474",
         qbUsername: "admin",
@@ -252,7 +282,7 @@ describe("settings storage helpers", () => {
 
     expect(storage.set).toHaveBeenCalledTimes(2)
     expect(storage.set.mock.calls[0]?.[0]).toEqual({
-      settings: DEFAULT_SETTINGS
+      settings_v2: DEFAULT_SETTINGS
     })
   })
 })

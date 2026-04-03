@@ -111,17 +111,8 @@ describe("sanitizeSettings", () => {
     })
   })
 
-  it("defaults filter groups to an empty array and ignores legacy filter rules", () => {
-    expect(
-      sanitizeSettings({
-        filterRules: [
-          {
-            id: "legacy-rule",
-            name: "排除 RAW"
-          }
-        ]
-      } as never).filterGroups
-    ).toEqual([])
+  it("defaults filter groups to an empty array", () => {
+    expect(sanitizeSettings({}).filterGroups).toEqual([])
   })
 
   it("normalizes filter groups and trims valid nested fields", () => {
