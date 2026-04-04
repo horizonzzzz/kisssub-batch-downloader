@@ -1,7 +1,12 @@
 import packageJson from "../../package.json"
 import { getSourceAdapterForPage } from "../sources"
 import { getSettings, resolveSourceEnabled, saveSettings } from "../settings"
-import { SOURCE_ENABLED_CHANGE_EVENT, type SourceEnabledChangeMessage } from "../shared/messages"
+import {
+  FILTERS_UPDATED_EVENT,
+  SOURCE_ENABLED_CHANGE_EVENT,
+  type FiltersUpdatedMessage,
+  type SourceEnabledChangeMessage
+} from "../shared/messages"
 import { DEFAULT_OPTIONS_ROUTE, isOptionsRoutePath, type OptionsRoutePath } from "../shared/options-routes"
 import {
   POPUP_HELP_URL,
@@ -40,6 +45,11 @@ type OpenOptionsPageDependencies = {
 type NotifyActiveTabOfSourceEnabledChangeDependencies = {
   queryActiveTabId: () => Promise<number | null>
   sendMessageToTab: (tabId: number, message: SourceEnabledChangeMessage) => Promise<void>
+}
+
+type NotifySupportedSourceTabsOfFilterChangeDependencies = {
+  queryTabs: () => Promise<Array<{ id?: number; url?: string | null }>>
+  sendMessageToTab: (tabId: number, message: FiltersUpdatedMessage) => Promise<void>
 }
 
 const DEFAULT_BUILD_POPUP_STATE_DEPENDENCIES: BuildPopupStateDependencies = {
@@ -93,6 +103,14 @@ const DEFAULT_OPEN_OPTIONS_PAGE_DEPENDENCIES: OpenOptionsPageDependencies = {
 const DEFAULT_NOTIFY_ACTIVE_TAB_OF_SOURCE_ENABLED_CHANGE_DEPENDENCIES: NotifyActiveTabOfSourceEnabledChangeDependencies =
   {
     queryActiveTabId,
+    sendMessageToTab: async (tabId, message) => {
+      await chrome.tabs.sendMessage(tabId, message)
+    }
+  }
+
+const DEFAULT_NOTIFY_SUPPORTED_SOURCE_TABS_OF_FILTER_CHANGE_DEPENDENCIES: NotifySupportedSourceTabsOfFilterChangeDependencies =
+  {
+    queryTabs: async () => chrome.tabs.query({}),
     sendMessageToTab: async (tabId, message) => {
       await chrome.tabs.sendMessage(tabId, message)
     }
@@ -165,6 +183,33 @@ export async function notifyActiveTabOfSourceEnabledChange(
   } catch {
     // Ignore tabs without a receiver, such as unsupported or reloaded pages.
   }
+}
+
+export async function notifySupportedSourceTabsOfFilterChange(
+  dependencies: NotifySupportedSourceTabsOfFilterChangeDependencies = DEFAULT_NOTIFY_SUPPORTED_SOURCE_TABS_OF_FILTER_CHANGE_DEPENDENCIES
+) {
+  const tabs = await dependencies.queryTabs()
+
+  await Promise.all(
+    tabs.map(async (tab) => {
+      if (typeof tab.id !== "number" || typeof tab.url !== "string") {
+        return
+      }
+
+      try {
+        const matchedSource = getSourceAdapterForPage(new URL(tab.url))
+        if (!matchedSource) {
+          return
+        }
+
+        await dependencies.sendMessageToTab(tab.id, {
+          type: FILTERS_UPDATED_EVENT
+        })
+      } catch {
+        // Ignore unsupported tabs, malformed URLs, and tabs without an active content-script receiver.
+      }
+    })
+  )
 }
 
 export function normalizePopupOptionsRoute(route: string | null | undefined): OptionsRoutePath {

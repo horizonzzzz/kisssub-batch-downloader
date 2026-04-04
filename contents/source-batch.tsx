@@ -7,6 +7,7 @@ import { createBatchPanelFilterStatus } from "../components/batch-panel/filter-s
 import { SelectionCheckbox } from "../components/selection-checkbox"
 import {
   BATCH_EVENT,
+  FILTERS_UPDATED_EVENT,
   SOURCE_ENABLED_CHANGE_EVENT,
   sendRuntimeRequest,
   type ContentRuntimeMessage,
@@ -98,21 +99,7 @@ async function bootstrap() {
 
     matchedPageSource = matchedSource
     registerRuntimeMessageListener()
-
-    const settings = await loadSettingsForContentScript()
-    hydrateSavePath(settings)
-    const source = getEnabledSourceAdapterForLocation(window.location, settings)
-    if (!source) {
-      return
-    }
-
-    snapshot.filterStatus = createBatchPanelFilterStatus({
-      sourceId: source.id,
-      filters: settings.filters ?? []
-    })
-    snapshot.filters = settings.filters ?? []
-
-    activateSource(source)
+    await synchronizeContentSettings()
   } catch (error) {
     console.error("[Anime BT Batch] Failed to bootstrap content script.", error)
   }
@@ -135,6 +122,11 @@ function registerRuntimeMessageListener() {
 
     if (message.type === SOURCE_ENABLED_CHANGE_EVENT) {
       handleSourceEnabledChange(message)
+      return
+    }
+
+    if (message.type === FILTERS_UPDATED_EVENT) {
+      void handleFiltersUpdated()
     }
   })
 
@@ -151,6 +143,61 @@ async function loadSettingsForContentScript(): Promise<Settings> {
   }
 
   return response.settings
+}
+
+function applyFiltersToSnapshot(sourceId: SourceAdapter["id"], filters: FilterEntry[]) {
+  snapshot.filters = filters
+  snapshot.filterStatus = createBatchPanelFilterStatus({
+    sourceId,
+    filters
+  })
+}
+
+function refreshSelectableItems() {
+  let selectionChanged = false
+
+  for (const [detailUrl, checkboxRoot] of checkboxRoots.entries()) {
+    const nextItem = buildSelectableBatchItem(checkboxRoot.item.item, snapshot.filters)
+    checkboxRoot.item = nextItem
+
+    if (!nextItem.selectable && snapshot.selected.delete(detailUrl)) {
+      selectionChanged = true
+    }
+  }
+
+  if (selectionChanged && !snapshot.running) {
+    snapshot.statusText = buildSelectionStatus(snapshot.selected.size)
+  }
+}
+
+async function synchronizeContentSettings() {
+  const settings = await loadSettingsForContentScript()
+  hydrateSavePath(settings)
+
+  const enabledSource = getEnabledSourceAdapterForLocation(window.location, settings)
+  const filters = settings.filters ?? []
+
+  if (!enabledSource) {
+    applyFiltersToSnapshot(matchedPageSource?.id ?? "kisssub", filters)
+
+    if (activeSource) {
+      deactivateSource({ preserveRunningState: true })
+    }
+
+    return
+  }
+
+  applyFiltersToSnapshot(enabledSource.id, filters)
+
+  if (!activeSource) {
+    activateSource(enabledSource)
+    return
+  }
+
+  activeSource = enabledSource
+  scanAndDecorate(enabledSource)
+  refreshSelectableItems()
+  renderAll()
 }
 
 function activateSource(source: SourceAdapter) {
@@ -275,6 +322,18 @@ function handleSourceEnabledChange(message: SourceEnabledChangeMessage) {
   }
 
   deactivateSource({ preserveRunningState: true })
+}
+
+async function handleFiltersUpdated() {
+  if (!matchedPageSource) {
+    return
+  }
+
+  try {
+    await synchronizeContentSettings()
+  } catch (error) {
+    console.error("[Anime BT Batch] Failed to refresh filter settings.", error)
+  }
 }
 
 function scanAndDecorate(source: SourceAdapter) {

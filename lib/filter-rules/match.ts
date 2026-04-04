@@ -186,11 +186,20 @@ function isFilterEffectiveForSource(filter: FilterEntry, sourceId: SourceId) {
       condition.field === "source"
   )
 
-  if (!sourceMustConditions.length) {
+  if (
+    sourceMustConditions.length &&
+    !sourceMustConditions.every((condition) => condition.value === sourceId)
+  ) {
+    return false
+  }
+
+  if (!filter.any.length) {
     return true
   }
 
-  return sourceMustConditions.every((condition) => condition.value === sourceId)
+  return filter.any.some(
+    (condition) => condition.field !== "source" || condition.value === sourceId
+  )
 }
 
 function getConditionTargetValue(

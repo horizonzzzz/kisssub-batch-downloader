@@ -2,6 +2,7 @@ import {
   buildPopupState,
   createBatchDownloadManager,
   fetchTorrentForUpload,
+  notifySupportedSourceTabsOfFilterChange,
   notifyActiveTabOfSourceEnabledChange,
   openOptionsPageForRoute,
   retryFailedItems,
@@ -116,9 +117,11 @@ chrome.runtime.onMessage.addListener((message: unknown, sender, sendResponse) =>
           )
           return
         case "SAVE_SETTINGS":
+          const savedSettings = await saveSettings(runtimeMessage.settings ?? {})
+          await notifySupportedSourceTabsOfFilterChange()
           sendResponse(
             createRuntimeSuccessResponse("SAVE_SETTINGS", {
-              settings: await saveSettings(runtimeMessage.settings ?? {})
+              settings: savedSettings
             })
           )
           return

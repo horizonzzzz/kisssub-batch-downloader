@@ -226,6 +226,39 @@ describe("deriveEffectiveFilterSummary", () => {
       emptyStateReason: "no-filters-for-source"
     })
   })
+
+  it("treats source conditions in any clauses as site scoping when deriving effective filters", () => {
+    expect(
+      deriveEffectiveFilterSummary({
+        sourceId: "kisssub",
+        filters: [
+          createFilter({
+            id: "bangumi-any",
+            name: "Bangumi 任一来源",
+            must: [
+              createCondition({
+                id: "condition-title",
+                field: "title",
+                value: "1080"
+              })
+            ],
+            any: [
+              createCondition({
+                id: "condition-source",
+                field: "source",
+                operator: "is",
+                value: "bangumimoe"
+              })
+            ]
+          })
+        ]
+      })
+    ).toMatchObject({
+      effectiveCount: 0,
+      hasEnabledFilters: true,
+      emptyStateReason: "no-filters-for-source"
+    })
+  })
 })
 
 describe("decideFilterAction", () => {
@@ -263,6 +296,41 @@ describe("decideFilterAction", () => {
               id: "condition-title",
               field: "title",
               value: "1080p"
+            })
+          ]
+        })
+      ]
+    })
+
+    expect(result).toMatchObject({
+      accepted: true,
+      matchedFilter: null
+    })
+    expect(result.message).toBe("No effective filters for source. Accepted by default.")
+    expect(result.trace[result.trace.length - 1]).toContain("默认放行")
+  })
+
+  it("allows items by default when site scoping is expressed through any clauses", () => {
+    const result = decideFilterAction({
+      sourceId: "acgrip",
+      title: "[LoliHouse] Summer Pockets 01 [1080p]",
+      filters: [
+        createFilter({
+          id: "bangumi-any",
+          name: "Bangumi 1080",
+          must: [
+            createCondition({
+              id: "condition-title",
+              field: "title",
+              value: "1080"
+            })
+          ],
+          any: [
+            createCondition({
+              id: "condition-source",
+              field: "source",
+              operator: "is",
+              value: "bangumimoe"
             })
           ]
         })

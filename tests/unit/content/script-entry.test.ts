@@ -110,6 +110,7 @@ describe("content script entry", () => {
         if (element?.props?.onDownload) {
           return element.props as {
             running: boolean
+            selectedCount: number
             statusText: string
             onSelectAll: () => void
             onDownload: () => void
@@ -307,6 +308,198 @@ describe("content script entry", () => {
     expect(getLatestCheckboxProps()).toMatchObject({
       disabled: true,
       disabledReason: "该条目未命中当前筛选规则，无法选择"
+    })
+  })
+
+  it("reloads filters and re-enables previously blocked items when filter settings update", async () => {
+    const anchorCell = document.createElement("td")
+    const anchor = document.createElement("a")
+    anchor.href = "https://acg.rip/t/4"
+    anchor.textContent = "Episode 04"
+    anchorCell.appendChild(anchor)
+    document.body.appendChild(anchorCell)
+
+    const source = {
+      id: "acgrip",
+      displayName: "ACG.RIP"
+    }
+    const item = {
+      sourceId: "acgrip",
+      title: "[LoliHouse] Episode 04 [1080p]",
+      detailUrl: "https://acg.rip/t/4"
+    }
+
+    getSourceAdapterForLocation.mockReturnValueOnce(source)
+    getEnabledSourceAdapterForLocation.mockReturnValue(source)
+    getDetailAnchors.mockReturnValue([anchor])
+    getBatchItemFromAnchor.mockReturnValue(item)
+    getAnchorMountTarget.mockReturnValue(anchorCell)
+
+    runtimeSendMessage.mockImplementation(({ type }) => {
+      if (type === "GET_SETTINGS") {
+        const callCount = runtimeSendMessage.mock.calls.filter((call) => call[0]?.type === "GET_SETTINGS").length
+
+        if (callCount <= 1) {
+          return Promise.resolve({
+            ok: true,
+            settings: {
+              enabledSources: {
+                acgrip: true
+              },
+              filters: [
+                {
+                  id: "filter-1",
+                  name: "仅保留爱恋",
+                  enabled: true,
+                  must: [
+                    {
+                      id: "condition-1",
+                      field: "subgroup",
+                      operator: "contains",
+                      value: "爱恋字幕社"
+                    }
+                  ],
+                  any: []
+                }
+              ]
+            }
+          })
+        }
+
+        return Promise.resolve({
+          ok: true,
+          settings: {
+            enabledSources: {
+              acgrip: true
+            },
+            filters: []
+          }
+        })
+      }
+
+      return Promise.resolve({ ok: true })
+    })
+
+    await import("../../../contents/source-batch")
+
+    await vi.waitFor(() => {
+      expect(createRoot).toHaveBeenCalledTimes(2)
+    })
+
+    expect(getLatestCheckboxProps()).toMatchObject({
+      disabled: true,
+      disabledReason: "该条目未命中当前筛选规则，无法选择"
+    })
+
+    const listener = runtimeAddListener.mock.calls[0]?.[0]
+    listener?.({
+      type: "ANIME_BT_FILTERS_UPDATED_EVENT"
+    })
+
+    await vi.waitFor(() => {
+      expect(runtimeSendMessage.mock.calls.filter((call) => call[0]?.type === "GET_SETTINGS")).toHaveLength(2)
+      expect(getLatestCheckboxProps()).toMatchObject({
+        disabled: false
+      })
+    })
+  })
+
+  it("drops stale selections when updated filters make an item ineligible", async () => {
+    const anchorCell = document.createElement("td")
+    const anchor = document.createElement("a")
+    anchor.href = "https://acg.rip/t/5"
+    anchor.textContent = "Episode 05"
+    anchorCell.appendChild(anchor)
+    document.body.appendChild(anchorCell)
+
+    const source = {
+      id: "acgrip",
+      displayName: "ACG.RIP"
+    }
+    const item = {
+      sourceId: "acgrip",
+      title: "[LoliHouse] Episode 05 [1080p]",
+      detailUrl: "https://acg.rip/t/5"
+    }
+
+    getSourceAdapterForLocation.mockReturnValueOnce(source)
+    getEnabledSourceAdapterForLocation.mockReturnValue(source)
+    getDetailAnchors.mockReturnValue([anchor])
+    getBatchItemFromAnchor.mockReturnValue(item)
+    getAnchorMountTarget.mockReturnValue(anchorCell)
+
+    runtimeSendMessage.mockImplementation(({ type }) => {
+      if (type === "GET_SETTINGS") {
+        const callCount = runtimeSendMessage.mock.calls.filter((call) => call[0]?.type === "GET_SETTINGS").length
+
+        if (callCount <= 1) {
+          return Promise.resolve({
+            ok: true,
+            settings: {
+              enabledSources: {
+                acgrip: true
+              },
+              filters: []
+            }
+          })
+        }
+
+        return Promise.resolve({
+          ok: true,
+          settings: {
+            enabledSources: {
+              acgrip: true
+            },
+            filters: [
+              {
+                id: "filter-1",
+                name: "仅保留爱恋",
+                enabled: true,
+                must: [
+                  {
+                    id: "condition-1",
+                    field: "subgroup",
+                    operator: "contains",
+                    value: "爱恋字幕社"
+                  }
+                ],
+                any: []
+              }
+            ]
+          }
+        })
+      }
+
+      return Promise.resolve({ ok: true })
+    })
+
+    await import("../../../contents/source-batch")
+
+    await vi.waitFor(() => {
+      expect(createRoot).toHaveBeenCalledTimes(2)
+    })
+
+    const initialPanel = getLatestPanelProps()
+    initialPanel.onSelectAll()
+
+    await vi.waitFor(() => {
+      expect(getLatestPanelProps().selectedCount).toBe(1)
+      expect(getLatestCheckboxProps().checked).toBe(true)
+      expect(getLatestCheckboxProps().disabled).toBe(false)
+    })
+
+    const listener = runtimeAddListener.mock.calls[0]?.[0]
+    listener?.({
+      type: "ANIME_BT_FILTERS_UPDATED_EVENT"
+    })
+
+    await vi.waitFor(() => {
+      expect(runtimeSendMessage.mock.calls.filter((call) => call[0]?.type === "GET_SETTINGS")).toHaveLength(2)
+      expect(getLatestCheckboxProps()).toMatchObject({
+        checked: false,
+        disabled: true
+      })
+      expect(getLatestPanelProps().selectedCount).toBe(0)
     })
   })
 

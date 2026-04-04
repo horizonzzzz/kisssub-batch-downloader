@@ -4,6 +4,7 @@ import type { PopupOptionsRoute, PopupStateViewModel } from "./popup"
 
 export const BATCH_EVENT = "ANIME_BT_BATCH_EVENT"
 export const SOURCE_ENABLED_CHANGE_EVENT = "ANIME_BT_SOURCE_ENABLED_CHANGE_EVENT"
+export const FILTERS_UPDATED_EVENT = "ANIME_BT_FILTERS_UPDATED_EVENT"
 
 export type BatchEventMessage = {
   type: typeof BATCH_EVENT
@@ -15,7 +16,14 @@ export type SourceEnabledChangeMessage = {
   enabled: boolean
 }
 
-export type ContentRuntimeMessage = BatchEventMessage | SourceEnabledChangeMessage
+export type FiltersUpdatedMessage = {
+  type: typeof FILTERS_UPDATED_EVENT
+}
+
+export type ContentRuntimeMessage =
+  | BatchEventMessage
+  | SourceEnabledChangeMessage
+  | FiltersUpdatedMessage
 
 export type RuntimeRequest =
   | { type: "GET_HISTORY" }

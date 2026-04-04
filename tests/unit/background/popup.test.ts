@@ -272,4 +272,39 @@ describe("popup background helpers", () => {
 
     expect(sendMessageToTab).not.toHaveBeenCalled()
   })
+
+  it("broadcasts filter updates to supported source tabs without touching unrelated pages", async () => {
+    const popupModule = (await import("../../../lib/background/popup")) as Record<string, unknown>
+    const notifySupportedSourceTabsOfFilterChange = popupModule
+      .notifySupportedSourceTabsOfFilterChange as
+      | ((dependencies?: {
+          queryTabs: () => Promise<Array<{ id?: number; url?: string | null }>>
+          sendMessageToTab: (tabId: number, message: { type: string }) => Promise<void>
+        }) => Promise<void>)
+      | undefined
+
+    expect(notifySupportedSourceTabsOfFilterChange).toBeTypeOf("function")
+
+    const queryTabs = vi.fn(async () => [
+      { id: 11, url: "https://acg.rip/" },
+      { id: 12, url: "https://bangumi.moe/search" },
+      { id: 13, url: "https://example.com/" },
+      { id: undefined, url: "https://kisssub.org/list" }
+    ])
+    const sendMessageToTab = vi.fn(async () => undefined)
+
+    await notifySupportedSourceTabsOfFilterChange?.({
+      queryTabs,
+      sendMessageToTab
+    })
+
+    expect(queryTabs).toHaveBeenCalledTimes(1)
+    expect(sendMessageToTab).toHaveBeenCalledTimes(2)
+    expect(sendMessageToTab).toHaveBeenNthCalledWith(1, 11, {
+      type: "ANIME_BT_FILTERS_UPDATED_EVENT"
+    })
+    expect(sendMessageToTab).toHaveBeenNthCalledWith(2, 12, {
+      type: "ANIME_BT_FILTERS_UPDATED_EVENT"
+    })
+  })
 })

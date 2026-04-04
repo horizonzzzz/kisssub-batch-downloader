@@ -1,6 +1,7 @@
 export { createBatchDownloadManager } from "./manager"
 export {
   buildPopupState,
+  notifySupportedSourceTabsOfFilterChange,
   notifyActiveTabOfSourceEnabledChange,
   openOptionsPageForRoute,
   queryActiveTabId,
