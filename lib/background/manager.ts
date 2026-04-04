@@ -1,7 +1,7 @@
+import { decideFilterAction } from "../filter-rules"
 import { getDisabledSources, normalizeSavePath } from "../settings"
 import type { StartBatchDownloadSuccessResponse } from "../shared/messages"
 import type { BatchItem, ClassifiedBatchResult } from "../shared/types"
-import { getDeliveryModePriority } from "../sources/delivery"
 import { createBatchJob, recordBatchResult, summarizeBatchResults } from "./job-state"
 import { getBatchStartedMessage, getBatchSubmittingMessage } from "./messages"
 import { classifyExtractionResult, createPreparedExtractionResult, normalizeBatchItems } from "./preparation"
@@ -200,10 +200,21 @@ export function createBatchDownloadManager(dependencies: BackgroundBatchDependen
   ): Promise<ClassifiedBatchResult> {
     const preparedResult = createPreparedExtractionResult(item)
     if (preparedResult) {
+      const blockedPreparedResult = classifyBlockedBatchResult(item.sourceId, preparedResult, job)
+      if (blockedPreparedResult) {
+        return blockedPreparedResult
+      }
+
       return classifyExtractionResult(item.sourceId, preparedResult, job.settings, seenHashes, seenUrls)
     }
 
     const extractedResult = await dependencies.extractSingleItem(item, job.settings)
+    if (extractedResult.ok) {
+      const blockedExtractedResult = classifyBlockedBatchResult(item.sourceId, extractedResult, job)
+      if (blockedExtractedResult) {
+        return blockedExtractedResult
+      }
+    }
 
     return classifyExtractionResult(
       item.sourceId,
@@ -217,6 +228,35 @@ export function createBatchDownloadManager(dependencies: BackgroundBatchDependen
   return {
     activeJobs,
     startBatchDownload
+  }
+}
+
+function classifyBlockedBatchResult(
+  sourceId: BatchItem["sourceId"],
+  item: Pick<ClassifiedBatchResult, "title" | "detailUrl" | "hash" | "magnetUrl" | "torrentUrl">,
+  job: BatchJob
+): ClassifiedBatchResult | null {
+  const filterDecision = decideFilterAction({
+    sourceId,
+    title: item.title,
+    filters: job.settings.filters
+  })
+  if (filterDecision.accepted) {
+    return null
+  }
+
+  return {
+    ok: false,
+    title: item.title,
+    detailUrl: item.detailUrl,
+    hash: item.hash || "",
+    magnetUrl: item.magnetUrl || "",
+    torrentUrl: item.torrentUrl || "",
+    failureReason: "",
+    status: "failed",
+    deliveryMode: "",
+    submitUrl: "",
+    message: filterDecision.message || "Blocked by filters: no filter matched"
   }
 }
 

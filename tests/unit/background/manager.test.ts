@@ -174,7 +174,7 @@ describe("createBatchDownloadManager", () => {
     })
   })
 
-  it("submits items even when enabled filters would not have matched them before", async () => {
+  it("blocks items that do not match any enabled filter before submitting them to qBittorrent", async () => {
     const settings = createSettings({
       filters: [
         {
@@ -227,23 +227,23 @@ describe("createBatchDownloadManager", () => {
       expect(dependencies.sendBatchEvent.mock.calls.at(-1)?.[1]).toMatchObject({
         stage: "completed",
         summary: {
-          submitted: 1,
+          submitted: 0,
           duplicated: 0,
-          failed: 0
+          failed: 1
         }
       })
     })
 
     expect(dependencies.extractSingleItem).toHaveBeenCalledTimes(1)
-    expect(dependencies.loginQb).toHaveBeenCalledTimes(1)
-    expect(dependencies.addUrlsToQb).toHaveBeenCalledTimes(1)
+    expect(dependencies.loginQb).not.toHaveBeenCalled()
+    expect(dependencies.addUrlsToQb).not.toHaveBeenCalled()
     expect(dependencies.addTorrentFilesToQb).not.toHaveBeenCalled()
     expect(dependencies.sendBatchEvent.mock.calls.at(-1)?.[1].results).toEqual([
       {
         title: "[喵萌奶茶屋] Episode 01 [1080p][RAW]",
         detailUrl: "https://www.kisssub.org/show-deadbeef.html",
-        status: "submitted",
-        message: "Magnet queued in qBittorrent."
+        status: "failed",
+        message: "Blocked by filters: no filter matched"
       }
     ])
     expect(persistBatchHistoryMock).toHaveBeenCalledTimes(1)
@@ -251,13 +251,13 @@ describe("createBatchDownloadManager", () => {
       expect.objectContaining({
         stats: expect.objectContaining({
           total: 1,
-          submitted: 1,
-          failed: 0
+          submitted: 0,
+          failed: 1
         }),
         results: expect.arrayContaining([
           expect.objectContaining({
-            status: "submitted",
-            message: "Magnet queued in qBittorrent."
+            status: "failed",
+            message: "Blocked by filters: no filter matched"
           })
         ])
       }),
@@ -265,7 +265,7 @@ describe("createBatchDownloadManager", () => {
     )
   })
 
-  it("submits unmatched extracted items because filtering is now enforced before selection", async () => {
+  it("blocks unmatched extracted items when enabled filters exist", async () => {
     const settings = createSettings({
       filters: [
         {
@@ -318,27 +318,27 @@ describe("createBatchDownloadManager", () => {
       expect(dependencies.sendBatchEvent.mock.calls.at(-1)?.[1]).toMatchObject({
         stage: "completed",
         summary: {
-          submitted: 1,
+          submitted: 0,
           duplicated: 0,
-          failed: 0
+          failed: 1
         }
       })
     })
 
-    expect(dependencies.loginQb).toHaveBeenCalledTimes(1)
-    expect(dependencies.addUrlsToQb).toHaveBeenCalledTimes(1)
+    expect(dependencies.loginQb).not.toHaveBeenCalled()
+    expect(dependencies.addUrlsToQb).not.toHaveBeenCalled()
     expect(dependencies.addTorrentFilesToQb).not.toHaveBeenCalled()
     expect(dependencies.sendBatchEvent.mock.calls.at(-1)?.[1].results).toEqual([
       {
         title: "[LoliHouse] Episode 01 [1080p]",
         detailUrl: "https://www.kisssub.org/show-deadbeef.html",
-        status: "submitted",
-        message: "Magnet queued in qBittorrent."
+        status: "failed",
+        message: "Blocked by filters: no filter matched"
       }
     ])
   })
 
-  it("submits unmatched pre-resolved direct-link items because filtering happens in the page", async () => {
+  it("blocks unmatched pre-resolved direct-link items before qB submission", async () => {
     const settings = createSettings({
       filters: [
         {
@@ -383,22 +383,22 @@ describe("createBatchDownloadManager", () => {
       expect(dependencies.sendBatchEvent.mock.calls.at(-1)?.[1]).toMatchObject({
         stage: "completed",
         summary: {
-          submitted: 1,
+          submitted: 0,
           duplicated: 0,
-          failed: 0
+          failed: 1
         }
       })
     })
 
     expect(dependencies.extractSingleItem).not.toHaveBeenCalled()
-    expect(dependencies.loginQb).toHaveBeenCalledTimes(1)
-    expect(dependencies.addUrlsToQb).toHaveBeenCalledTimes(1)
+    expect(dependencies.loginQb).not.toHaveBeenCalled()
+    expect(dependencies.addUrlsToQb).not.toHaveBeenCalled()
     expect(dependencies.sendBatchEvent.mock.calls.at(-1)?.[1].results).toEqual([
       {
         title: "[LoliHouse] Episode 01 [1080p]",
         detailUrl: "https://www.kisssub.org/show-deadbeef.html",
-        status: "submitted",
-        message: "Magnet queued in qBittorrent."
+        status: "failed",
+        message: "Blocked by filters: no filter matched"
       }
     ])
   })
