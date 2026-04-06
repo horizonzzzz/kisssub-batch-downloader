@@ -28,6 +28,7 @@ describe("popup background helpers", () => {
   it("builds popup state from settings, active tab URL, site metadata, and version info", async () => {
     const settings = createSettings({
       downloaders: {
+        ...DEFAULT_SETTINGS.downloaders,
         qbittorrent: {
           ...DEFAULT_SETTINGS.downloaders.qbittorrent,
           username: "admin",
@@ -96,6 +97,7 @@ describe("popup background helpers", () => {
       getSettings: async () =>
         createSettings({
           downloaders: {
+            ...DEFAULT_SETTINGS.downloaders,
             qbittorrent: {
               baseUrl: "http://127.0.0.1:17474",
               username: "",
@@ -174,6 +176,7 @@ describe("popup background helpers", () => {
   it("updates only enabledSources when toggling a source from popup", async () => {
     const settings = createSettings({
       downloaders: {
+        ...DEFAULT_SETTINGS.downloaders,
         qbittorrent: {
           ...DEFAULT_SETTINGS.downloaders.qbittorrent,
           baseUrl: "http://127.0.0.1:18444"

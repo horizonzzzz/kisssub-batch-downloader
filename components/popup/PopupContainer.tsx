@@ -74,7 +74,7 @@ export function PopupContainer() {
     void (async () => {
       try {
         const response = await sendRuntimeRequest({
-          type: "TEST_QB_CONNECTION"
+          type: "TEST_DOWNLOADER_CONNECTION"
         })
 
         if (cancelled) {

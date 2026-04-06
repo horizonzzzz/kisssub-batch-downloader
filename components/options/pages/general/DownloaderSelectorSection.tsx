@@ -16,7 +16,7 @@ export function DownloaderSelectorSection(): JSX.Element {
       <CardHeader>
         <CardTitle>下载器选择</CardTitle>
         <CardDescription>
-          先选择当前使用的下载器，再填写对应连接信息。当前版本仅提供 qBittorrent。
+          先选择当前使用的下载器，再填写对应连接信息。
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -41,6 +41,16 @@ export function DownloaderSelectorSection(): JSX.Element {
               <div className="text-sm font-medium text-zinc-950">qBittorrent</div>
               <p className="text-sm leading-relaxed text-zinc-500">
                 通过 qBittorrent WebUI 测试连接并提交 magnet、种子链接或种子文件。
+              </p>
+            </div>
+          </label>
+
+          <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-zinc-200 bg-white px-4 py-4 shadow-sm transition hover:border-blue-300">
+            <RadioGroupItem value="transmission" id="downloader-transmission" aria-label="Transmission" />
+            <div className="space-y-1">
+              <div className="text-sm font-medium text-zinc-950">Transmission</div>
+              <p className="text-sm leading-relaxed text-zinc-500">
+                通过 Transmission RPC 测试连接并提交 magnet、种子链接或种子文件。
               </p>
             </div>
           </label>

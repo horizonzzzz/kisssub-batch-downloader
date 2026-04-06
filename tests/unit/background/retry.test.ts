@@ -109,6 +109,7 @@ function createMockDeps(
     getSettings: vi.fn(async () => ({
       ...DEFAULT_SETTINGS,
       downloaders: {
+        ...DEFAULT_SETTINGS.downloaders,
         qbittorrent: {
           baseUrl: "http://localhost:8080",
           username: "admin",
@@ -234,6 +235,7 @@ describe("retryFailedItems", () => {
       const filteredSettings: Settings = {
         ...DEFAULT_SETTINGS,
         downloaders: {
+          ...DEFAULT_SETTINGS.downloaders,
           qbittorrent: {
             baseUrl: "http://localhost:8080",
             username: "admin",
@@ -286,6 +288,7 @@ describe("retryFailedItems", () => {
       const includeSettings: Settings = {
         ...DEFAULT_SETTINGS,
         downloaders: {
+          ...DEFAULT_SETTINGS.downloaders,
           qbittorrent: {
             baseUrl: "http://localhost:8080",
             username: "admin",

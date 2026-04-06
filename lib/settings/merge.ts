@@ -13,6 +13,7 @@ export function mergeSettings(
   const record = asRecord(overrides)
   const downloaders = asRecord(record.downloaders)
   const qbittorrent = asRecord(downloaders.qbittorrent)
+  const transmission = asRecord(downloaders.transmission)
 
   return {
     ...base,
@@ -23,6 +24,10 @@ export function mergeSettings(
       qbittorrent: {
         ...base.downloaders.qbittorrent,
         ...qbittorrent
+      },
+      transmission: {
+        ...base.downloaders.transmission,
+        ...transmission
       }
     },
     sourceDeliveryModes: {

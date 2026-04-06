@@ -24,7 +24,8 @@ const sourceIdSchema = z.enum([
 ] satisfies SourceId[])
 
 const downloaderIdSchema = z.enum([
-  "qbittorrent"
+  "qbittorrent",
+  "transmission"
 ] satisfies DownloaderId[])
 
 const textConditionFieldSchema = z.enum([
@@ -77,6 +78,15 @@ export const settingsFormSchema = z.object({
         .string()
         .trim()
         .min(1, "请输入 qBittorrent WebUI 地址")
+        .transform((value) => value.replace(/\/+$/, "")),
+      username: z.string().trim(),
+      password: z.string()
+    }),
+    transmission: z.object({
+      baseUrl: z
+        .string()
+        .trim()
+        .min(1, "请输入 Transmission RPC 地址")
         .transform((value) => value.replace(/\/+$/, "")),
       username: z.string().trim(),
       password: z.string()

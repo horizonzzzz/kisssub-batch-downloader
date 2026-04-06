@@ -105,6 +105,7 @@ describe("settings storage helpers", () => {
     await expect(getSettings()).resolves.toEqual({
       ...DEFAULT_SETTINGS,
       downloaders: {
+        ...DEFAULT_SETTINGS.downloaders,
         qbittorrent: {
           baseUrl: "http://127.0.0.1:17474",
           username: "admin",
@@ -147,11 +148,36 @@ describe("settings storage helpers", () => {
     await expect(getSettings()).resolves.toEqual({
       ...DEFAULT_SETTINGS,
       downloaders: {
+        ...DEFAULT_SETTINGS.downloaders,
         qbittorrent: {
           baseUrl: "http://127.0.0.1:17474",
           username: "admin",
           password: ""
         }
+      },
+    })
+  })
+
+  it("hydrates transmission defaults when reading older qb-only settings", async () => {
+    state.values.settings_v2 = {
+      currentDownloaderId: "qbittorrent",
+      downloaders: {
+        qbittorrent: {
+          baseUrl: " http://127.0.0.1:17474/// ",
+          username: " admin "
+        }
+      }
+    }
+
+    await expect(getSettings()).resolves.toEqual({
+      ...DEFAULT_SETTINGS,
+      downloaders: {
+        qbittorrent: {
+          baseUrl: "http://127.0.0.1:17474",
+          username: "admin",
+          password: ""
+        },
+        transmission: DEFAULT_SETTINGS.downloaders.transmission
       }
     })
   })
@@ -208,6 +234,7 @@ describe("settings storage helpers", () => {
     ).resolves.toEqual({
       ...DEFAULT_SETTINGS,
       downloaders: {
+        ...DEFAULT_SETTINGS.downloaders,
         qbittorrent: {
           baseUrl: "http://127.0.0.1:17474",
           username: "admin",
@@ -250,6 +277,7 @@ describe("settings storage helpers", () => {
       settings_v2: {
         ...DEFAULT_SETTINGS,
         downloaders: {
+          ...DEFAULT_SETTINGS.downloaders,
           qbittorrent: {
             baseUrl: "http://127.0.0.1:17474",
             username: "admin",
@@ -302,6 +330,7 @@ describe("settings storage helpers", () => {
     ).resolves.toEqual({
       ...DEFAULT_SETTINGS,
       downloaders: {
+        ...DEFAULT_SETTINGS.downloaders,
         qbittorrent: {
           ...DEFAULT_SETTINGS.downloaders.qbittorrent,
           username: "admin"

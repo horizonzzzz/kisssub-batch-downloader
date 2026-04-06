@@ -89,6 +89,40 @@ describe("PopupContainer", () => {
     sendRuntimeRequestMock.mockReset()
   })
 
+  it("tests downloader connection with the generic runtime message while checking state", async () => {
+    const deferred = createDeferred<RuntimeResponse>()
+
+    sendRuntimeRequestMock.mockImplementation((request: RuntimeRequest) => {
+      if (request.type === "GET_POPUP_STATE") {
+        return okResponse({
+          ok: true,
+          state: createState({
+            downloaderConnectionStatus: "checking"
+          })
+        })
+      }
+      if (request.type === "TEST_DOWNLOADER_CONNECTION") {
+        return deferred.promise
+      }
+
+      return okResponse({ ok: true })
+    })
+
+    render(<PopupContainer />)
+
+    await waitFor(() => {
+      expect(sendRuntimeRequestMock).toHaveBeenCalledWith({
+        type: "TEST_DOWNLOADER_CONNECTION"
+      })
+    })
+
+    deferred.resolve({ ok: true, result: { downloaderId: "qbittorrent", displayName: "qBittorrent", baseUrl: "http://127.0.0.1:7474", version: "5.0.0" } })
+
+    await waitFor(() => {
+      expect(screen.getByText("插件已就绪")).toBeInTheDocument()
+    })
+  })
+
   it("loads popup state on mount and renders popup page", async () => {
     sendRuntimeRequestMock.mockImplementation((request: RuntimeRequest) => {
       if (request.type === "GET_POPUP_STATE") {
@@ -400,7 +434,7 @@ describe("PopupContainer", () => {
           })
         })
       }
-      if (request.type === "TEST_QB_CONNECTION") {
+      if (request.type === "TEST_DOWNLOADER_CONNECTION") {
         return connectionRequest.promise
       }
 
@@ -413,7 +447,7 @@ describe("PopupContainer", () => {
       expect(screen.getByText("正在检测下载器连接")).toBeInTheDocument()
     })
     expect(sendRuntimeRequestMock).toHaveBeenNthCalledWith(2, {
-      type: "TEST_QB_CONNECTION"
+      type: "TEST_DOWNLOADER_CONNECTION"
     })
 
     connectionRequest.resolve({
@@ -441,7 +475,7 @@ describe("PopupContainer", () => {
           })
         })
       }
-      if (request.type === "TEST_QB_CONNECTION") {
+      if (request.type === "TEST_DOWNLOADER_CONNECTION") {
         return okResponse({
           ok: false,
           error: "qB 连接失败"

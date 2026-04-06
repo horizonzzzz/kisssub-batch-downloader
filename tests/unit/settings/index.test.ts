@@ -24,10 +24,36 @@ describe("sanitizeSettings", () => {
     ).toEqual({
       ...DEFAULT_SETTINGS,
       downloaders: {
+        ...DEFAULT_SETTINGS.downloaders,
         qbittorrent: {
           baseUrl: "http://127.0.0.1:17474",
           username: "admin",
           password: "123456"
+        }
+      }
+    })
+  })
+
+  it("hydrates transmission settings and normalizes its base url", () => {
+    expect(
+      sanitizeSettings({
+        currentDownloaderId: "transmission",
+        downloaders: {
+          transmission: {
+            baseUrl: " http://127.0.0.1:9091/transmission/rpc/// ",
+            username: " admin ",
+            password: "secret"
+          }
+        }
+      })
+    ).toMatchObject({
+      currentDownloaderId: "transmission",
+      downloaders: {
+        qbittorrent: DEFAULT_SETTINGS.downloaders.qbittorrent,
+        transmission: {
+          baseUrl: "http://127.0.0.1:9091/transmission/rpc",
+          username: "admin",
+          password: "secret"
         }
       }
     })

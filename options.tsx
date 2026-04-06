@@ -26,7 +26,7 @@ const api: OptionsApi = {
   },
   async testConnection(settings) {
     const response = await sendRuntimeRequest({
-      type: "TEST_QB_CONNECTION",
+      type: "TEST_DOWNLOADER_CONNECTION",
       settings
     })
 

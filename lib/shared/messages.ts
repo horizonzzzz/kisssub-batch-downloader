@@ -38,7 +38,7 @@ export type RuntimeRequest =
   | { type: "RETRY_FAILED_ITEMS"; recordId: string; itemIds?: string[] }
   | { type: "GET_SETTINGS" }
   | { type: "SAVE_SETTINGS"; settings?: Partial<Settings> }
-  | { type: "TEST_QB_CONNECTION"; settings?: Partial<Settings> | null }
+  | { type: "TEST_DOWNLOADER_CONNECTION"; settings?: Partial<Settings> | null }
   | { type: "GET_POPUP_STATE" }
   | { type: "SET_SOURCE_ENABLED"; sourceId: SourceId; enabled: boolean }
   | { type: "OPEN_OPTIONS_PAGE"; route?: PopupOptionsRoute }
@@ -111,7 +111,7 @@ export type RuntimeSuccessResponseMap = {
   RETRY_FAILED_ITEMS: RetryFailedItemsSuccessResponse
   GET_SETTINGS: GetSettingsSuccessResponse
   SAVE_SETTINGS: SaveSettingsSuccessResponse
-  TEST_QB_CONNECTION: TestDownloaderConnectionSuccessResponse
+  TEST_DOWNLOADER_CONNECTION: TestDownloaderConnectionSuccessResponse
   GET_POPUP_STATE: GetPopupStateSuccessResponse
   SET_SOURCE_ENABLED: SetSourceEnabledSuccessResponse
   OPEN_OPTIONS_PAGE: OpenOptionsPageSuccessResponse
@@ -131,7 +131,7 @@ export type DeleteHistoryRecordResponse = RuntimeResponseFor<"DELETE_HISTORY_REC
 export type RetryFailedItemsResponse = RuntimeResponseFor<"RETRY_FAILED_ITEMS">
 export type GetSettingsResponse = RuntimeResponseFor<"GET_SETTINGS">
 export type SaveSettingsResponse = RuntimeResponseFor<"SAVE_SETTINGS">
-export type TestDownloaderConnectionResponse = RuntimeResponseFor<"TEST_QB_CONNECTION">
+export type TestDownloaderConnectionResponse = RuntimeResponseFor<"TEST_DOWNLOADER_CONNECTION">
 export type GetPopupStateResponse = RuntimeResponseFor<"GET_POPUP_STATE">
 export type SetSourceEnabledResponse = RuntimeResponseFor<"SET_SOURCE_ENABLED">
 export type OpenOptionsPageResponse = RuntimeResponseFor<"OPEN_OPTIONS_PAGE">

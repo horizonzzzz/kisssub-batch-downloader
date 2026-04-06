@@ -48,7 +48,9 @@ export function sanitizeSettings(raw: RawSettings): Settings {
 }
 
 function normalizeDownloaderId(value: unknown): DownloaderId {
-  return value === "qbittorrent" ? "qbittorrent" : DEFAULT_SETTINGS.currentDownloaderId
+  return value === "qbittorrent" || value === "transmission"
+    ? value
+    : DEFAULT_SETTINGS.currentDownloaderId
 }
 
 function normalizeDownloaders(raw: unknown): Settings["downloaders"] {
@@ -59,12 +61,24 @@ function normalizeDownloaders(raw: unknown): Settings["downloaders"] {
     record.qbittorrent && typeof record.qbittorrent === "object"
       ? (record.qbittorrent as Record<string, unknown>)
       : {}
+  const transmissionRaw =
+    record.transmission && typeof record.transmission === "object"
+      ? (record.transmission as Record<string, unknown>)
+      : {}
 
   return {
     qbittorrent: {
-      baseUrl: normalizeBaseUrl(qbRaw.baseUrl ?? DEFAULT_SETTINGS.downloaders.qbittorrent.baseUrl),
+      baseUrl: normalizeBaseUrl(qbRaw.baseUrl, DEFAULT_SETTINGS.downloaders.qbittorrent.baseUrl),
       username: String(qbRaw.username ?? "").trim(),
       password: String(qbRaw.password ?? "")
+    },
+    transmission: {
+      baseUrl: normalizeBaseUrl(
+        transmissionRaw.baseUrl,
+        DEFAULT_SETTINGS.downloaders.transmission.baseUrl
+      ),
+      username: String(transmissionRaw.username ?? "").trim(),
+      password: String(transmissionRaw.password ?? "")
     }
   }
 }
@@ -82,12 +96,12 @@ function clampInteger(value: unknown, min: number, max: number, fallback: number
   return Math.min(max, Math.max(min, numeric))
 }
 
-function normalizeBaseUrl(url: unknown): string {
+function normalizeBaseUrl(url: unknown, fallback: string): string {
   const normalized = String(url ?? "")
     .trim()
     .replace(/\/+$/, "")
 
-  return normalized || DEFAULT_SETTINGS.downloaders.qbittorrent.baseUrl
+  return normalized || fallback
 }
 
 function normalizeRemoteScriptUrl(url: unknown): string {

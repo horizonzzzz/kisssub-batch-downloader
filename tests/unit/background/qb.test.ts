@@ -12,6 +12,7 @@ import { DEFAULT_SETTINGS } from "../../../lib/settings"
 const qbSettings = {
   ...DEFAULT_SETTINGS,
   downloaders: {
+    ...DEFAULT_SETTINGS.downloaders,
     qbittorrent: {
       baseUrl: "http://127.0.0.1:17474",
       username: "admin",
@@ -25,6 +26,7 @@ describe("getQbLoginErrorMessage", () => {
     expect(
       getQbLoginErrorMessage(401, {
         downloaders: {
+          ...DEFAULT_SETTINGS.downloaders,
           qbittorrent: {
             baseUrl: "http://127.0.0.1:17474",
             username: "",
@@ -39,6 +41,7 @@ describe("getQbLoginErrorMessage", () => {
     expect(
       getQbLoginErrorMessage(403, {
         downloaders: {
+          ...DEFAULT_SETTINGS.downloaders,
           qbittorrent: {
             baseUrl: "http://127.0.0.1:17474",
             username: "",

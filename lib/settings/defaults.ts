@@ -9,6 +9,11 @@ export const DEFAULT_SETTINGS: Settings = Object.freeze({
       baseUrl: "http://127.0.0.1:7474",
       username: "",
       password: ""
+    },
+    transmission: {
+      baseUrl: "http://127.0.0.1:9091/transmission/rpc",
+      username: "",
+      password: ""
     }
   },
   concurrency: 3,

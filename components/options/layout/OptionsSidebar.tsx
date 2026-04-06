@@ -43,12 +43,14 @@ function SidebarButton({
 type OptionsSidebarProps = {
   routes: OptionsRouteMeta[]
   activePath: string
+  currentDownloaderName: string
   onNavigate: (path: string) => void
 }
 
 export function OptionsSidebar({
   routes,
   activePath,
+  currentDownloaderName,
   onNavigate
 }: OptionsSidebarProps) {
   return (
@@ -90,7 +92,7 @@ export function OptionsSidebar({
             <HiOutlineGlobeAlt className="h-4 w-4" aria-hidden="true" />
             <span>{SOURCE_IDS.length} 个支持源站</span>
           </div>
-          <strong className="text-sm font-medium text-zinc-100">当前下载器：qBittorrent</strong>
+          <strong className="text-sm font-medium text-zinc-100">当前下载器：{currentDownloaderName}</strong>
         </div>
         <a
           className="inline-flex items-center justify-center gap-2 rounded-md border border-zinc-800 bg-zinc-800/80 px-4 py-2.5 font-medium text-zinc-200 transition-colors hover:bg-zinc-800 hover:text-white"

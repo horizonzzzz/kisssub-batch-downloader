@@ -22,6 +22,7 @@ function createSettings(overrides: Partial<Settings> = {}): Settings {
   return {
     ...DEFAULT_SETTINGS,
     downloaders: {
+      ...DEFAULT_SETTINGS.downloaders,
       qbittorrent: {
         baseUrl: "http://127.0.0.1:17474",
         username: "admin",

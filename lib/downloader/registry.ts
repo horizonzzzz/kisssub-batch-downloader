@@ -1,6 +1,7 @@
 import type { DownloaderId } from "../shared/types"
 import type { DownloaderAdapter } from "./types"
 import { qbDownloaderAdapter } from "./qb"
+import { transmissionDownloaderAdapter } from "./transmission"
 
 export type DownloaderMeta = {
   id: DownloaderId
@@ -8,13 +9,18 @@ export type DownloaderMeta = {
 }
 
 const DOWNLOADER_ADAPTERS: Record<DownloaderId, DownloaderAdapter> = {
-  qbittorrent: qbDownloaderAdapter
+  qbittorrent: qbDownloaderAdapter,
+  transmission: transmissionDownloaderAdapter
 }
 
 export const SUPPORTED_DOWNLOADERS: DownloaderMeta[] = [
   {
     id: "qbittorrent",
     displayName: "qBittorrent"
+  },
+  {
+    id: "transmission",
+    displayName: "Transmission"
   }
 ]
 

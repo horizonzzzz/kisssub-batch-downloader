@@ -11,6 +11,11 @@ const settings = {
       baseUrl: "http://127.0.0.1:17474",
       username: "admin",
       password: "123456"
+    },
+    transmission: {
+      baseUrl: "http://127.0.0.1:9091/transmission/rpc",
+      username: "transmission",
+      password: "secret"
     }
   },
   concurrency: 1,
@@ -108,6 +113,37 @@ describe("OptionsPage", () => {
     expect(screen.getByRole("heading", { name: "下载器选择" })).toBeInTheDocument()
     expect(screen.getByRole("radio", { name: "qBittorrent" })).toBeChecked()
     expect(screen.getByText("下载器兼容性提示")).toBeInTheDocument()
+  })
+
+  it("switches to transmission settings fields when transmission is selected", async () => {
+    const user = userEvent.setup()
+    const api = createOptionsApi()
+
+    render(<OptionsPage api={api} />)
+
+    expect(await screen.findByDisplayValue("http://127.0.0.1:17474")).toBeInTheDocument()
+    expect(screen.getByRole("radio", { name: "qBittorrent" })).toBeChecked()
+    expect(screen.getByRole("radio", { name: "Transmission" })).not.toBeChecked()
+
+    await user.click(screen.getByRole("radio", { name: "Transmission" }))
+
+    expect(screen.getByRole("radio", { name: "Transmission" })).toBeChecked()
+    expect(screen.getByDisplayValue("http://127.0.0.1:9091/transmission/rpc")).toBeInTheDocument()
+    expect(screen.getByText("Transmission 配置")).toBeInTheDocument()
+  })
+
+  it("updates the sidebar current downloader label when switching downloaders", async () => {
+    const user = userEvent.setup()
+    const api = createOptionsApi()
+
+    render(<OptionsPage api={api} />)
+
+    expect(await screen.findByDisplayValue("http://127.0.0.1:17474")).toBeInTheDocument()
+    expect(screen.getByText("当前下载器：qBittorrent")).toBeInTheDocument()
+
+    await user.click(screen.getByRole("radio", { name: "Transmission" }))
+
+    expect(screen.getByText("当前下载器：Transmission")).toBeInTheDocument()
   })
 
   it(

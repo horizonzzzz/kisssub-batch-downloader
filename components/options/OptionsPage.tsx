@@ -1,6 +1,6 @@
 import { useMemo } from "react"
 
-import { FormProvider } from "react-hook-form"
+import { FormProvider, useWatch } from "react-hook-form"
 import {
   HashRouter,
   Navigate,
@@ -10,6 +10,7 @@ import {
   useNavigate
 } from "react-router-dom"
 
+import { getDownloaderMeta } from "../../lib/downloader"
 import type { Settings, TestDownloaderConnectionResult } from "../../lib/shared/types"
 import {
   DEFAULT_OPTIONS_ROUTE,
@@ -113,6 +114,11 @@ function OptionsWorkspace({ api }: OptionsPageProps) {
     handleSave,
     handleTestConnection
   } = useSettingsForm(api)
+  const currentDownloaderId = useWatch({
+    control: form.control,
+    name: "currentDownloaderId"
+  })
+  const currentDownloaderName = getDownloaderMeta(currentDownloaderId).displayName
 
   const routeContent =
     activeMeta.mode === "form" ? (
@@ -136,6 +142,7 @@ function OptionsWorkspace({ api }: OptionsPageProps) {
       <OptionsSidebar
         routes={OPTIONS_ROUTES}
         activePath={activeMeta.path}
+        currentDownloaderName={currentDownloaderName}
         onNavigate={navigate}
       />
       {routeContent}

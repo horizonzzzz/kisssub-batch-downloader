@@ -39,6 +39,33 @@ describe("options settings form helpers", () => {
     })
   })
 
+  it("hydrates transmission settings when the selected downloader is transmission", () => {
+    expect(
+      createSettingsFormDefaults({
+        currentDownloaderId: "transmission",
+        downloaders: {
+          transmission: {
+            baseUrl: " http://127.0.0.1:9091/transmission/rpc/ ",
+            username: " admin ",
+            password: "secret"
+          }
+        }
+      })
+    ).toMatchObject({
+      currentDownloaderId: "transmission",
+      downloaders: {
+        qbittorrent: {
+          baseUrl: "http://127.0.0.1:7474"
+        },
+        transmission: {
+          baseUrl: "http://127.0.0.1:9091/transmission/rpc",
+          username: "admin",
+          password: "secret"
+        }
+      }
+    })
+  })
+
   it("coerces numeric field values and trims strings before save", () => {
     const rawValues: SettingsFormInput = {
       ...createSettingsFormDefaults(),
@@ -47,7 +74,8 @@ describe("options settings form helpers", () => {
           baseUrl: " http://127.0.0.1:8080/ ",
           username: " operator ",
           password: ""
-        }
+        },
+        transmission: createSettingsFormDefaults().downloaders.transmission
       },
       lastSavePath: "  D:\\Anime\\Save  ",
       concurrency: "2",

@@ -123,9 +123,9 @@ chrome.runtime.onMessage.addListener((message: unknown, sender, sendResponse) =>
             })
           )
           return
-        case "TEST_QB_CONNECTION":
+        case "TEST_DOWNLOADER_CONNECTION":
           sendResponse(
-            createRuntimeSuccessResponse("TEST_QB_CONNECTION", {
+            createRuntimeSuccessResponse("TEST_DOWNLOADER_CONNECTION", {
               result: await testDownloaderConnection(runtimeMessage.settings ?? null)
             })
           )

@@ -43,6 +43,7 @@ describe("testDownloaderConnection", () => {
   const storedSettings: Settings = {
     ...DEFAULT_SETTINGS,
     downloaders: {
+      ...DEFAULT_SETTINGS.downloaders,
       qbittorrent: {
         baseUrl: "http://127.0.0.1:7474",
         username: "admin",
@@ -54,6 +55,7 @@ describe("testDownloaderConnection", () => {
   const sanitizedSettings: Settings = {
     ...storedSettings,
     downloaders: {
+      ...DEFAULT_SETTINGS.downloaders,
       qbittorrent: {
         baseUrl: "http://127.0.0.1:17474",
         username: "root",
@@ -84,6 +86,7 @@ describe("testDownloaderConnection", () => {
     await expect(
       testDownloaderConnection({
         downloaders: {
+          ...DEFAULT_SETTINGS.downloaders,
           qbittorrent: {
             baseUrl: " http://127.0.0.1:17474/// ",
             username: " root ",
@@ -101,6 +104,7 @@ describe("testDownloaderConnection", () => {
     expect(getSettingsMock).toHaveBeenCalledTimes(1)
     expect(mergeSettingsMock).toHaveBeenCalledWith(storedSettings, {
       downloaders: {
+        ...DEFAULT_SETTINGS.downloaders,
         qbittorrent: {
           baseUrl: " http://127.0.0.1:17474/// ",
           username: " root ",
