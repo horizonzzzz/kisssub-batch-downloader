@@ -60,6 +60,10 @@ function updateItemAfterFailure(item: TaskHistoryItem, message: string): TaskHis
   }
 }
 
+function getUrlSubmissionFailure(resultMessage?: string): string {
+  return resultMessage || "下载器未返回提交结果"
+}
+
 function recalculateStats(items: TaskHistoryItem[]): TaskHistoryRecord["stats"] {
   const total = items.length
   const success = items.filter(i => i.status === "success").length
@@ -134,12 +138,22 @@ export async function retryFailedItems(
   if (urlItems.length > 0) {
     for (const { item, url } of urlItems) {
       try {
-        await downloader.addUrls(settings, [url], savePathOption)
+        const result = await downloader.addUrls(settings, [url], savePathOption)
+        const submission = result.entries[0]
         const index = updatedItems.findIndex(i => i.id === item.id)
-        if (index !== -1) {
-          updatedItems[index] = updateItemAfterSuccess(item)
+        if (submission?.status === "submitted") {
+          if (index !== -1) {
+            updatedItems[index] = updateItemAfterSuccess(item)
+          }
+          successCount++
+          continue
         }
-        successCount++
+
+        const message = `下载器提交失败: ${getUrlSubmissionFailure(submission?.error)}`
+        if (index !== -1) {
+          updatedItems[index] = updateItemAfterFailure(item, message)
+        }
+        failedCount++
       } catch (error) {
         const message = `下载器提交失败: ${error instanceof Error ? error.message : String(error)}`
         const index = updatedItems.findIndex(i => i.id === item.id)

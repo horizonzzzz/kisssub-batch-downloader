@@ -8,6 +8,7 @@ import { classifyExtractionResult, createPreparedExtractionResult, normalizeBatc
 import { fetchTorrentForUpload } from "./torrent-file"
 import type { BackgroundBatchDependencies, BatchJob } from "./types"
 import { persistBatchHistory } from "./history-builder"
+import type { DownloaderUrlSubmissionResult } from "../downloader"
 
 export function createBatchDownloadManager(dependencies: BackgroundBatchDependencies) {
   const activeJobs = new Map<number, BatchJob>()
@@ -159,20 +160,12 @@ export function createBatchDownloadManager(dependencies: BackgroundBatchDependen
 
     if (urlSubmissions.length) {
       try {
-        await downloader.addUrls(
+        const submissionResult = await downloader.addUrls(
           job.settings,
           urlSubmissions.map((entry) => entry.submitUrl),
           getSavePathOption(job.savePath)
         )
-
-        for (const entry of urlSubmissions) {
-          entry.status = "submitted"
-          entry.message =
-            entry.deliveryMode === "magnet"
-              ? "Magnet queued in the downloader."
-              : "Torrent URL queued in the downloader."
-          job.stats.submitted += 1
-        }
+        applyUrlSubmissionResults(urlSubmissions, submissionResult, job)
       } catch (error: unknown) {
         const failure = error instanceof Error ? error.message : String(error)
         markFailedSubmissions(urlSubmissions, job, failure)
@@ -296,6 +289,39 @@ function markFailedSubmissions(
   for (const entry of entries) {
     entry.status = "failed"
     entry.message = `Downloader submission failed: ${failure}`
+    job.stats.failed += 1
+  }
+}
+
+function applyUrlSubmissionResults(
+  entries: ClassifiedBatchResult[],
+  result: DownloaderUrlSubmissionResult,
+  job: BatchJob
+): void {
+  for (const [index, entry] of entries.entries()) {
+    const reportedEntry = result.entries[index]
+
+    if (!reportedEntry) {
+      entry.status = "failed"
+      entry.message = "Downloader submission failed: Downloader did not report a submission result."
+      job.stats.failed += 1
+      continue
+    }
+
+    if (reportedEntry.status === "submitted") {
+      entry.status = "submitted"
+      entry.message =
+        entry.deliveryMode === "magnet"
+          ? "Magnet queued in the downloader."
+          : "Torrent URL queued in the downloader."
+      job.stats.submitted += 1
+      continue
+    }
+
+    entry.status = "failed"
+    entry.message = `Downloader submission failed: ${
+      reportedEntry.error ?? "Unknown downloader submission failure."
+    }`
     job.stats.failed += 1
   }
 }

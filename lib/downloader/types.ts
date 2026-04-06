@@ -14,6 +14,16 @@ export type DownloaderConnectionResult = {
   version: string
 }
 
+export type DownloaderUrlSubmissionEntry = {
+  url: string
+  status: "submitted" | "failed"
+  error?: string
+}
+
+export type DownloaderUrlSubmissionResult = {
+  entries: DownloaderUrlSubmissionEntry[]
+}
+
 export type DownloaderAdapter = {
   id: DownloaderId
   displayName: string
@@ -22,7 +32,7 @@ export type DownloaderAdapter = {
     settings: Settings,
     urls: string[],
     options?: DownloaderSubmitOptions
-  ) => Promise<void>
+  ) => Promise<DownloaderUrlSubmissionResult>
   addTorrentFiles: (
     settings: Settings,
     torrents: DownloaderTorrentFile[],

@@ -42,7 +42,12 @@ function createManager(overrides: Partial<Parameters<typeof createBatchDownloadM
     id: "qbittorrent",
     displayName: "qBittorrent",
     authenticate: vi.fn().mockResolvedValue(undefined),
-    addUrls: vi.fn().mockResolvedValue(undefined),
+    addUrls: vi.fn().mockImplementation(async (_settings, urls: string[]) => ({
+      entries: urls.map((url) => ({
+        url,
+        status: "submitted" as const
+      }))
+    })),
     addTorrentFiles: vi.fn().mockResolvedValue(undefined),
     testConnection: vi.fn()
   } satisfies DownloaderAdapter
@@ -185,6 +190,95 @@ describe("createBatchDownloadManager", () => {
       duplicated: 1,
       failed: 0
     })
+  })
+
+  it("records partial URL submission success when the downloader reports mixed URL results", async () => {
+    const { manager, dependencies, downloader } = createManager()
+    downloader.addUrls = vi.fn().mockResolvedValue({
+      entries: [
+        {
+          url: "magnet:?xt=urn:btih:aaa",
+          status: "submitted"
+        },
+        {
+          url: "magnet:?xt=urn:btih:bbb",
+          status: "submitted"
+        },
+        {
+          url: "magnet:?xt=urn:btih:ccc",
+          status: "failed",
+          error: "Transmission RPC failed on item 3."
+        }
+      ]
+    })
+
+    await expect(
+      manager.startBatchDownload(
+        21,
+        [
+          {
+            sourceId: "kisssub",
+            detailUrl: "https://www.kisssub.org/show-aaa.html",
+            title: "Episode 01",
+            magnetUrl: "magnet:?xt=urn:btih:aaa"
+          },
+          {
+            sourceId: "kisssub",
+            detailUrl: "https://www.kisssub.org/show-bbb.html",
+            title: "Episode 02",
+            magnetUrl: "magnet:?xt=urn:btih:bbb"
+          },
+          {
+            sourceId: "kisssub",
+            detailUrl: "https://www.kisssub.org/show-ccc.html",
+            title: "Episode 03",
+            magnetUrl: "magnet:?xt=urn:btih:ccc"
+          }
+        ],
+        ""
+      )
+    ).resolves.toEqual({
+      ok: true,
+      total: 3
+    })
+
+    await vi.waitFor(() => {
+      expect(dependencies.sendBatchEvent.mock.calls.at(-1)?.[1].summary).toEqual({
+        submitted: 2,
+        duplicated: 0,
+        failed: 1
+      })
+    })
+
+    expect(downloader.addUrls).toHaveBeenCalledWith(
+      expect.any(Object),
+      [
+        "magnet:?xt=urn:btih:aaa",
+        "magnet:?xt=urn:btih:bbb",
+        "magnet:?xt=urn:btih:ccc"
+      ],
+      undefined
+    )
+    expect(dependencies.sendBatchEvent.mock.calls.at(-1)?.[1].results).toEqual([
+      {
+        title: "Episode 01",
+        detailUrl: "https://www.kisssub.org/show-aaa.html",
+        status: "submitted",
+        message: "Magnet queued in the downloader."
+      },
+      {
+        title: "Episode 02",
+        detailUrl: "https://www.kisssub.org/show-bbb.html",
+        status: "submitted",
+        message: "Magnet queued in the downloader."
+      },
+      {
+        title: "Episode 03",
+        detailUrl: "https://www.kisssub.org/show-ccc.html",
+        status: "failed",
+        message: "Downloader submission failed: Transmission RPC failed on item 3."
+      }
+    ])
   })
 
   it("blocks items that do not match any enabled filter before submitting them to qBittorrent", async () => {

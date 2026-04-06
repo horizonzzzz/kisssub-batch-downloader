@@ -3,16 +3,26 @@ import { describe, expect, it } from "vitest"
 import { SUPPORTED_DOWNLOADERS, getDownloaderAdapter, getDownloaderMeta } from "../../../lib/downloader"
 
 describe("downloader registry", () => {
-  it("returns the qBittorrent adapter and metadata as the current supported downloader", () => {
-    const adapter = getDownloaderAdapter("qbittorrent")
-    const meta = getDownloaderMeta("qbittorrent")
+  it("registers both qBittorrent and Transmission in the supported downloader registry", () => {
+    const qbAdapter = getDownloaderAdapter("qbittorrent")
+    const qbMeta = getDownloaderMeta("qbittorrent")
+    const transmissionAdapter = getDownloaderAdapter("transmission")
+    const transmissionMeta = getDownloaderMeta("transmission")
 
-    expect(adapter.id).toBe("qbittorrent")
-    expect(adapter.displayName).toBe("qBittorrent")
-    expect(meta).toEqual({
+    expect(qbAdapter.id).toBe("qbittorrent")
+    expect(qbAdapter.displayName).toBe("qBittorrent")
+    expect(qbMeta).toEqual({
       id: "qbittorrent",
       displayName: "qBittorrent"
     })
-    expect(SUPPORTED_DOWNLOADERS).toEqual([meta])
+
+    expect(transmissionAdapter.id).toBe("transmission")
+    expect(transmissionAdapter.displayName).toBe("Transmission")
+    expect(transmissionMeta).toEqual({
+      id: "transmission",
+      displayName: "Transmission"
+    })
+
+    expect(SUPPORTED_DOWNLOADERS).toEqual([qbMeta, transmissionMeta])
   })
 })

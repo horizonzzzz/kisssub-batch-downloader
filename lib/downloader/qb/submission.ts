@@ -1,4 +1,5 @@
 import type { Settings } from "../../shared/types"
+import type { DownloaderUrlSubmissionResult } from "../types"
 import type { QbTorrentFile } from "./types"
 
 type FetchLike = typeof fetch
@@ -14,9 +15,11 @@ export async function addUrlsToQb(
     savePath?: string
   } = {},
   fetchImpl: FetchLike = fetch
-): Promise<void> {
+): Promise<DownloaderUrlSubmissionResult> {
   if (!urls.length) {
-    return
+    return {
+      entries: []
+    }
   }
   const qbSettings = getQbSettings(settings)
 
@@ -35,6 +38,13 @@ export async function addUrlsToQb(
 
   if (!response.ok) {
     throw new Error(`qBittorrent rejected the batch add request with HTTP ${response.status}.`)
+  }
+
+  return {
+    entries: urls.map((url) => ({
+      url,
+      status: "submitted" as const
+    }))
   }
 }
 

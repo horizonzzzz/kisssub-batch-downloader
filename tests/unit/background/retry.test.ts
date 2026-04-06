@@ -100,7 +100,12 @@ function createMockDeps(
     id: "qbittorrent",
     displayName: "qBittorrent",
     authenticate: vi.fn(async () => {}),
-    addUrls: vi.fn(async () => {}),
+    addUrls: vi.fn(async (_settings, urls: string[]) => ({
+      entries: urls.map((url) => ({
+        url,
+        status: "submitted" as const
+      }))
+    })),
     addTorrentFiles: vi.fn(async () => {}),
     testConnection: vi.fn()
   } satisfies DownloaderAdapter
@@ -378,6 +383,30 @@ describe("retryFailedItems", () => {
       expect(updatedRecord.items[0].failure?.lastRetryAt).toBeDefined()
     })
 
+    it("keeps a retried item failed when addUrls returns a failed item result without throwing", async () => {
+      const failedItem = createFailedItem("item-1", "Failed", "magnet:?xt=test")
+      const record = createMockRecord("batch-1", [failedItem])
+      deps.getHistoryRecord = vi.fn(async () => record)
+      deps.downloader.addUrls = vi.fn(async () => ({
+        entries: [
+          {
+            url: "magnet:?xt=test",
+            status: "failed" as const,
+            error: "Transmission RPC failed."
+          }
+        ]
+      }))
+
+      const result = await retryFailedItems({ recordId: "batch-1" }, deps)
+
+      expect(result.successCount).toBe(0)
+      expect(result.failedCount).toBe(1)
+      const updatedRecord = (deps.updateHistoryRecord as Mock).mock.calls[0][0]
+      expect(updatedRecord.items[0].status).toBe("failed")
+      expect(updatedRecord.items[0].failure?.message).toBe("下载器提交失败: Transmission RPC failed.")
+      expect(updatedRecord.status).toBe("partial_failure")
+    })
+
     it("handles mixed results - some success, some failure", async () => {
       const failed1 = createFailedItem("item-1", "Failed 1", "magnet:?xt=1")
       const failed2 = createFailedItem("item-2", "Failed 2", "magnet:?xt=2")
@@ -385,10 +414,17 @@ describe("retryFailedItems", () => {
 
       let callCount = 0
       deps.getHistoryRecord = vi.fn(async () => record)
-      deps.downloader.addUrls = vi.fn(async () => {
+      deps.downloader.addUrls = vi.fn(async (_settings, urls: string[]) => {
         callCount++
         if (callCount === 2) {
           throw new Error("HTTP 500")
+        }
+
+        return {
+          entries: urls.map((url) => ({
+            url,
+            status: "submitted" as const
+          }))
         }
       })
 

@@ -1,4 +1,5 @@
 import type { Settings } from "../../shared/types"
+import type { DownloaderUrlSubmissionResult } from "../types"
 import type { TransmissionTorrentFile } from "./types"
 import { transmissionRpc } from "./client"
 
@@ -25,13 +26,41 @@ export async function addUrlsToTransmission(
   urls: string[],
   options: { savePath?: string } = {},
   fetchImpl: FetchLike = fetch
-): Promise<void> {
-  for (const url of urls) {
-    await transmissionRpc(settings, "torrent-add", {
-      filename: url,
-      ...(options.savePath ? { "download-dir": options.savePath } : {})
-    }, fetchImpl)
+): Promise<DownloaderUrlSubmissionResult> {
+  const entries: DownloaderUrlSubmissionResult["entries"] = []
+
+  for (const [index, url] of urls.entries()) {
+    try {
+      await transmissionRpc(settings, "torrent-add", {
+        filename: url,
+        ...(options.savePath ? { "download-dir": options.savePath } : {})
+      }, fetchImpl)
+      entries.push({
+        url,
+        status: "submitted"
+      })
+    } catch (error: unknown) {
+      const failure = error instanceof Error ? error.message : String(error)
+
+      entries.push({
+        url,
+        status: "failed",
+        error: failure
+      })
+
+      for (const skippedUrl of urls.slice(index + 1)) {
+        entries.push({
+          url: skippedUrl,
+          status: "failed",
+          error: `Skipped after an earlier Transmission submission failed: ${failure}`
+        })
+      }
+
+      return { entries }
+    }
   }
+
+  return { entries }
 }
 
 export async function addTorrentFilesToTransmission(
