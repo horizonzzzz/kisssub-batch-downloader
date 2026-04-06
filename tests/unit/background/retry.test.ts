@@ -14,6 +14,7 @@ function createMockRecord(id: string, items: TaskHistoryItem[]): TaskHistoryReco
     id,
     name: "Test Batch",
     sourceId: "kisssub",
+    originalDownloaderId: "qbittorrent",
     status: "partial_failure",
     createdAt: "2026-01-01T00:00:00Z",
     stats: {
@@ -178,6 +179,7 @@ describe("retryFailedItems", () => {
       expect(result.failedCount).toBe(0)
       expect(deps.downloader.addUrls).not.toHaveBeenCalled()
       expect(result.updatedRecord.stats.failed).toBe(0)
+      expect(result.updatedRecord.lastRetriedDownloaderId).toBeUndefined()
     })
 
     it("skips failed items that are marked as non-retryable", async () => {
@@ -227,6 +229,29 @@ describe("retryFailedItems", () => {
       const updatedRecord = (deps.updateHistoryRecord as Mock).mock.calls[0][0]
       expect(updatedRecord.items[0].status).toBe("success")
       expect(updatedRecord.status).toBe("completed")
+      expect(updatedRecord.lastRetriedDownloaderId).toBe("qbittorrent")
+    })
+
+    it("records the current downloader used for retry without changing the original downloader", async () => {
+      const failedItem = createFailedItem("item-1", "Failed", "magnet:?xt=test")
+      const record = {
+        ...createMockRecord("batch-1", [failedItem]),
+        originalDownloaderId: "qbittorrent" as const
+      }
+      deps.getHistoryRecord = vi.fn(async () => record)
+      deps.getSettings = vi.fn(async () => ({
+        ...DEFAULT_SETTINGS,
+        currentDownloaderId: "transmission" as const,
+        downloaders: {
+          ...DEFAULT_SETTINGS.downloaders
+        },
+        filters: []
+      }))
+
+      const result = await retryFailedItems({ recordId: "batch-1" }, deps)
+
+      expect(result.updatedRecord.originalDownloaderId).toBe("qbittorrent")
+      expect(result.updatedRecord.lastRetriedDownloaderId).toBe("transmission")
     })
 
     it("retries failed items without re-applying current filters", async () => {

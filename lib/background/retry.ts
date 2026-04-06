@@ -191,6 +191,7 @@ export async function retryFailedItems(
   const updatedRecord: TaskHistoryRecord = {
     ...record,
     items: updatedItems,
+    lastRetriedDownloaderId: settings.currentDownloaderId,
     stats,
     status
   }

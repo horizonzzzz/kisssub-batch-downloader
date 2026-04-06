@@ -84,6 +84,7 @@ export function buildHistoryRecord(
     id: recordId,
     name: `${siteName} 批量提取 (${dateStr})`,
     sourceId,
+    originalDownloaderId: job.settings.currentDownloaderId,
     status: job.stats.failed > 0 ? "partial_failure" : "completed",
     createdAt: new Date().toISOString(),
     stats: {

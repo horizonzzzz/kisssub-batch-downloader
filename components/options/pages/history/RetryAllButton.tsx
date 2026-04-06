@@ -11,17 +11,21 @@ import {
   Button
 } from "../../../ui"
 import { HiOutlineArrowPath } from "react-icons/hi2"
+import { getDownloaderMeta } from "../../../../lib/downloader"
 import { sendRuntimeRequest } from "../../../../lib/shared/messages"
 import type { TaskHistoryRecord } from "../../../../lib/history/types"
+import type { DownloaderId } from "../../../../lib/shared/types"
 
 type RetryAllButtonProps = {
+  currentDownloaderId: DownloaderId
   record: TaskHistoryRecord
   onRetryComplete: () => void
 }
 
-export function RetryAllButton({ record, onRetryComplete }: RetryAllButtonProps) {
+export function RetryAllButton({ currentDownloaderId, record, onRetryComplete }: RetryAllButtonProps) {
   const [showConfirm, setShowConfirm] = useState(false)
   const [loading, setLoading] = useState(false)
+  const currentDownloaderName = getDownloaderMeta(currentDownloaderId).displayName
 
   const failedCount = record.items.filter(
     (item) => item.status === "failed" && (item.failure ? item.failure.retryable : true)
@@ -66,7 +70,10 @@ export function RetryAllButton({ record, onRetryComplete }: RetryAllButtonProps)
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>重试失败条目</AlertDialogTitle>
-            <AlertDialogDescription>{`确定重试 ${failedCount} 个失败条目吗？`}</AlertDialogDescription>
+            <AlertDialogDescription>
+              <span className="block">{`确定重试 ${failedCount} 个失败条目吗？`}</span>
+              <span className="mt-1 block">{`将使用当前配置的下载器 ${currentDownloaderName} 重新提交。`}</span>
+            </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={loading}>取消</AlertDialogCancel>

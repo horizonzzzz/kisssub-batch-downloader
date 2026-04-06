@@ -12,6 +12,7 @@ function createMockRecord(id: string, overrides?: Partial<TaskHistoryRecord>): T
     id,
     name: `Test Batch ${id}`,
     sourceId: "kisssub",
+    originalDownloaderId: "qbittorrent",
     status: "completed",
     createdAt: "2026-01-01T10:00:00Z",
     stats: { total: 3, success: 2, duplicated: 1, failed: 0 },
@@ -19,6 +20,17 @@ function createMockRecord(id: string, overrides?: Partial<TaskHistoryRecord>): T
     version: 1,
     ...overrides
   }
+}
+
+function renderHistoryDetail(record: TaskHistoryRecord, currentDownloaderId: "qbittorrent" | "transmission" = "qbittorrent") {
+  return render(
+    <HistoryDetailView
+      record={record}
+      currentDownloaderId={currentDownloaderId}
+      onBack={vi.fn()}
+      onRecordChanged={vi.fn()}
+    />
+  )
 }
 
 function createMockItem(id: string, overrides?: Partial<TaskHistoryItem>): TaskHistoryItem {
@@ -130,7 +142,7 @@ describe("HistoryDetailView", () => {
   it("renders record header with back button and status badge", () => {
     const record = createMockRecord("batch-1", { status: "completed" })
     
-    render(<HistoryDetailView record={record} onBack={vi.fn()} onRecordChanged={vi.fn()} />)
+    renderHistoryDetail(record)
     
     expect(screen.getByRole("button", { name: "返回" })).toBeInTheDocument()
     expect(screen.getByText("Test Batch batch-1")).toBeInTheDocument()
@@ -143,7 +155,7 @@ describe("HistoryDetailView", () => {
       stats: { total: 10, success: 7, duplicated: 2, failed: 1 }
     })
     
-    render(<HistoryDetailView record={record} onBack={vi.fn()} onRecordChanged={vi.fn()} />)
+    renderHistoryDetail(record)
     
     expect(screen.getByText("10")).toBeInTheDocument()
     expect(screen.getByText("7")).toBeInTheDocument()
@@ -164,7 +176,7 @@ describe("HistoryDetailView", () => {
       ]
     })
     
-    render(<HistoryDetailView record={record} onBack={vi.fn()} onRecordChanged={vi.fn()} />)
+    renderHistoryDetail(record)
     
     expect(screen.getByText("Success Item")).toBeInTheDocument()
     expect(screen.getByText("Duplicate Item")).toBeInTheDocument()
@@ -184,7 +196,7 @@ describe("HistoryDetailView", () => {
       ]
     })
     
-    render(<HistoryDetailView record={record} onBack={vi.fn()} onRecordChanged={vi.fn()} />)
+    renderHistoryDetail(record)
     
     expect(screen.getByText("失败原因汇总")).toBeInTheDocument()
     expect(screen.getByText("qB 返回错误")).toBeInTheDocument()
@@ -209,7 +221,7 @@ describe("HistoryDetailView", () => {
       ]
     })
 
-    render(<HistoryDetailView record={record} onBack={vi.fn()} onRecordChanged={vi.fn()} />)
+    renderHistoryDetail(record)
 
     expect(screen.getByText("筛选规则拦截")).toBeInTheDocument()
     expect(screen.queryByRole("button", { name: "重试全部失败项" })).not.toBeInTheDocument()
@@ -245,12 +257,56 @@ describe("HistoryDetailView", () => {
       ]
     })
 
-    render(<HistoryDetailView record={record} onBack={vi.fn()} onRecordChanged={vi.fn()} />)
+    renderHistoryDetail(record, "transmission")
 
     await user.click(screen.getByRole("button", { name: "重试全部失败项" }))
 
     expect(screen.getByText("确定重试 1 个失败条目吗？")).toBeInTheDocument()
+    expect(screen.getByText("将使用当前配置的下载器 Transmission 重新提交。")).toBeInTheDocument()
     expect(screen.getAllByTitle("重试此条目")).toHaveLength(1)
+  })
+
+  it("shows original and last retried downloader metadata in detail view", () => {
+    const record = createMockRecord("batch-1", {
+      lastRetriedDownloaderId: "transmission"
+    })
+
+    renderHistoryDetail(record, "transmission")
+
+    expect(screen.getByText("原始提交下载器")).toBeInTheDocument()
+    expect(screen.getByText("最近重试下载器")).toBeInTheDocument()
+    expect(screen.getByText("qBittorrent")).toBeInTheDocument()
+    expect(screen.getByText("Transmission")).toBeInTheDocument()
+  })
+
+  it("shows unknown legacy downloader metadata and asks confirmation before retrying a single item", async () => {
+    const user = userEvent.setup()
+    const record = createMockRecord("batch-1", {
+      originalDownloaderId: undefined,
+      status: "partial_failure",
+      stats: { total: 1, success: 0, duplicated: 0, failed: 1 },
+      items: [
+        createMockItem("item-1", {
+          status: "failed",
+          title: "Failed item",
+          failure: {
+            reason: "qb_error",
+            message: "qB rejected",
+            retryable: true,
+            retryCount: 0
+          }
+        })
+      ]
+    })
+
+    renderHistoryDetail(record, "transmission")
+
+    expect(screen.getByText("未知（旧记录）")).toBeInTheDocument()
+    expect(screen.getByText("未重试")).toBeInTheDocument()
+
+    await user.click(screen.getByTitle("重试此条目"))
+
+    expect(screen.getByText("将使用当前配置的下载器 Transmission 重新提交。")).toBeInTheDocument()
   })
 
   it("hides failure summary when no failures", () => {
@@ -259,7 +315,7 @@ describe("HistoryDetailView", () => {
       stats: { total: 2, success: 2, duplicated: 0, failed: 0 }
     })
     
-    render(<HistoryDetailView record={record} onBack={vi.fn()} onRecordChanged={vi.fn()} />)
+    renderHistoryDetail(record)
     
     expect(screen.queryByText("失败原因汇总")).not.toBeInTheDocument()
   })
@@ -269,7 +325,14 @@ describe("HistoryDetailView", () => {
     const onBack = vi.fn()
     const record = createMockRecord("batch-1")
     
-    render(<HistoryDetailView record={record} onBack={onBack} onRecordChanged={vi.fn()} />)
+    render(
+      <HistoryDetailView
+        record={record}
+        currentDownloaderId="qbittorrent"
+        onBack={onBack}
+        onRecordChanged={vi.fn()}
+      />
+    )
     
     await user.click(screen.getByRole("button", { name: "返回" }))
     

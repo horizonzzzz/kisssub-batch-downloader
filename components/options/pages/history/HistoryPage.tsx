@@ -1,26 +1,37 @@
 import { useEffect, useState } from "react"
 import type { TaskHistoryRecord } from "../../../../lib/history/types"
 import { sendRuntimeRequest } from "../../../../lib/shared/messages"
+import type { DownloaderId } from "../../../../lib/shared/types"
 import { HistoryListView } from "./HistoryListView"
 import { HistoryDetailView } from "./HistoryDetailView"
 
 export function HistoryPage() {
   const [records, setRecords] = useState<TaskHistoryRecord[]>([])
   const [selectedRecord, setSelectedRecord] = useState<TaskHistoryRecord | null>(null)
+  const [currentDownloaderId, setCurrentDownloaderId] = useState<DownloaderId>("qbittorrent")
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   async function loadRecords() {
     try {
-      const response = await sendRuntimeRequest({ type: "GET_HISTORY" })
-      if (!response.ok) {
-        setError(response.error)
+      const [historyResponse, settingsResponse] = await Promise.all([
+        sendRuntimeRequest({ type: "GET_HISTORY" }),
+        sendRuntimeRequest({ type: "GET_SETTINGS" })
+      ])
+
+      if (!historyResponse.ok) {
+        setError(historyResponse.error)
         return
       }
-      setRecords(response.records)
+
+      setRecords(historyResponse.records)
       if (selectedRecord) {
-        const updated = response.records.find((r) => r.id === selectedRecord.id)
+        const updated = historyResponse.records.find((r) => r.id === selectedRecord.id)
         setSelectedRecord(updated ?? null)
+      }
+
+      if (settingsResponse.ok && settingsResponse.settings?.currentDownloaderId) {
+        setCurrentDownloaderId(settingsResponse.settings.currentDownloaderId)
       }
     } catch {
       setError("加载历史记录失败")
@@ -53,6 +64,7 @@ export function HistoryPage() {
     return (
       <HistoryDetailView
         record={selectedRecord}
+        currentDownloaderId={currentDownloaderId}
         onBack={() => setSelectedRecord(null)}
         onRecordChanged={loadRecords}
       />

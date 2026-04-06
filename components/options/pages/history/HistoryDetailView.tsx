@@ -1,6 +1,8 @@
 import type { FailureReason, TaskHistoryItem, TaskHistoryRecord } from "../../../../lib/history/types"
+import { getDownloaderMeta } from "../../../../lib/downloader"
 import { SITE_CONFIG_META } from "../../../../lib/sources/site-meta"
 import { cn } from "../../../../lib/shared/cn"
+import type { DownloaderId } from "../../../../lib/shared/types"
 import { Button } from "../../../ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "../../../ui/card"
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "../../../ui/tooltip"
@@ -20,9 +22,25 @@ import { RetryAllButton } from "./RetryAllButton"
 import { RetryItemButton } from "./RetryItemButton"
 
 type HistoryDetailViewProps = {
+  currentDownloaderId: DownloaderId
   record: TaskHistoryRecord
   onBack: () => void
   onRecordChanged: () => void
+}
+
+function getDownloaderDisplayName(
+  downloaderId: DownloaderId | undefined,
+  fallbackText: string
+): string {
+  if (!downloaderId) {
+    return fallbackText
+  }
+
+  try {
+    return getDownloaderMeta(downloaderId).displayName
+  } catch {
+    return fallbackText
+  }
 }
 
 function StatusBadge({ status }: { status: TaskHistoryRecord["status"] }) {
@@ -85,10 +103,12 @@ function aggregateFailures(items: TaskHistoryItem[]): Map<FailureReason, { count
   return map
 }
 
-export function HistoryDetailView({ record, onBack, onRecordChanged }: HistoryDetailViewProps) {
+export function HistoryDetailView({ currentDownloaderId, record, onBack, onRecordChanged }: HistoryDetailViewProps) {
   const siteMeta = SITE_CONFIG_META[record.sourceId]
   const failures = aggregateFailures(record.items)
   const hasFailures = record.stats.failed > 0
+  const originalDownloaderName = getDownloaderDisplayName(record.originalDownloaderId, "未知（旧记录）")
+  const lastRetriedDownloaderName = getDownloaderDisplayName(record.lastRetriedDownloaderId, "未重试")
 
   const handleDeleted = () => {
     onRecordChanged()
@@ -156,6 +176,19 @@ export function HistoryDetailView({ record, onBack, onRecordChanged }: HistoryDe
         )}
       </div>
 
+      <Card>
+        <CardContent className="grid gap-3 p-4 text-sm text-zinc-700 md:grid-cols-2">
+          <div className="grid gap-1">
+            <span className="text-xs text-zinc-500">原始提交下载器</span>
+            <span className="font-medium text-zinc-900">{originalDownloaderName}</span>
+          </div>
+          <div className="grid gap-1">
+            <span className="text-xs text-zinc-500">最近重试下载器</span>
+            <span className="font-medium text-zinc-900">{lastRetriedDownloaderName}</span>
+          </div>
+        </CardContent>
+      </Card>
+
       {hasFailures && (
         <Card>
           <CardHeader>
@@ -179,6 +212,7 @@ export function HistoryDetailView({ record, onBack, onRecordChanged }: HistoryDe
               )
             })}
             <RetryAllButton
+              currentDownloaderId={currentDownloaderId}
               record={record}
               onRetryComplete={() => onRecordChanged()}
             />
@@ -231,6 +265,7 @@ export function HistoryDetailView({ record, onBack, onRecordChanged }: HistoryDe
               <div className="col-span-2 flex justify-end">
                 {item.status === "failed" && (
                   <RetryItemButton
+                    currentDownloaderId={currentDownloaderId}
                     item={item}
                     record={record}
                     onRetryComplete={() => onRecordChanged()}

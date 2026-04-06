@@ -1,4 +1,4 @@
-import type { DeliveryMode, SourceId } from "../shared/types"
+import type { DeliveryMode, DownloaderId, SourceId } from "../shared/types"
 
 export type TaskHistoryStatus = "completed" | "partial_failure"
 
@@ -39,6 +39,8 @@ export type TaskHistoryRecord = {
   id: string
   name: string
   sourceId: SourceId
+  originalDownloaderId?: DownloaderId
+  lastRetriedDownloaderId?: DownloaderId
   status: TaskHistoryStatus
   createdAt: string
   completedAt?: string

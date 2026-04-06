@@ -38,6 +38,8 @@ describe("buildHistoryRecord", () => {
     const record = buildHistoryRecord(job, "kisssub")
 
     expect(record.status).toBe("partial_failure")
+    expect(record.originalDownloaderId).toBe("qbittorrent")
+    expect(record.lastRetriedDownloaderId).toBeUndefined()
     expect(record.stats).toMatchObject({
       total: 1,
       success: 0,

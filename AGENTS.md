@@ -114,9 +114,9 @@ The extension injects selection UI into supported list pages, reuses direct magn
 - `tests/`
   Unit, component, and Playwright end-to-end coverage.
 - `lib/history/`
-  Task history persistence module, including type definitions, storage read/write, and automatic cleanup logic. Automatically saved by the background when a batch completes.
+  Task history persistence module, including type definitions, storage read/write, automatic cleanup logic, and downloader audit metadata such as the original downloader plus the most recent retry downloader. Automatically saved by the background when a batch completes.
 - `lib/background/retry.ts`
-  Orchestration logic for retrying failed entries, extracting failed entries from history records and resubmitting to qBittorrent.
+  Orchestration logic for retrying failed entries, extracting failed entries from history records and resubmitting them with the current configured downloader while updating retry audit metadata on the history record.
 - `lib/background/popup.ts`
   Popup-specific background helpers for building popup view state, normalizing options routes, opening options tabs, persisting source enable/disable toggles from the popup, and syncing the current active tab after popup source toggles.
 - `lib/shared/popup.ts`
