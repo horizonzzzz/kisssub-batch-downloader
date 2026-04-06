@@ -20,8 +20,8 @@ const onUpdatedAddListener = vi.fn()
 const onActivatedAddListener = vi.fn()
 const runtimeOpenOptionsPage = vi.fn()
 
-vi.mock("../../../lib/background", async () => {
-  const actual = await vi.importActual<typeof import("../../../lib/background")>("../../../lib/background")
+vi.mock("../../../src/lib/background", async () => {
+  const actual = await vi.importActual<typeof import("../../../src/lib/background")>("../../../src/lib/background")
   return {
     ...actual,
     createBatchDownloadManager: () => ({
@@ -75,7 +75,7 @@ describe("background popup runtime boundary", () => {
     vi.clearAllMocks()
     activeJobsMock.clear()
     installChromeMock()
-    const { registerBackgroundRuntime } = await import("../../../lib/background/runtime")
+    const { registerBackgroundRuntime } = await import("../../../src/entrypoints/background/runtime")
     registerBackgroundRuntime()
   })
 

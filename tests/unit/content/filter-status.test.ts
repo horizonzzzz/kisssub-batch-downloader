@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest"
 
-import { createBatchPanelFilterStatus } from "../../../components/batch-panel/filter-status"
-import type { FilterCondition, FilterEntry } from "../../../lib/shared/types"
+import { createBatchPanelFilterStatus } from "../../../src/components/batch-panel/filter-status"
+import type { FilterCondition, FilterEntry } from "../../../src/lib/shared/types"
 
 function createCondition(
   overrides: Partial<FilterCondition> = {}

@@ -2,7 +2,7 @@ import { render, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { describe, expect, it, vi } from "vitest"
 
-import { SelectionCheckbox } from "../../components/selection-checkbox"
+import { SelectionCheckbox } from "../../src/components/selection-checkbox"
 
 describe("SelectionCheckbox", () => {
   it("exposes an explicit accessible name and reports checked state changes", async () => {

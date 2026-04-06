@@ -3,8 +3,8 @@ import userEvent from "@testing-library/user-event"
 import type { ComponentProps } from "react"
 import { describe, expect, it, vi } from "vitest"
 
-import { PopupPage } from "../../components/popup/PopupPage"
-import type { PopupStateViewModel } from "../../lib/shared/popup"
+import { PopupPage } from "../../src/components/popup/PopupPage"
+import type { PopupStateViewModel } from "../../src/lib/shared/popup"
 
 type PopupPageProps = ComponentProps<typeof PopupPage>
 

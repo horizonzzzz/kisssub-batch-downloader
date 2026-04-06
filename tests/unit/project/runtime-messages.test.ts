@@ -6,9 +6,9 @@ import {
   createRuntimeErrorResponse,
   createRuntimeSuccessResponse,
   sendRuntimeRequest
-} from "../../../lib/shared/messages"
-import { DEFAULT_SETTINGS } from "../../../lib/settings/defaults"
-import type { PopupStateViewModel } from "../../../lib/shared/popup"
+} from "../../../src/lib/shared/messages"
+import { DEFAULT_SETTINGS } from "../../../src/lib/settings/defaults"
+import type { PopupStateViewModel } from "../../../src/lib/shared/popup"
 
 const runtimeSendMessage = vi.fn()
 

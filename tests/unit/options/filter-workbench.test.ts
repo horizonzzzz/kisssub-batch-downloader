@@ -5,8 +5,8 @@ import {
   runWorkbenchTest,
   type FilterWorkbenchFilter,
   type FilterWorkbenchSourceId
-} from "../../../components/options/pages/filters/filter-workbench"
-import type { FilterCondition } from "../../../lib/shared/types"
+} from "../../../src/components/options/pages/filters/filter-workbench"
+import type { FilterCondition } from "../../../src/lib/shared/types"
 
 function createTextCondition(
   overrides: Partial<Extract<FilterCondition, { field: "title" | "subgroup" }>> = {}

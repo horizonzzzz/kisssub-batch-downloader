@@ -1,8 +1,0 @@
-@import "./options.css";
-
-@layer base {
-  html,
-  body {
-    min-width: 360px;
-  }
-}

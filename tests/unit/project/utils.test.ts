@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import { cn } from "../../../lib/shared/cn"
+import { cn } from "../../../src/lib/shared/cn"
 
 describe("cn", () => {
   it("merges Tailwind class conflicts and ignores falsy values", () => {

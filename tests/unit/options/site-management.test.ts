@@ -5,7 +5,7 @@ import {
   countEnabledSites,
   getInitialExpandedSites,
   reconcileExpandedSites
-} from "../../../components/options/pages/sites/site-management"
+} from "../../../src/components/options/pages/sites/site-management"
 
 describe("site management helpers", () => {
   it("sorts enabled sites ahead of disabled sites while preserving catalog order", () => {

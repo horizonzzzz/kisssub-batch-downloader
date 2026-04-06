@@ -6,8 +6,8 @@ import {
   extractDetailHash,
   extractMagnetHash,
   normalizeBatchItems
-} from "../../../lib/background/preparation"
-import { DEFAULT_SETTINGS } from "../../../lib/settings/defaults"
+} from "../../../src/lib/background/preparation"
+import { DEFAULT_SETTINGS } from "../../../src/lib/settings/defaults"
 
 describe("normalizeBatchItems", () => {
   it("keeps valid source-aware items, normalizes prepared candidates, and de-duplicates repeats", () => {

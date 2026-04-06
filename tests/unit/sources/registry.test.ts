@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest"
 
-import { getSourceAdapterById, getSourceAdapterForPage } from "../../../lib/sources"
+import { getSourceAdapterById, getSourceAdapterForPage } from "../../../src/lib/sources"
 import {
   DEFAULT_SOURCE_DELIVERY_MODES,
   getSupportedDeliveryModes
-} from "../../../lib/sources/delivery"
-import { SOURCE_IDS } from "../../../lib/sources/catalog"
-import { SITE_CONFIG_META } from "../../../lib/sources/site-meta"
+} from "../../../src/lib/sources/delivery"
+import { SOURCE_IDS } from "../../../src/lib/sources/catalog"
+import { SITE_CONFIG_META } from "../../../src/lib/sources/site-meta"
 
 describe("source registry", () => {
   it("resolves the source adapter for supported list pages", () => {

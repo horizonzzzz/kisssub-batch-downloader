@@ -2,17 +2,17 @@ import { render, screen, waitFor } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
-import { DEFAULT_SETTINGS } from "../../lib/settings/defaults"
-import type { RuntimeRequest, RuntimeResponse } from "../../lib/shared/messages"
-import type { PopupStateViewModel } from "../../lib/shared/popup"
+import { DEFAULT_SETTINGS } from "../../src/lib/settings/defaults"
+import type { RuntimeRequest, RuntimeResponse } from "../../src/lib/shared/messages"
+import type { PopupStateViewModel } from "../../src/lib/shared/popup"
 
 const { sendRuntimeRequestMock } = vi.hoisted(() => ({
   sendRuntimeRequestMock: vi.fn()
 }))
 
-vi.mock("../../lib/shared/messages", async () => {
-  const actual = await vi.importActual<typeof import("../../lib/shared/messages")>(
-    "../../lib/shared/messages"
+vi.mock("../../src/lib/shared/messages", async () => {
+  const actual = await vi.importActual<typeof import("../../src/lib/shared/messages")>(
+    "../../src/lib/shared/messages"
   )
 
   return {
@@ -21,7 +21,7 @@ vi.mock("../../lib/shared/messages", async () => {
   }
 })
 
-import { PopupContainer } from "../../components/popup/PopupContainer"
+import { PopupContainer } from "../../src/components/popup/PopupContainer"
 
 function createState(overrides: Partial<PopupStateViewModel> = {}): PopupStateViewModel {
   return {

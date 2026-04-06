@@ -18,7 +18,7 @@ function readPackageJson(): PackageJson {
 }
 
 function readGlobalTypes() {
-  return readFileSync(resolve(process.cwd(), "global.d.ts"), "utf8")
+  return readFileSync(resolve(process.cwd(), "src/global.d.ts"), "utf8")
 }
 
 function readText(path: string) {
@@ -53,6 +53,7 @@ describe("package metadata", () => {
     expect(packageJson.devDependencies?.wxt).toBeTruthy()
     expect(wxtConfig).toContain("defineConfig")
     expect(wxtConfig).toContain("Anime BT Batch")
+    expect(wxtConfig).toContain('srcDir: "src"')
     expect(wxtConfig).toContain("popup.html")
     expect(wxtConfig).toContain("options.html")
     expect(wxtConfig).toContain("chrome-mv3-prod")
@@ -67,26 +68,46 @@ describe("package metadata", () => {
 
   it("uses WXT entrypoints instead of root-level extension entry files", () => {
     expect(existsSync(resolve(process.cwd(), "wxt.config.ts"))).toBe(true)
-    expect(existsSync(resolve(process.cwd(), "entrypoints", "background", "index.ts"))).toBe(true)
-    expect(existsSync(resolve(process.cwd(), "entrypoints", "popup", "index.html"))).toBe(true)
-    expect(existsSync(resolve(process.cwd(), "entrypoints", "options", "index.html"))).toBe(true)
+    expect(existsSync(resolve(process.cwd(), "src", "entrypoints", "background", "index.ts"))).toBe(
+      true
+    )
+    expect(existsSync(resolve(process.cwd(), "src", "entrypoints", "popup", "index.html"))).toBe(
+      true
+    )
+    expect(existsSync(resolve(process.cwd(), "src", "entrypoints", "popup", "style.css"))).toBe(
+      true
+    )
+    expect(existsSync(resolve(process.cwd(), "src", "entrypoints", "options", "index.html"))).toBe(
+      true
+    )
+    expect(existsSync(resolve(process.cwd(), "src", "entrypoints", "options", "style.css"))).toBe(
+      true
+    )
     expect(
-      existsSync(resolve(process.cwd(), "entrypoints", "source-batch.content", "index.tsx"))
+      existsSync(resolve(process.cwd(), "src", "entrypoints", "source-batch.content", "index.tsx"))
+    ).toBe(true)
+    expect(
+      existsSync(resolve(process.cwd(), "src", "entrypoints", "source-batch.content", "style.css"))
     ).toBe(true)
 
     expect(existsSync(resolve(process.cwd(), "background.ts"))).toBe(false)
     expect(existsSync(resolve(process.cwd(), "popup.tsx"))).toBe(false)
     expect(existsSync(resolve(process.cwd(), "options.tsx"))).toBe(false)
+    expect(existsSync(resolve(process.cwd(), "contents", "source-batch.tsx"))).toBe(false)
+    expect(existsSync(resolve(process.cwd(), "lib", "background", "runtime.ts"))).toBe(false)
+    expect(existsSync(resolve(process.cwd(), "components", "options-page.tsx"))).toBe(false)
+    expect(existsSync(resolve(process.cwd(), "entrypoints"))).toBe(false)
+    expect(existsSync(resolve(process.cwd(), "components"))).toBe(false)
+    expect(existsSync(resolve(process.cwd(), "lib"))).toBe(false)
   })
 
   it("keeps lucide-react imports scoped to shadcn ui primitives", () => {
     const sourceRoots = [
-      resolve(process.cwd(), "components"),
-      resolve(process.cwd(), "contents"),
-      resolve(process.cwd(), "entrypoints"),
-      resolve(process.cwd(), "lib")
+      resolve(process.cwd(), "src", "components"),
+      resolve(process.cwd(), "src", "entrypoints"),
+      resolve(process.cwd(), "src", "lib")
     ]
-    const allowedUiDir = resolve(process.cwd(), "components", "ui")
+    const allowedUiDir = resolve(process.cwd(), "src", "components", "ui")
     const filesToCheck = sourceRoots
       .filter((root) => existsSync(root))
       .flatMap((root) => listSourceFiles(root))
@@ -96,6 +117,22 @@ describe("package metadata", () => {
     )
 
     expect(filesUsingLucide).toEqual([])
+  })
+
+  it("uses WXT's browser API wrapper in production source files instead of direct chrome globals", () => {
+    const sourceRoots = [
+      resolve(process.cwd(), "src", "components"),
+      resolve(process.cwd(), "src", "entrypoints"),
+      resolve(process.cwd(), "src", "lib")
+    ]
+    const filesToCheck = sourceRoots
+      .filter((root) => existsSync(root))
+      .flatMap((root) => listSourceFiles(root))
+    const filesUsingChromeGlobals = filesToCheck.filter((filePath) =>
+      /\bchrome\./.test(readFileSync(filePath, "utf8"))
+    )
+
+    expect(filesUsingChromeGlobals).toEqual([])
   })
 
   it("does not keep legacy sass dependencies or scss module declarations", () => {

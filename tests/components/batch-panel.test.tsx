@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event"
 import { useState } from "react"
 import { describe, expect, it, vi } from "vitest"
 
-import { BatchPanel } from "../../components/batch-panel"
+import { BatchPanel } from "../../src/components/batch-panel"
 
 function renderBatchPanel(overrides: Record<string, unknown> = {}) {
   const props = {

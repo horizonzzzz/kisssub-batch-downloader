@@ -4,14 +4,14 @@ import { resolve } from "node:path"
 import { describe, expect, it } from "vitest"
 
 function readContentStyles() {
-  return readFileSync(resolve(process.cwd(), "styles/content.css"), "utf8")
+  return readFileSync(resolve(process.cwd(), "src/entrypoints/source-batch.content/style.css"), "utf8")
 }
 
 describe("content styles", () => {
   it("uses the Tailwind v4 split import path without pulling preflight into contents", () => {
     const css = readContentStyles()
 
-    expect(css).toContain('@import "./tailwind-theme.css";')
+    expect(css).toContain('@import "../../styles/tailwind-theme.css";')
     expect(css).toContain('@import "tailwindcss/theme.css"')
     expect(css).toContain('@import "tailwindcss/utilities.css"')
     expect(css).not.toContain('@import "tailwindcss/preflight.css"')

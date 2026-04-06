@@ -2,7 +2,7 @@ import { fireEvent, render, screen, waitFor, within } from "@testing-library/rea
 import userEvent from "@testing-library/user-event"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
-import { OptionsPage, type OptionsApi } from "../../components/options-page"
+import { OptionsPage, type OptionsApi } from "../../src/components/options/OptionsPage"
 
 const settings = {
   currentDownloaderId: "qbittorrent",

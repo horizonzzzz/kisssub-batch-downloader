@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest"
 
-import { buildSelectableBatchItem } from "../../../lib/content/filter-selection"
-import type { FilterCondition, FilterEntry } from "../../../lib/shared/types"
+import { buildSelectableBatchItem } from "../../../src/lib/content/filter-selection"
+import type { FilterCondition, FilterEntry } from "../../../src/lib/shared/types"
 
 function createCondition(overrides: Partial<FilterCondition> = {}): FilterCondition {
   if (overrides.field === "source") {

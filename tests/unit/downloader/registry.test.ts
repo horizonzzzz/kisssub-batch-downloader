@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import { SUPPORTED_DOWNLOADERS, getDownloaderAdapter, getDownloaderMeta } from "../../../lib/downloader"
+import { SUPPORTED_DOWNLOADERS, getDownloaderAdapter, getDownloaderMeta } from "../../../src/lib/downloader"
 
 describe("downloader registry", () => {
   it("registers both qBittorrent and Transmission in the supported downloader registry", () => {

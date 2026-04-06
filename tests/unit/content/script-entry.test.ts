@@ -47,17 +47,17 @@ vi.mock("react-dom/client", () => ({
   createRoot
 }))
 
-vi.mock("../../../components/batch-panel", () => ({
+vi.mock("../../../src/components/batch-panel", () => ({
   BatchPanel: () => null
 }))
 
 const SelectionCheckbox = vi.fn(() => null)
 
-vi.mock("../../../components/selection-checkbox", () => ({
+vi.mock("../../../src/components/selection-checkbox", () => ({
   SelectionCheckbox
 }))
 
-vi.mock("../../../lib/content/page", () => ({
+vi.mock("../../../src/lib/content/page", () => ({
   getAnchorMountTarget,
   getBatchItemFromAnchor,
   getDetailAnchors,
@@ -227,7 +227,10 @@ describe("content script runtime", () => {
   })
 
   it("exports the WXT runtime bootstrap instead of Plasmo entry metadata", async () => {
-    const module = (await import("../../../contents/source-batch")) as Record<string, unknown>
+    const module = (await import("../../../src/entrypoints/source-batch.content/runtime")) as Record<
+      string,
+      unknown
+    >
 
     expect(module.startSourceBatchContentScript).toBeTypeOf("function")
     expect(module.default).toBeUndefined()
@@ -249,7 +252,7 @@ describe("content script runtime", () => {
     })
     getEnabledSourceAdapterForLocation.mockReturnValueOnce(null)
 
-    const { startSourceBatchContentScript } = await import("../../../contents/source-batch")
+    const { startSourceBatchContentScript } = await import("../../../src/entrypoints/source-batch.content/runtime")
     await startSourceBatchContentScript(createTestContext() as never)
 
     expect(runtimeSendMessage).toHaveBeenCalledWith({
@@ -279,7 +282,7 @@ describe("content script runtime", () => {
       }
     })
 
-    const { startSourceBatchContentScript } = await import("../../../contents/source-batch")
+    const { startSourceBatchContentScript } = await import("../../../src/entrypoints/source-batch.content/runtime")
     await startSourceBatchContentScript(createTestContext() as never)
 
     await vi.waitFor(() => {
@@ -345,7 +348,7 @@ describe("content script runtime", () => {
       }
     })
 
-    const { startSourceBatchContentScript } = await import("../../../contents/source-batch")
+    const { startSourceBatchContentScript } = await import("../../../src/entrypoints/source-batch.content/runtime")
     await startSourceBatchContentScript(createTestContext() as never)
 
     await vi.waitFor(() => {
@@ -427,7 +430,7 @@ describe("content script runtime", () => {
       return Promise.resolve({ ok: true })
     })
 
-    const { startSourceBatchContentScript } = await import("../../../contents/source-batch")
+    const { startSourceBatchContentScript } = await import("../../../src/entrypoints/source-batch.content/runtime")
     await startSourceBatchContentScript(createTestContext() as never)
 
     await vi.waitFor(() => {
@@ -482,7 +485,7 @@ describe("content script runtime", () => {
       }
     })
 
-    const { startSourceBatchContentScript } = await import("../../../contents/source-batch")
+    const { startSourceBatchContentScript } = await import("../../../src/entrypoints/source-batch.content/runtime")
     await startSourceBatchContentScript(createTestContext() as never)
 
     await vi.waitFor(() => {
@@ -528,7 +531,7 @@ describe("content script runtime", () => {
       }
     })
 
-    const { startSourceBatchContentScript } = await import("../../../contents/source-batch")
+    const { startSourceBatchContentScript } = await import("../../../src/entrypoints/source-batch.content/runtime")
     await startSourceBatchContentScript(createTestContext() as never)
 
     await vi.waitFor(() => {
@@ -573,7 +576,7 @@ describe("content script runtime", () => {
       }
     })
 
-    const { startSourceBatchContentScript } = await import("../../../contents/source-batch")
+    const { startSourceBatchContentScript } = await import("../../../src/entrypoints/source-batch.content/runtime")
     await startSourceBatchContentScript(createTestContext() as never)
 
     await vi.waitFor(() => {
@@ -657,7 +660,7 @@ describe("content script runtime", () => {
       return Promise.resolve({ ok: true })
     })
 
-    const { startSourceBatchContentScript } = await import("../../../contents/source-batch")
+    const { startSourceBatchContentScript } = await import("../../../src/entrypoints/source-batch.content/runtime")
     await startSourceBatchContentScript(createTestContext() as never)
 
     await vi.waitFor(() => {

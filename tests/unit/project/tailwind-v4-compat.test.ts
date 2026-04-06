@@ -19,7 +19,7 @@ function readPostcssConfig() {
 }
 
 function readOptionsStyles() {
-  return readFileSync(resolve(process.cwd(), "styles/options.css"), "utf8")
+  return readFileSync(resolve(process.cwd(), "src/entrypoints/options/style.css"), "utf8")
 }
 
 describe("tailwind v4 compatibility", () => {
@@ -37,7 +37,7 @@ describe("tailwind v4 compatibility", () => {
     const css = readOptionsStyles()
 
     expect(css).toContain('@import "tailwindcss";')
-    expect(css).toContain('@import "./tailwind-theme.css";')
+    expect(css).toContain('@import "../../styles/tailwind-theme.css";')
     expect(css).not.toContain("@tailwind")
   })
 

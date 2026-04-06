@@ -4,7 +4,7 @@ import {
   getDisabledSources,
   normalizeEnabledSources,
   resolveSourceEnabled
-} from "../../../lib/settings"
+} from "../../../src/lib/settings"
 
 describe("source enablement helpers", () => {
   it("keeps explicit boolean flags and defaults the rest to enabled", () => {

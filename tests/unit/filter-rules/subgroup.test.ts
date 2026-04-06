@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest"
 
-import { extractSubgroup } from "../../../lib/filter-rules/subgroup"
-import type { SourceId } from "../../../lib/shared/types"
+import { extractSubgroup } from "../../../src/lib/filter-rules/subgroup"
+import type { SourceId } from "../../../src/lib/shared/types"
 
 describe("extractSubgroup", () => {
   it.each<{

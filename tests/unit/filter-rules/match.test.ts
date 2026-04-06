@@ -5,11 +5,11 @@ import {
   deriveEffectiveFilterSummary,
   matchesCondition,
   matchesFilter
-} from "../../../lib/filter-rules"
+} from "../../../src/lib/filter-rules"
 import type {
   FilterCondition,
   FilterEntry
-} from "../../../lib/shared/types"
+} from "../../../src/lib/shared/types"
 
 function createCondition(
   overrides: Partial<FilterCondition> = {}

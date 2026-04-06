@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it, vi, type Mock } from "vitest"
-import { retryFailedItems, type RetryDependencies, type RetryRequest } from "../../../lib/background/retry"
-import type { DownloaderAdapter, DownloaderTorrentFile } from "../../../lib/downloader"
-import type { TaskHistoryItem, TaskHistoryRecord } from "../../../lib/history/types"
-import { DEFAULT_SETTINGS } from "../../../lib/settings/defaults"
-import type { Settings } from "../../../lib/shared/types"
+import { retryFailedItems, type RetryDependencies, type RetryRequest } from "../../../src/lib/background/retry"
+import type { DownloaderAdapter, DownloaderTorrentFile } from "../../../src/lib/downloader"
+import type { TaskHistoryItem, TaskHistoryRecord } from "../../../src/lib/history/types"
+import { DEFAULT_SETTINGS } from "../../../src/lib/settings/defaults"
+import type { Settings } from "../../../src/lib/shared/types"
 
 type RetryTestDeps = RetryDependencies & {
   downloader: DownloaderAdapter

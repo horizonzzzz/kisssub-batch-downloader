@@ -10,12 +10,12 @@ import {
   getHistoryStorage,
   saveTaskHistory,
   updateHistoryRecord
-} from "../../../lib/history/storage"
+} from "../../../src/lib/history/storage"
 import {
   DEFAULT_MAX_RECORDS,
   HISTORY_STORAGE_KEY,
   type TaskHistoryRecord
-} from "../../../lib/history/types"
+} from "../../../src/lib/history/types"
 
 type StoredState = {
   [HISTORY_STORAGE_KEY]?: unknown

@@ -1,13 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
-import { DEFAULT_SETTINGS } from "../../../lib/settings"
-import { kisssubSourceAdapter } from "../../../lib/sources/kisssub"
+import { DEFAULT_SETTINGS } from "../../../src/lib/settings"
+import { kisssubSourceAdapter } from "../../../src/lib/sources/kisssub"
 
 const { withDetailTab } = vi.hoisted(() => ({
   withDetailTab: vi.fn()
 }))
 
-vi.mock("../../../lib/sources/detail-tab", () => ({
+vi.mock("../../../src/lib/sources/detail-tab", () => ({
   withDetailTab
 }))
 

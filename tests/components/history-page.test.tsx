@@ -2,10 +2,10 @@ import { render, screen, waitFor, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
-import type { TaskHistoryRecord, TaskHistoryItem } from "../../lib/history/types"
-import { HistoryListView } from "../../components/options/pages/history/HistoryListView"
-import { HistoryDetailView } from "../../components/options/pages/history/HistoryDetailView"
-import { HistoryPage } from "../../components/options/pages/history/HistoryPage"
+import type { TaskHistoryRecord, TaskHistoryItem } from "../../src/lib/history/types"
+import { HistoryListView } from "../../src/components/options/pages/history/HistoryListView"
+import { HistoryDetailView } from "../../src/components/options/pages/history/HistoryDetailView"
+import { HistoryPage } from "../../src/components/options/pages/history/HistoryPage"
 
 function createMockRecord(id: string, overrides?: Partial<TaskHistoryRecord>): TaskHistoryRecord {
   return {

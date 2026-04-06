@@ -1,9 +1,9 @@
 import { describe, expect, it, vi } from "vitest"
 
-import { DEFAULT_SETTINGS } from "../../../lib/settings"
+import { DEFAULT_SETTINGS } from "../../../src/lib/settings"
 
-import { getDownloaderAdapter, getDownloaderMeta, SUPPORTED_DOWNLOADERS } from "../../../lib/downloader"
-import { transmissionDownloaderAdapter, transmissionRpc, addUrlsToTransmission } from "../../../lib/downloader/transmission"
+import { getDownloaderAdapter, getDownloaderMeta, SUPPORTED_DOWNLOADERS } from "../../../src/lib/downloader"
+import { transmissionDownloaderAdapter, transmissionRpc, addUrlsToTransmission } from "../../../src/lib/downloader/transmission"
 
 describe("downloader registry", () => {
   it("registers transmission as a supported downloader", () => {

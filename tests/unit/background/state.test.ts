@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest"
 
-import type { ClassifiedBatchResult, Settings } from "../../../lib/shared/types"
+import type { ClassifiedBatchResult, Settings } from "../../../src/lib/shared/types"
 import {
   createBatchJob,
   recordBatchResult,
   summarizeBatchResults
-} from "../../../lib/background/job-state"
-import { DEFAULT_SETTINGS } from "../../../lib/settings"
+} from "../../../src/lib/background/job-state"
+import { DEFAULT_SETTINGS } from "../../../src/lib/settings"
 
 function createSettings(overrides: Partial<Settings> = {}): Settings {
   return {

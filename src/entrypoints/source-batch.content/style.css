@@ -1,0 +1,130 @@
+@layer theme, base, components, utilities;
+@import "tailwindcss/theme.css" layer(theme);
+@import "../../styles/tailwind-theme.css";
+@import "tailwindcss/utilities.css" layer(utilities);
+
+@layer components {
+  .anime-bt-content-root {
+    --tw-border-style: solid;
+    --tw-translate-x: 0;
+    --tw-translate-y: 0;
+    --tw-translate-z: 0;
+    --tw-rotate-x: initial;
+    --tw-rotate-y: initial;
+    --tw-rotate-z: initial;
+    --tw-skew-x: initial;
+    --tw-skew-y: initial;
+    --tw-shadow: 0 0 #0000;
+    --tw-shadow-color: initial;
+    --tw-shadow-alpha: 100%;
+    --tw-inset-shadow: 0 0 #0000;
+    --tw-inset-shadow-color: initial;
+    --tw-inset-shadow-alpha: 100%;
+    --tw-ring-color: initial;
+    --tw-ring-shadow: 0 0 #0000;
+    --tw-inset-ring-color: initial;
+    --tw-inset-ring-shadow: 0 0 #0000;
+    --tw-ring-inset: initial;
+    --tw-ring-offset-width: 0px;
+    --tw-ring-offset-color: #fff;
+    --tw-ring-offset-shadow: 0 0 #0000;
+    --tw-outline-style: solid;
+
+    --anime-bt-white: #ffffff;
+    --anime-bt-blue-600: #2563eb;
+    --anime-bt-font-panel: "Trebuchet MS", "PingFang SC", "Microsoft YaHei", sans-serif;
+    --anime-bt-panel-width: 336px;
+    --anime-bt-panel-gap: 14px;
+    --anime-bt-control-height: 42px;
+    --anime-bt-control-padding-x: 12px;
+    --anime-bt-checkbox-pill-height: 24px;
+    --anime-bt-icon-button-size: 30px;
+    --anime-bt-radius-lg: 20px;
+    --anime-bt-radius-xl: 24px;
+    --anime-bt-radius-pill: 999px;
+    --anime-bt-radius-control: 14px;
+    --anime-bt-radius-icon: 10px;
+    --anime-bt-shadow-floating:
+      0 30px 80px rgba(2, 6, 23, 0.24),
+      0 8px 18px rgba(2, 6, 23, 0.12);
+    --anime-bt-transition-fast: 0.18s ease;
+    --anime-bt-mobile-inset: 12px;
+
+    color: #182636;
+    font: 13px/1.45 var(--anime-bt-font-panel);
+    letter-spacing: normal;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .anime-bt-content-root,
+  .anime-bt-content-root *,
+  .anime-bt-content-root *::before,
+  .anime-bt-content-root *::after {
+    box-sizing: border-box;
+  }
+
+  .anime-bt-content-root :where(button),
+  .anime-bt-content-root :where(input) {
+    margin: 0;
+    font: inherit;
+  }
+
+  .anime-bt-content-root :where(button) {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: inherit;
+  }
+
+  .anime-bt-content-root :where(button:not(:disabled)) {
+    cursor: pointer;
+  }
+
+  .anime-bt-content-root :where(input:not([type="checkbox"])) {
+    appearance: none;
+    outline: none;
+  }
+
+  .anime-bt-content-root ::selection {
+    background: rgba(59, 130, 246, 0.22);
+  }
+
+  .anime-bt-panel-expand {
+    transform-origin: bottom right;
+    animation: anime-bt-panel-expand-keyframes 200ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+
+  @keyframes anime-bt-panel-expand-keyframes {
+    from {
+      opacity: 0;
+      transform: scale(0.8);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  .anime-bt-panel-collapse {
+    transform-origin: bottom right;
+    animation: anime-bt-panel-collapse-keyframes 180ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+
+  @keyframes anime-bt-panel-collapse-keyframes {
+    from {
+      opacity: 1;
+      transform: scale(1);
+    }
+    to {
+      opacity: 0;
+      transform: scale(0.8);
+    }
+  }
+
+  @media (max-width: 680px) {
+    .anime-bt-content-root {
+      --anime-bt-panel-width: calc(100vw - 24px);
+    }
+  }
+}

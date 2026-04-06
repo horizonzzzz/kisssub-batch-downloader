@@ -4,9 +4,9 @@ import {
   DEFAULT_OPTIONS_ROUTE,
   OPTIONS_ROUTE_PATHS,
   isOptionsRoutePath
-} from "../../../lib/shared/options-routes"
-import { OPTIONS_ROUTES } from "../../../components/options/config/routes"
-import { normalizePopupOptionsRoute } from "../../../lib/background/popup"
+} from "../../../src/lib/shared/options-routes"
+import { OPTIONS_ROUTES } from "../../../src/components/options/config/routes"
+import { normalizePopupOptionsRoute } from "../../../src/lib/background/popup"
 
 describe("shared options route paths", () => {
   it("keeps options config paths aligned with shared route-path source of truth", () => {

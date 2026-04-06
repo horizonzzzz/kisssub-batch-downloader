@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import * as ui from "../../../components/ui"
+import * as ui from "../../../src/components/ui"
 
 describe("components/ui exports", () => {
   it("exports alert dialog primitives", () => {

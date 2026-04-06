@@ -49,7 +49,7 @@ describe("resolveIsSupportedSite", () => {
   })
 
   it("returns true for supported kisssub URL", async () => {
-    const { resolveIsSupportedSite } = await import("../../../lib/background/runtime")
+    const { resolveIsSupportedSite } = await import("../../../src/entrypoints/background/runtime")
 
     const result = resolveIsSupportedSite("https://www.kisssub.org/")
 
@@ -57,7 +57,7 @@ describe("resolveIsSupportedSite", () => {
   })
 
   it("returns true for supported dongmanhuayuan URL", async () => {
-    const { resolveIsSupportedSite } = await import("../../../lib/background/runtime")
+    const { resolveIsSupportedSite } = await import("../../../src/entrypoints/background/runtime")
 
     const result = resolveIsSupportedSite("https://www.dongmanhuayuan.com/")
 
@@ -65,7 +65,7 @@ describe("resolveIsSupportedSite", () => {
   })
 
   it("returns true for supported acgrip URL", async () => {
-    const { resolveIsSupportedSite } = await import("../../../lib/background/runtime")
+    const { resolveIsSupportedSite } = await import("../../../src/entrypoints/background/runtime")
 
     const result = resolveIsSupportedSite("https://acg.rip/")
 
@@ -73,7 +73,7 @@ describe("resolveIsSupportedSite", () => {
   })
 
   it("returns true for supported www.acgrip URL", async () => {
-    const { resolveIsSupportedSite } = await import("../../../lib/background/runtime")
+    const { resolveIsSupportedSite } = await import("../../../src/entrypoints/background/runtime")
 
     const result = resolveIsSupportedSite("https://www.acg.rip/")
 
@@ -81,7 +81,7 @@ describe("resolveIsSupportedSite", () => {
   })
 
   it("returns false for unsupported URL", async () => {
-    const { resolveIsSupportedSite } = await import("../../../lib/background/runtime")
+    const { resolveIsSupportedSite } = await import("../../../src/entrypoints/background/runtime")
 
     const result = resolveIsSupportedSite("https://www.google.com/")
 
@@ -89,7 +89,7 @@ describe("resolveIsSupportedSite", () => {
   })
 
   it("returns false for null URL", async () => {
-    const { resolveIsSupportedSite } = await import("../../../lib/background/runtime")
+    const { resolveIsSupportedSite } = await import("../../../src/entrypoints/background/runtime")
 
     const result = resolveIsSupportedSite(null)
 
@@ -97,7 +97,7 @@ describe("resolveIsSupportedSite", () => {
   })
 
   it("returns false for undefined URL", async () => {
-    const { resolveIsSupportedSite } = await import("../../../lib/background/runtime")
+    const { resolveIsSupportedSite } = await import("../../../src/entrypoints/background/runtime")
 
     const result = resolveIsSupportedSite(undefined)
 
@@ -105,7 +105,7 @@ describe("resolveIsSupportedSite", () => {
   })
 
   it("returns false for empty string URL", async () => {
-    const { resolveIsSupportedSite } = await import("../../../lib/background/runtime")
+    const { resolveIsSupportedSite } = await import("../../../src/entrypoints/background/runtime")
 
     const result = resolveIsSupportedSite("")
 
@@ -113,7 +113,7 @@ describe("resolveIsSupportedSite", () => {
   })
 
   it("returns false for chrome:// URL", async () => {
-    const { resolveIsSupportedSite } = await import("../../../lib/background/runtime")
+    const { resolveIsSupportedSite } = await import("../../../src/entrypoints/background/runtime")
 
     const result = resolveIsSupportedSite("chrome://extensions")
 
@@ -121,7 +121,7 @@ describe("resolveIsSupportedSite", () => {
   })
 
   it("returns false for chrome-extension:// URL", async () => {
-    const { resolveIsSupportedSite } = await import("../../../lib/background/runtime")
+    const { resolveIsSupportedSite } = await import("../../../src/entrypoints/background/runtime")
 
     const result = resolveIsSupportedSite("chrome-extension://abc123/popup.html")
 
@@ -129,7 +129,7 @@ describe("resolveIsSupportedSite", () => {
   })
 
   it("returns false for invalid URL string", async () => {
-    const { resolveIsSupportedSite } = await import("../../../lib/background/runtime")
+    const { resolveIsSupportedSite } = await import("../../../src/entrypoints/background/runtime")
 
     const result = resolveIsSupportedSite("not-a-valid-url")
 
@@ -142,7 +142,7 @@ describe("background action icon listeners", () => {
     vi.resetModules()
     vi.clearAllMocks()
     installChromeMock()
-    const { registerBackgroundRuntime } = await import("../../../lib/background/runtime")
+    const { registerBackgroundRuntime } = await import("../../../src/entrypoints/background/runtime")
     registerBackgroundRuntime()
   })
 

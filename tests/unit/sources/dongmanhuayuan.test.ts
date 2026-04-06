@@ -1,16 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
-import { DEFAULT_SETTINGS } from "../../../lib/settings"
+import { DEFAULT_SETTINGS } from "../../../src/lib/settings"
 import {
   dongmanhuayuanSourceAdapter,
   parseDongmanhuayuanDetailSnapshot
-} from "../../../lib/sources/dongmanhuayuan"
+} from "../../../src/lib/sources/dongmanhuayuan"
 
 const { withDetailTab } = vi.hoisted(() => ({
   withDetailTab: vi.fn()
 }))
 
-vi.mock("../../../lib/sources/detail-tab", () => ({
+vi.mock("../../../src/lib/sources/detail-tab", () => ({
   withDetailTab
 }))
 

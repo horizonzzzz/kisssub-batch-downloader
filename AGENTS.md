@@ -2,9 +2,9 @@
 
 ## Purpose
 
-`Anime BT Batch Downloader` is a browser extension that batches downloads from supported anime BT source pages into `qBittorrent WebUI`.
+`Anime BT Batch Downloader` is a browser extension that batches downloads from supported anime BT source pages into the current downloader.
 
-The extension injects selection UI into supported list pages, reuses direct magnet or torrent links when available, falls back to detail-page extraction when necessary, deduplicates results, and submits the final batch to qBittorrent.
+The extension injects selection UI into supported list pages, reuses direct magnet or torrent links when available, falls back to detail-page extraction when necessary, deduplicates results, and submits the final batch to either `qBittorrent WebUI` or `Transmission RPC`.
 
 ## Current Scope
 
@@ -13,7 +13,7 @@ The extension injects selection UI into supported list pages, reuses direct magn
   - `Downloader & Basic Settings`
     - rendered as a downloader-first workspace backed by persisted `currentDownloaderId` plus nested `downloaders` settings
     - users select the current downloader first, then edit the active downloader configuration block
-    - currently only `qBittorrent` is available in the selector, but the UI and settings model are structured for future downloader additions
+    - `qBittorrent` and `Transmission` are available in the selector, and the UI/settings model remains structured for future downloader additions
   - `Site Configuration`
   - `Filter Rules`
     - rendered as a simplified filter workspace backed by persisted `filters`
@@ -31,7 +31,7 @@ The extension injects selection UI into supported list pages, reuses direct magn
   - `options.html#/filters`
   - `options.html#/history`
   - `options.html#/overview`
-- Supported downloader target: `qBittorrent WebUI` only
+- Supported downloader targets: `qBittorrent WebUI` and `Transmission RPC`
 - Optional per-batch save path override is supported
 - Pre-submit filters can keep resources by source field, title field, and subgroup text extracted from the list-page title
 - When the current source has effective filters (global rules plus rules targeting that source), unmatched resources are blocked; when the current source has no effective filters, resources are allowed by default
@@ -45,7 +45,7 @@ The extension injects selection UI into supported list pages, reuses direct magn
 - Release assets are uploaded as versioned Chrome MV3 zip archives named `anime-bt-batch-downloader-chrome-mv3-v<version>.zip`
 - Known product gaps:
   - no task cancellation flow
-  - no advanced qBittorrent options such as tags or categories
+  - no advanced downloader options such as qBittorrent tags/categories or Transmission labels
 
 ## Stack And Runtime Model
 
@@ -55,84 +55,80 @@ The extension injects selection UI into supported list pages, reuses direct magn
 - `Tailwind CSS` for the options UI layout and visual styling, plus scoped contents UI styling bundled once and mounted into WXT Shadow Root UIs
 - lightweight `shadcn/ui`-style primitives built in-repo with `Radix UI`
 - icon-library policy:
-  - project-owned UI outside `components/ui/` should use `react-icons`
-  - `components/ui/` primitives that come from the project's `shadcn/ui` pattern may keep `lucide-react` icons when introduced by shadcn
+  - project-owned UI outside `src/components/ui/` should use `react-icons`
+  - `src/components/ui/` primitives that come from the project's `shadcn/ui` pattern may keep `lucide-react` icons when introduced by shadcn
 - `React Hook Form` + `zod` for the options settings form model and validation
 - content-script UI mounts inside WXT-managed `Shadow Root` hosts so the injected batch panel and selection checkbox stay isolated from host-page styles while still using React roots
-- injected contents UI styling comes from `styles/content.css`, imported by the WXT content-script entrypoint and applied through `createShadowRootUi`
+- injected contents UI styling comes from `src/entrypoints/source-batch.content/style.css`, imported by the WXT content-script entrypoint and applied through `createShadowRootUi`
 - Browser-extension runtime with:
-  - a background service worker entry in `entrypoints/background/index.ts`
-  - a content script entry in `entrypoints/source-batch.content/index.tsx`
-  - a popup entry in `entrypoints/popup/`
-  - an options page entry in `entrypoints/options/`
+  - a background service worker entry in `src/entrypoints/background/index.ts`
+  - a content script entry in `src/entrypoints/source-batch.content/index.tsx`
+  - a popup entry in `src/entrypoints/popup/`
+  - an options page entry in `src/entrypoints/options/`
 
 ## Source Of Truth Files
 
 - `wxt.config.ts`
   WXT project configuration, including manifest metadata, React module registration, and build output paths.
-- `entrypoints/background/index.ts`
-  Boots the background runtime through WXT and delegates orchestration to `lib/background/runtime.ts`.
-- `entrypoints/options/`
-  Boots the hash-routed options page and mounts the React options workspace.
-- `entrypoints/popup/`
-  Boots the popup page and mounts the popup container that drives popup actions via runtime message APIs.
-- `entrypoints/source-batch.content/index.tsx`
-  WXT content-script entrypoint that registers source match patterns, imports `styles/content.css`, and starts the injected runtime in `contents/source-batch.tsx`.
-- `components/`
-  UI components for the floating batch panel, popup surface, and selection checkbox. The root `components/batch-panel.tsx` now acts as the injected panel entry shell and delegates focused panel sections to `components/batch-panel/`; popup UI lives under `components/popup/`; the options workspace lives under `components/options/`, contents-specific primitives under `components/content-ui/`, and shared option-page primitives under `components/ui/`.
-- `components/batch-panel/`
-  Focused injected batch-panel sections and pure view-state helpers for launcher/header/summary/advanced/actions composition. Keep batch-panel-specific UI derivation here instead of growing `components/batch-panel.tsx` again.
-- `components/popup/`
+- `src/entrypoints/background/index.ts`
+  Boots the background runtime through WXT and delegates orchestration to `src/entrypoints/background/runtime.ts`.
+- `src/entrypoints/options/`
+  Boots the hash-routed options page; `main.tsx` mounts the React workspace and `api.ts` owns entry-local runtime message wiring.
+- `src/entrypoints/popup/`
+  Boots the popup page and mounts the popup container that drives popup actions via runtime message APIs, with the popup stylesheet colocated in the same entrypoint directory.
+- `src/entrypoints/source-batch.content/index.tsx`
+  WXT content-script entrypoint that registers source match patterns, imports `src/entrypoints/source-batch.content/style.css`, and starts the injected runtime in `src/entrypoints/source-batch.content/runtime.tsx`.
+- `src/components/`
+  UI components for the floating batch panel, popup surface, and selection checkbox. The root `src/components/batch-panel.tsx` now acts as the injected panel entry shell and delegates focused panel sections to `src/components/batch-panel/`; popup UI lives under `src/components/popup/`; the options workspace lives under `src/components/options/`, contents-specific primitives under `src/components/content-ui/`, and shared option-page primitives under `src/components/ui/`.
+- `src/components/batch-panel/`
+  Focused injected batch-panel sections and pure view-state helpers for launcher/header/summary/advanced/actions composition. Keep batch-panel-specific UI derivation here instead of growing `src/components/batch-panel.tsx` again.
+- `src/components/popup/`
   Source of truth for popup container/state rendering and popup-only sections such as status, quick actions, supported-site list, and footer actions.
-- `components/content-ui/`
-  Contents-only Tailwind/shadcn-style primitives for the injected batch panel and selection checkbox visuals. Keep these isolated from `components/ui/` so third-party page injection stays on its own sizing, reset contract, and `data-*` test-anchor surface.
-- `components/options/`
-  Source of truth for the options workspace shell, hash-route config, form hooks/schema, shared options-only form fragments under `components/options/form/`, and the `general` / `sites` / `overview` page implementations.
-  Filtering rules UI lives under `components/options/pages/filters/` and persists simplified `filters` data through the shared settings form; drawers, cards, and the quick test bench all reflect the real include-only filter model and feed the backend filter engine.
-- `components/ui/`
+- `src/components/content-ui/`
+  Contents-only Tailwind/shadcn-style primitives for the injected batch panel and selection checkbox visuals. Keep these isolated from `src/components/ui/` so third-party page injection stays on its own sizing, reset contract, and `data-*` test-anchor surface.
+- `src/components/options/`
+  Source of truth for the options workspace shell, hash-route config, form hooks/schema, shared options-only form fragments under `src/components/options/form/`, and the `general` / `sites` / `overview` page implementations.
+  Filtering rules UI lives under `src/components/options/pages/filters/` and persists simplified `filters` data through the shared settings form; drawers, cards, and the quick test bench all reflect the real include-only filter model and feed the backend filter engine.
+- `src/components/ui/`
   Tailwind-first primitive components used by the options workspace, including buttons, inputs, cards, badges, alerts, switches, and radio groups.
-- `contents/`
-  Content-script runtime orchestration for supported source pages, including WXT Shadow Root UI creation and injected React UI mounting.
-- `styles/`
-  `styles/options.css` is the Tailwind entry for the options page, `styles/popup.css` is the popup entry stylesheet, and `styles/content.css` is the root-scoped Tailwind components/utilities entry for injected content UI tokens, reset rules, and WXT Shadow Root UI styling.
-- `assets/`
+- `src/styles/`
+  `src/styles/tailwind-theme.css` is the shared Tailwind theme token entry imported by the entrypoint-local stylesheets under `src/entrypoints/options/`, `src/entrypoints/popup/`, and `src/entrypoints/source-batch.content/`.
+- `src/assets/`
   Static icon assets used by the extension UI. `anime-bt-icon-speedline.svg` is the extension brand icon, packaged site icons for the options-page site-management cards are normalized to local `site-icon-*.(png|svg)` assets, and `icon.png` is the generated packaging icon copied to `public/` for WXT manifest icons.
 - `CHANGELOG.md`
   Canonical release notes for tagged versions. Each GitHub Release page should reuse the matching version section from this file. New release entries must summarize the changes from the previous version tag up to the new release commit.
-- `lib/`
+- `src/lib/`
   Domain-organized shared logic:
-  - `lib/background/` for batch orchestration, job-state helpers, and background-only services
-  - `lib/content/` for source-page matching helpers and Shadow Root host/style orchestration
-  - `lib/downloader/` for downloader adapter contracts, supported-downloader registry/meta, and downloader-facing shared types
-  - `lib/downloader/qb/` for qBittorrent WebUI client helpers and submission APIs
-  - `lib/settings/` for defaults, nested downloader settings merge/sanitization, storage access, and source enablement helpers
-  - `lib/shared/` for cross-runtime messages, shared types, and Tailwind utility helpers
+  - `src/lib/background/` for batch orchestration, job-state helpers, and background-only services
+  - `src/lib/content/` for source-page matching helpers and content-side selection/filter derivation
+  - `src/lib/downloader/` for downloader adapter contracts, supported-downloader registry/meta, and downloader-facing shared types
+  - `src/lib/downloader/qb/` for qBittorrent WebUI client helpers and submission APIs
+  - `src/lib/settings/` for defaults, nested downloader settings merge/sanitization, storage access, and source enablement helpers
+  - `src/lib/shared/` for the WXT browser helper, cross-runtime messages, shared types, and Tailwind utility helpers
 - `.github/workflows/release.yml`
   Tagged-release automation that validates versions, packages the extension, extracts the matching `CHANGELOG.md` section, renames the packaged archive, and publishes the GitHub Release.
 - `scripts/prepare-release.mjs`
   Release helper script that extracts version notes from `CHANGELOG.md`, renames the packaged zip artifact, and exposes the prepared paths to the workflow.
-- `lib/sources/`
+- `src/lib/sources/`
   Source adapter registry plus site-specific page matching and extraction logic, source delivery-mode capability helpers, and options-page site metadata.
-- `lib/sources/matching.ts`
+- `src/lib/sources/matching.ts`
   Shared runtime source host definitions and host-matching helpers. Keep adapter and popup/runtime host recognition here; the WXT content-script entrypoint should stay aligned with these shared wildcard patterns, and tests must keep both sides aligned.
 - `tests/`
   Unit, component, and Playwright end-to-end coverage.
-- `lib/history/`
+- `src/lib/history/`
   Task history persistence module, including type definitions, storage read/write, automatic cleanup logic, and downloader audit metadata such as the original downloader plus the most recent retry downloader. Automatically saved by the background when a batch completes.
-- `lib/background/retry.ts`
+- `src/lib/background/retry.ts`
   Orchestration logic for retrying failed entries, extracting failed entries from history records and resubmitting them with the current configured downloader while updating retry audit metadata on the history record.
-- `lib/background/runtime.ts`
+- `src/entrypoints/background/runtime.ts`
   Background runtime registration helpers, including icon updates, runtime message listeners, and shared bootstrap helpers used by the WXT background entrypoint.
-- `lib/background/popup.ts`
+- `src/lib/background/popup.ts`
   Popup-specific background helpers for building popup view state, normalizing options routes, opening options tabs, persisting source enable/disable toggles from the popup, and syncing the current active tab after popup source toggles.
-- `lib/shared/popup.ts`
+- `src/lib/shared/popup.ts`
   Shared popup view-model types and popup metadata constants reused across popup UI and background runtime handlers.
-- `components/options/pages/history/`
+- `src/components/options/pages/history/`
   Batch history page components, including list view, detail view, retry button, and delete button.
-- `components/options/ui/alert-dialog.tsx`
+- `src/components/ui/alert-dialog.tsx`
   AlertDialog component (shadcn/ui style), used for confirmation dialogs.
-- `components/options/ui/confirmation-dialog.tsx`
-  Confirmation dialog wrapper component, based on AlertDialog.
 
 ## Module Map
 
@@ -140,91 +136,91 @@ Use this section as the shortest runtime-oriented guide to the current code layo
 
 ### Background Batch Request Flow
 
-1. `contents/source-batch.tsx`
+1. `src/entrypoints/source-batch.content/runtime.tsx`
    Collects selected source-page items and sends `START_BATCH_DOWNLOAD`.
-2. `entrypoints/background/index.ts`
+2. `src/entrypoints/background/index.ts`
    Boots the WXT background entrypoint and registers the shared runtime.
-3. `lib/background/runtime.ts`
-   Routes the runtime message and injects concrete dependencies into `lib/background/`.
-4. `lib/background/manager.ts`
+3. `src/entrypoints/background/runtime.ts`
+   Routes the runtime message and injects concrete dependencies into `src/lib/background/`.
+4. `src/lib/background/manager.ts`
    Validates the request, creates the batch job, coordinates concurrent preparation, and drives final submission.
-5. `lib/background/preparation.ts`
+5. `src/lib/background/preparation.ts`
    Normalizes selected items, classifies prepared links, and deduplicates extracted results before submission.
-6. `lib/sources/extraction.ts`
-   Delegates per-item detail-page extraction to the matched source adapter in `lib/sources/`.
-7. `lib/downloader/`
+6. `src/lib/sources/extraction.ts`
+   Delegates per-item detail-page extraction to the matched source adapter in `src/lib/sources/`.
+7. `src/lib/downloader/`
    Resolves the active downloader adapter and exposes the shared downloader contract used by background services.
-8. `lib/downloader/qb/`
+8. `src/lib/downloader/qb/`
    Implements the qBittorrent adapter, including authentication, URL submission, torrent upload, and connection testing.
-9. `lib/background/job-state.ts`
+9. `src/lib/background/job-state.ts`
    Tracks per-job stats, accumulates results, and produces the completion summary payload sent back to the content script.
 
 ### Popup Runtime Flow
 
-1. `entrypoints/popup/`
+1. `src/entrypoints/popup/`
    Mounts the popup surface and loads popup styling through WXT.
-2. `components/popup/PopupContainer.tsx`
+2. `src/components/popup/PopupContainer.tsx`
    Requests popup state, drives popup actions, and sends popup-triggered runtime messages.
-3. `lib/background/runtime.ts`
+3. `src/entrypoints/background/runtime.ts`
    Routes popup runtime messages for state loading, source toggles, and options-page opening.
-4. `lib/background/popup.ts`
+4. `src/lib/background/popup.ts`
    Builds popup view state from settings and active-tab context, applies source toggle writes, syncs current-tab source enablement state, and resolves options-route navigation targets.
-5. `lib/shared/popup.ts`
+5. `src/lib/shared/popup.ts`
    Provides popup view-model contracts and supported-site metadata shared between background and popup UI.
 
 ### Runtime Ownership
 
-- `lib/background/`
+- `src/lib/background/`
   Background-only orchestration, job state, and service helpers.
-- `lib/background/runtime.ts`
+- `src/entrypoints/background/runtime.ts`
   Background runtime registration for the WXT entrypoint and tab/icon lifecycle hooks.
-- `lib/background/popup.ts`
+- `src/lib/background/popup.ts`
   Popup-only background services for popup state assembly, source enablement writes, and options-page route navigation.
-- `lib/content/`
-  Content-script page matching and anchor extraction helpers. WXT Shadow Root UI lifecycle now lives in `contents/source-batch.tsx`; do not reintroduce document stylesheet readback or manual CSS-text injection.
-- `lib/sources/`
+- `src/lib/content/`
+  Content-script page matching, anchor extraction, and selection/filter derivation helpers. WXT Shadow Root UI lifecycle now lives in `src/entrypoints/source-batch.content/runtime.tsx`; do not reintroduce document stylesheet readback or manual CSS-text injection.
+- `src/lib/sources/`
   Source registry, site adapters, site metadata, and source delivery-mode capabilities.
-- `lib/settings/`
+- `src/lib/settings/`
   Default settings, sanitization, storage access, and source enablement resolution.
-- `lib/downloader/`
+- `src/lib/downloader/`
   Downloader adapter registry, supported-downloader metadata, and downloader-facing shared types.
-- `lib/downloader/qb/`
+- `src/lib/downloader/qb/`
   qBittorrent WebUI client and submission APIs.
-- `lib/shared/`
+- `src/lib/shared/`
   Cross-runtime message contracts, shared types, and utility helpers used by multiple domains.
-- `lib/shared/popup.ts`
+- `src/lib/shared/popup.ts`
   Popup-specific shared types and constants for popup state/view-model contracts.
-- `lib/filter-rules/`
+- `src/lib/filter-rules/`
   Include-only filter matching and subgroup extraction logic, responsible for deciding whether a resource is kept before submission and shared by the options-page test bench.
-- `lib/history/`
+- `src/lib/history/`
   Task history persistence, type definitions and storage logic, automatically saved by the background when a batch completes.
 
 ### Boundary Rules
 
-- Runtime protocol constants and shared message/request types belong in `lib/shared/`.
-- Source-specific parsing, page matching, and capability defaults belong in `lib/sources/`.
-- Source host aliases and runtime host matching belong in `lib/sources/matching.ts`; keep the WXT content-script entrypoint aligned with these shared wildcard patterns, and use tests to prevent drift.
-- Batch orchestration belongs in `lib/background/`; source adapters should not take over job-level concerns.
-- `lib/settings/` may normalize or persist settings, but qB/network behavior belongs outside it.
-- Filters are stored in `Settings.filters`, but matching logic must remain in `lib/filter-rules/`; do not scatter rule judgments across options components or source adapters.
-- `lib/content/` may help mount and scan pages, but downloader submission must stay out of content-side helpers.
+- Runtime protocol constants and shared message/request types belong in `src/lib/shared/`.
+- Source-specific parsing, page matching, and capability defaults belong in `src/lib/sources/`.
+- Source host aliases and runtime host matching belong in `src/lib/sources/matching.ts`; keep the WXT content-script entrypoint aligned with these shared wildcard patterns, and use tests to prevent drift.
+- Batch orchestration belongs in `src/lib/background/`; source adapters should not take over job-level concerns.
+- `src/lib/settings/` may normalize or persist settings, but qB/network behavior belongs outside it.
+- Filters are stored in `Settings.filters`, but matching logic must remain in `src/lib/filter-rules/`; do not scatter rule judgments across options components or source adapters.
+- `src/lib/content/` may help mount and scan pages, but downloader submission must stay out of content-side helpers.
 - During development, prefer splitting code by responsibility instead of letting a single file keep growing; when a file starts carrying multiple concerns or becomes hard to hold in context, extract focused modules before adding more logic.
 
 ## Refactor Lessons Promoted To Policy
 
-These constraints were learned during the `lib/`, `components/`, and contents-style refactors and should now be treated as normal project rules, not optional preferences.
+These constraints were learned during the `src/lib/`, `src/components/`, and contents-style refactors and should now be treated as normal project rules, not optional preferences.
 
 ### Runtime And Module Boundaries
 
-- Keep `entrypoints/background/index.ts` thin: WXT bootstrap + dependency wiring only. New orchestration logic belongs under `lib/background/`.
-- Add new cross-runtime request/response types, helpers, and protocol constants in `lib/shared/`, not in runtime entry files.
+- Keep `src/entrypoints/background/index.ts` thin: WXT bootstrap + dependency wiring only. New orchestration logic belongs under `src/lib/background/`.
+- Add new cross-runtime request/response types, helpers, and protocol constants in `src/lib/shared/`, not in runtime entry files.
 - Keep tests aligned with ownership boundaries: `background`, `settings`, `shared`, `content`, and `sources` should each have direct tests for their own helpers instead of relying on indirect coverage from another domain.
 - When a helper becomes pure derivation or normalization logic, prefer extracting it and testing it directly rather than growing page components or orchestration files.
 
 ### Contents Injection And Styling
 
-- Contents UI styling must come from `styles/content.css` imported by the WXT content-script entrypoint and applied through `createShadowRootUi`. Do not reintroduce manual CSS-text injection or any page-stylesheet dependency.
-- `styles/content.css` is limited to root-scoped tokens, low-specificity reset rules, `::selection`, and minimal root-level responsive constraints. Component visuals should live in `components/content-ui/*` and injected UI components, not in new component-level CSS selectors.
+- Contents UI styling must come from `src/entrypoints/source-batch.content/style.css` imported by the WXT content-script entrypoint and applied through `createShadowRootUi`. Do not reintroduce manual CSS-text injection or any page-stylesheet dependency.
+- `src/entrypoints/source-batch.content/style.css` is limited to root-scoped tokens, low-specificity reset rules, `::selection`, and minimal root-level responsive constraints. Component visuals should live in `src/components/content-ui/*` and injected UI components, not in new component-level CSS selectors.
 - Treat `checkbox`, `button`, `input`, and other native form controls in contents UI as high-risk controls. Keep reset scope explicit and low-specificity, and preserve native checkbox appearance unless there is a deliberate full custom replacement.
 - Contents UI must stay isolated from options-page primitives unless a contents-specific variant is explicitly designed and verified. Code reuse is not a goal if it weakens cross-site stability.
 - Prefer `px`-based sizing tokens for contents UI dimensions that must stay stable across `kisssub`, `dongmanhuayuan`, `acg.rip`, and `bangumi.moe`; avoid depending on host-page `rem` scaling for panel and checkbox metrics.
@@ -286,6 +282,6 @@ Commands are defined in `package.json`:
 - Omit any empty subsection rather than inserting placeholder text, but keep the subsection heading format exactly as `### Features`, `### Fixes`, and `### Refactor` whenever that category has entries.
 - When creating commits, use standard Conventional Commits style messages such as `feat: ...`, `fix: ...`, `docs: ...`, `refactor: ...`, or `chore: ...`.
 - If options-page work needs an additional `shadcn/ui` component, add the component directly in the project’s existing `shadcn/ui` pattern instead of hand-rolling a bespoke replacement.
-- Do not migrate `lucide-react` icons that are introduced by `shadcn/ui` inside `components/ui/` only for icon-library consistency. Outside `components/ui/`, prefer `react-icons` for project-owned UI.
-- If a change updates the extension branding or icon pipeline, keep `assets/anime-bt-icon-speedline.svg` and the generated `assets/icon.png` aligned in the same change.
+- Do not migrate `lucide-react` icons that are introduced by `shadcn/ui` inside `src/components/ui/` only for icon-library consistency. Outside `src/components/ui/`, prefer `react-icons` for project-owned UI.
+- If a change updates the extension branding or icon pipeline, keep `src/assets/anime-bt-icon-speedline.svg` and the generated `src/assets/icon.png` aligned in the same change.
 - If a code change makes any statement in this file stale, update `AGENTS.md` before finishing the task.

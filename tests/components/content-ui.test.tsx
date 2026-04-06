@@ -2,9 +2,9 @@ import { render, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { describe, expect, it, vi } from "vitest"
 
-import { ContentButton } from "../../components/content-ui/button"
-import { ContentCheckbox } from "../../components/content-ui/checkbox"
-import { ContentInput } from "../../components/content-ui/input"
+import { ContentButton } from "../../src/components/content-ui/button"
+import { ContentCheckbox } from "../../src/components/content-ui/checkbox"
+import { ContentInput } from "../../src/components/content-ui/input"
 
 describe("contents UI primitives", () => {
   it("renders a content button with the provided data anchor and disabled state", () => {

@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest"
 
 describe("icon assets", () => {
   it("keeps the selected extension brand icon, packaged real favicons where available, and the generated png in assets", () => {
-    const assetsDir = resolve(process.cwd(), "assets")
+    const assetsDir = resolve(process.cwd(), "src", "assets")
     const assetNames = readdirSync(assetsDir).sort()
 
     expect(assetNames.filter((name) => name.endsWith(".svg"))).toEqual([

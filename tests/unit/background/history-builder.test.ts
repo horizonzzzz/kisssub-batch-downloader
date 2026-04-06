@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest"
 
-import { buildHistoryRecord } from "../../../lib/background/history-builder"
-import { DEFAULT_SETTINGS } from "../../../lib/settings"
-import type { BatchJob } from "../../../lib/background/types"
+import { buildHistoryRecord } from "../../../src/lib/background/history-builder"
+import { DEFAULT_SETTINGS } from "../../../src/lib/settings"
+import type { BatchJob } from "../../../src/lib/background/types"
 
 describe("buildHistoryRecord", () => {
   it("marks filter-blocked failures as non-retryable filtered items", () => {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import { DEFAULT_SETTINGS, sanitizeSettings } from "../../../lib/settings"
+import { DEFAULT_SETTINGS, sanitizeSettings } from "../../../src/lib/settings"
 
 describe("sanitizeSettings", () => {
   it("uses 3 as the default concurrency and retry count", () => {

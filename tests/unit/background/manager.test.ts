@@ -4,19 +4,19 @@ const { persistBatchHistoryMock } = vi.hoisted(() => ({
   persistBatchHistoryMock: vi.fn()
 }))
 
-vi.mock("../../../lib/background/history-builder", () => ({
+vi.mock("../../../src/lib/background/history-builder", () => ({
   persistBatchHistory: persistBatchHistoryMock
 }))
 
-import { createBatchDownloadManager } from "../../../lib/background/manager"
-import type { DownloaderAdapter } from "../../../lib/downloader"
-import { DEFAULT_SETTINGS } from "../../../lib/settings/defaults"
+import { createBatchDownloadManager } from "../../../src/lib/background/manager"
+import type { DownloaderAdapter } from "../../../src/lib/downloader"
+import { DEFAULT_SETTINGS } from "../../../src/lib/settings/defaults"
 import type {
   BatchEventPayload,
   BatchItem,
   ExtractionResult,
   Settings
-} from "../../../lib/shared/types"
+} from "../../../src/lib/shared/types"
 
 function createSettings(overrides: Partial<Settings> = {}): Settings {
   return {

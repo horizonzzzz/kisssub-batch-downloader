@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
-import { DEFAULT_SETTINGS } from "../../../lib/settings/defaults"
-import type { Settings } from "../../../lib/shared/types"
+import { DEFAULT_SETTINGS } from "../../../src/lib/settings/defaults"
+import type { Settings } from "../../../src/lib/shared/types"
 
 const {
   getSettingsMock,
@@ -19,9 +19,9 @@ const {
   testConnectionMock: vi.fn()
 }))
 
-vi.mock("../../../lib/settings", async () => {
-  const actual = await vi.importActual<typeof import("../../../lib/settings")>(
-    "../../../lib/settings"
+vi.mock("../../../src/lib/settings", async () => {
+  const actual = await vi.importActual<typeof import("../../../src/lib/settings")>(
+    "../../../src/lib/settings"
   )
 
   return {
@@ -32,12 +32,12 @@ vi.mock("../../../lib/settings", async () => {
   }
 })
 
-vi.mock("../../../lib/downloader", () => ({
+vi.mock("../../../src/lib/downloader", () => ({
   getDownloaderAdapter: getDownloaderAdapterMock,
   getDownloaderMeta: getDownloaderMetaMock
 }))
 
-import { testDownloaderConnection } from "../../../lib/background/service"
+import { testDownloaderConnection } from "../../../src/lib/background/service"
 
 describe("testDownloaderConnection", () => {
   const storedSettings: Settings = {

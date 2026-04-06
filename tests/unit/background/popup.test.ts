@@ -1,15 +1,15 @@
 import { describe, expect, it, vi } from "vitest"
 
-import { DEFAULT_SETTINGS } from "../../../lib/settings/defaults"
+import { DEFAULT_SETTINGS } from "../../../src/lib/settings/defaults"
 import {
   buildPopupState,
   notifyActiveTabOfSourceEnabledChange,
   normalizePopupOptionsRoute,
   openOptionsPageForRoute,
   setSourceEnabledForPopup
-} from "../../../lib/background/popup"
-import { SOURCE_IDS } from "../../../lib/sources/catalog"
-import type { Settings } from "../../../lib/shared/types"
+} from "../../../src/lib/background/popup"
+import { SOURCE_IDS } from "../../../src/lib/sources/catalog"
+import type { Settings } from "../../../src/lib/shared/types"
 
 function createSettings(overrides: Partial<Settings> = {}): Settings {
   return {
@@ -293,7 +293,7 @@ describe("popup background helpers", () => {
   })
 
   it("broadcasts filter updates to supported source tabs without touching unrelated pages", async () => {
-    const popupModule = (await import("../../../lib/background/popup")) as Record<string, unknown>
+    const popupModule = (await import("../../../src/lib/background/popup")) as Record<string, unknown>
     const notifySupportedSourceTabsOfFilterChange = popupModule
       .notifySupportedSourceTabsOfFilterChange as
       | ((dependencies?: {

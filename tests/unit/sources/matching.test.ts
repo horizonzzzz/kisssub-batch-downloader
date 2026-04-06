@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import { CONTENT_SCRIPT_MATCH_PATTERNS, matchesSourceHost } from "../../../lib/sources/matching"
+import { CONTENT_SCRIPT_MATCH_PATTERNS, matchesSourceHost } from "../../../src/lib/sources/matching"
 
 describe("source matching definitions", () => {
   it("matches bare and www host variants from the shared source host map", () => {

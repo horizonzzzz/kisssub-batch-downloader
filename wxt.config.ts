@@ -3,6 +3,7 @@ import { defineConfig } from "wxt"
 export default defineConfig({
   browser: "chrome",
   modules: ["@wxt-dev/module-react"],
+  srcDir: "src",
   outDir: "build",
   outDirTemplate: "chrome-mv3-prod",
   manifest: {

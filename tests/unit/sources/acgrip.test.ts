@@ -1,13 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
-import { DEFAULT_SETTINGS } from "../../../lib/settings"
-import { acgRipSourceAdapter, parseAcgRipDetailSnapshot } from "../../../lib/sources/acgrip"
+import { DEFAULT_SETTINGS } from "../../../src/lib/settings"
+import { acgRipSourceAdapter, parseAcgRipDetailSnapshot } from "../../../src/lib/sources/acgrip"
 
 const { withDetailTab } = vi.hoisted(() => ({
   withDetailTab: vi.fn()
 }))
 
-vi.mock("../../../lib/sources/detail-tab", () => ({
+vi.mock("../../../src/lib/sources/detail-tab", () => ({
   withDetailTab
 }))
 
