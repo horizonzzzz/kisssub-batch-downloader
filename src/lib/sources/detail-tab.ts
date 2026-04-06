@@ -19,6 +19,43 @@ export async function withDetailTab<T>(
   }
 }
 
+export async function reloadDetailTab(tabId: number, timeoutMs: number): Promise<void> {
+  return new Promise<void>((resolve, reject) => {
+    let timeoutId: ReturnType<typeof setTimeout> | null = null
+    const extensionBrowser = getBrowser()
+
+    const cleanup = () => {
+      extensionBrowser.tabs.onUpdated.removeListener(listener)
+      if (timeoutId !== null) {
+        clearTimeout(timeoutId)
+      }
+    }
+
+    const listener = (updatedTabId: number, changeInfo: { status?: string }) => {
+      if (updatedTabId !== tabId) {
+        return
+      }
+
+      if (changeInfo.status === "complete") {
+        cleanup()
+        resolve()
+      }
+    }
+
+    timeoutId = setTimeout(() => {
+      cleanup()
+      reject(new Error("Timed out waiting for the detail tab to finish reloading."))
+    }, timeoutMs)
+
+    extensionBrowser.tabs.onUpdated.addListener(listener)
+
+    void extensionBrowser.tabs.reload(tabId).catch(() => {
+      cleanup()
+      reject(new Error("The background detail tab could not be reloaded."))
+    })
+  })
+}
+
 async function waitForTabReady(tabId: number, timeoutMs: number) {
   return new Promise<Browser.tabs.Tab>((resolve, reject) => {
     let timeoutId: ReturnType<typeof setTimeout> | null = null

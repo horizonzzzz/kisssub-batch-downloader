@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
-import { withDetailTab } from "../../../src/lib/sources/detail-tab"
+import { reloadDetailTab, withDetailTab } from "../../../src/lib/sources/detail-tab"
 
 type UpdatedListener = (
   updatedTabId: number,
@@ -17,6 +17,7 @@ function createChromeTabsMock() {
       tabs: {
         create: vi.fn(),
         get: vi.fn(),
+        reload: vi.fn(),
         remove: vi.fn(),
         onUpdated: {
           addListener: vi.fn((listener: UpdatedListener) => {
@@ -117,5 +118,42 @@ describe("withDetailTab", () => {
     await expect(withDetailTab("https://example.com/detail", 5000, vi.fn().mockResolvedValue("ok"))).resolves.toBe(
       "ok"
     )
+  })
+
+  it("waits for the detail tab to finish reloading before continuing", async () => {
+    const tabsMock = createChromeTabsMock()
+    tabsMock.chrome.tabs.reload.mockResolvedValue(undefined)
+    globalThis.chrome = tabsMock.chrome as unknown as typeof chrome
+
+    const promise = reloadDetailTab(233, 5000)
+
+    expect(tabsMock.chrome.tabs.reload).toHaveBeenCalledWith(233)
+
+    await Promise.resolve()
+    tabsMock.emitUpdated(233, "complete")
+
+    await expect(promise).resolves.toBeUndefined()
+  })
+
+  it("rejects when the detail tab reload never completes", async () => {
+    vi.useFakeTimers()
+    const tabsMock = createChromeTabsMock()
+    tabsMock.chrome.tabs.reload.mockResolvedValue(undefined)
+    globalThis.chrome = tabsMock.chrome as unknown as typeof chrome
+
+    const promise = reloadDetailTab(377, 1000)
+    const assertion = expect(promise).rejects.toThrow("Timed out waiting for the detail tab to finish reloading.")
+
+    await vi.advanceTimersByTimeAsync(1000)
+
+    await assertion
+  })
+
+  it("rejects when the detail tab cannot be reloaded", async () => {
+    const tabsMock = createChromeTabsMock()
+    tabsMock.chrome.tabs.reload.mockRejectedValue(new Error("missing"))
+    globalThis.chrome = tabsMock.chrome as unknown as typeof chrome
+
+    await expect(reloadDetailTab(610, 5000)).rejects.toThrow("The background detail tab could not be reloaded.")
   })
 })

@@ -36,6 +36,7 @@ The extension injects selection UI into supported list pages, reuses direct magn
 - Pre-submit filters can keep resources by source field, title field, and subgroup text extracted from the list-page title
 - When the current source has effective filters (global rules plus rules targeting that source), unmatched resources are blocked; when the current source has no effective filters, resources are allowed by default
 - Magnet links are preferred; torrent URLs are the fallback
+- `kisssub.org` detail-page extraction primes the site's helper cookies and reloads the hidden detail tab once when a fresh page still shows `开启虫洞`, so the first item in a cold batch can resolve like later items
 - Each supported source can be enabled or disabled by the user:
   - disabled sources keep their saved per-site configuration
   - disabled sources do not inject the batch UI on matching pages

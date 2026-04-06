@@ -3,12 +3,14 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 import { DEFAULT_SETTINGS } from "../../../src/lib/settings"
 import { kisssubSourceAdapter, parseKisssubDetailSnapshot } from "../../../src/lib/sources/kisssub"
 
-const { withDetailTab } = vi.hoisted(() => ({
-  withDetailTab: vi.fn()
+const { reloadDetailTab, withDetailTab } = vi.hoisted(() => ({
+  withDetailTab: vi.fn(),
+  reloadDetailTab: vi.fn()
 }))
 
 vi.mock("../../../src/lib/sources/detail-tab", () => ({
-  withDetailTab
+  withDetailTab,
+  reloadDetailTab
 }))
 
 describe("parseKisssubDetailSnapshot", () => {
@@ -78,6 +80,7 @@ describe("kisssubSourceAdapter detail title fallback", () => {
     document.title = ""
     document.body.innerHTML = ""
     withDetailTab.mockReset()
+    reloadDetailTab.mockReset()
   })
 
   it("uses the document title when the navigation breadcrumb is absent", async () => {

@@ -3,10 +3,11 @@ import { getBrowser } from "../shared/browser"
 import { DEFAULT_SOURCE_DELIVERY_MODES, getSupportedDeliveryModes } from "./delivery"
 import { matchesSourceHost } from "./matching"
 import type { BatchItem, ExtractionResult, Settings } from "../shared/types"
-import { withDetailTab } from "./detail-tab"
+import { reloadDetailTab, withDetailTab } from "./detail-tab"
 import type { SourceAdapter } from "./types"
 
 const ENTRY_SELECTOR = 'a[href*="show-"][href$=".html"]'
+const MAIN_EXECUTION_WORLD = "MAIN" as const
 
 type KisssubDetailSnapshot = {
   title: string
@@ -25,6 +26,24 @@ function normalizeText(value: string | null | undefined): string {
   return String(value ?? "")
     .replace(/\s+/g, " ")
     .trim()
+}
+
+function needsHelperReload(snapshot: KisssubDetailSnapshot) {
+  return snapshot.magnetLabel === "开启虫洞" || snapshot.downloadLabel === "开启虫洞"
+}
+
+function buildExtractionResult(item: BatchItem, snapshot: KisssubDetailSnapshot): ExtractionResult {
+  const extraction = parseKisssubDetailSnapshot(snapshot)
+
+  return {
+    ok: extraction.ok,
+    title: normalizeTitle(extraction.title || item.title),
+    detailUrl: item.detailUrl,
+    hash: extraction.hash || extractDetailHash(item.detailUrl),
+    magnetUrl: extraction.magnetUrl || "",
+    torrentUrl: extraction.torrentUrl || "",
+    failureReason: extraction.failureReason || ""
+  }
 }
 
 export const kisssubSourceAdapter: SourceAdapter = {
@@ -72,22 +91,22 @@ export const kisssubSourceAdapter: SourceAdapter = {
 
     for (let attempt = 0; attempt <= settings.retryCount; attempt += 1) {
       try {
-        const snapshot = await withDetailTab(
+        const timeoutMs = Math.max(settings.injectTimeoutMs, 10000)
+        return await withDetailTab(
           item.detailUrl,
-          Math.max(settings.injectTimeoutMs, 10000),
-          async (tabId) => executeExtraction(tabId, settings)
-        )
-        const extraction = parseKisssubDetailSnapshot(snapshot)
+          timeoutMs,
+          async (tabId) => {
+            const preparation = await executeExtraction(tabId, settings, "prepare")
 
-        return {
-          ok: extraction.ok,
-          title: normalizeTitle(extraction.title || item.title),
-          detailUrl: item.detailUrl,
-          hash: extraction.hash || extractDetailHash(item.detailUrl),
-          magnetUrl: extraction.magnetUrl || "",
-          torrentUrl: extraction.torrentUrl || "",
-          failureReason: extraction.failureReason || ""
-        }
+            if (!needsHelperReload(preparation)) {
+              return buildExtractionResult(item, preparation)
+            }
+
+            await reloadDetailTab(tabId, timeoutMs)
+
+            return buildExtractionResult(item, await executeExtraction(tabId, settings, "extract"))
+          }
+        )
       } catch (error: unknown) {
         lastFailure = error instanceof Error ? error.message : String(error)
       }
@@ -127,16 +146,18 @@ export function parseKisssubDetailSnapshot(
   }
 }
 
-async function executeExtraction(tabId: number, settings: Settings) {
+async function executeExtraction(tabId: number, settings: Settings, mode: "prepare" | "extract") {
   const execution = await getBrowser().scripting.executeScript({
     target: { tabId },
+    world: MAIN_EXECUTION_WORLD,
     func: kisssubDetailExtractionScript,
     args: [
       {
         remoteScriptUrl: settings.remoteScriptUrl,
         remoteScriptRevision: settings.remoteScriptRevision,
         injectTimeoutMs: settings.injectTimeoutMs,
-        domSettleMs: settings.domSettleMs
+        domSettleMs: settings.domSettleMs,
+        mode
       }
     ]
   })
@@ -149,6 +170,7 @@ function kisssubDetailExtractionScript(config: {
   remoteScriptRevision: string
   injectTimeoutMs: number
   domSettleMs: number
+  mode: "prepare" | "extract"
 }) {
   const sleep = (ms: number) => new Promise<void>((resolve) => window.setTimeout(resolve, ms))
 
@@ -237,6 +259,10 @@ function kisssubDetailExtractionScript(config: {
 
     setCookies()
     injectHelper()
+
+    if (config.mode === "prepare") {
+      return initial
+    }
 
     const deadline = Date.now() + config.injectTimeoutMs
     while (Date.now() < deadline) {
