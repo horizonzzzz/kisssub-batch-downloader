@@ -2,6 +2,24 @@
 
 All notable release changes for `Anime BT Batch Downloader` are tracked here. GitHub Release pages should reuse the matching version section from this file.
 
+## 2.0.0
+
+### Features
+
+- Added downloader-first settings and Transmission support so batches can be routed through multiple downloader backends instead of qBittorrent only. (`710a08c`, `883de47`, `7c50a88`)
+- Added the new filter strategy workbench, runtime eligibility checks, status surfacing, and presets so source-specific include/exclude rules can be configured before batch submission. (`5abc6c9`, `b8013bb`, `092ea9e`, `bc2c4b1`, `248dae0`, `36fe795`, `2427879`, `2788b5a`)
+
+### Fixes
+
+- Fixed filter evaluation and source scoping so runtime enforcement, subgroup extraction, and source operator behavior stay aligned across the workbench and batch pipeline. (`1fd929c`, `b6bc9b8`, `45df5c2`, `b81e0ff`, `af72d85`, `45c2c4e`, `14b7379`)
+- Fixed downloader submission and history retry flows by hardening Transmission auth, clarifying retry contracts, handling partial URLs, and keeping helper-primed KissSub detail tabs fresh. (`290af2a`, `113c99b`, `3001812`, `3f80270`)
+- Fixed the WXT migration aftermath by stabilizing content styles, dev startup, and manifest host permissions to match injectable source pages. (`78d7e48`, `fa311bf`)
+
+### Refactor
+
+- Migrated the extension from Plasmo to WXT and reorganized the project structure, settings storage, and source/runtime boundaries around the new build pipeline. (`2187dd2`, `8ab67f6`, `5d11a63`)
+- Updated migration documentation to reflect the runtime behavior after the WXT transition. (`2b78251`)
+
 ## 1.5.0
 
 ### Features
