@@ -1,4 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
+import { fakeBrowser } from "wxt/testing/fake-browser"
+
+type RuntimeInstalledListener = Parameters<typeof fakeBrowser.runtime.onInstalled.addListener>[0]
+type RuntimeMessageListener = Parameters<typeof fakeBrowser.runtime.onMessage.addListener>[0]
+type TabsUpdatedListener = Parameters<typeof fakeBrowser.tabs.onUpdated.addListener>[0]
+type TabsActivatedListener = Parameters<typeof fakeBrowser.tabs.onActivated.addListener>[0]
 
 const onInstalledAddListener = vi.hoisted(() => vi.fn())
 const onUpdatedAddListener = vi.hoisted(() => vi.fn())
@@ -10,48 +16,32 @@ const sendMessageMock = vi.hoisted(() => vi.fn())
 const onMessageAddListener = vi.hoisted(() => vi.fn())
 const openOptionsPageMock = vi.hoisted(() => vi.fn())
 
-function installChromeMock() {
-  const extensionApi = {
-    runtime: {
-      onInstalled: {
-        addListener: onInstalledAddListener
-      },
-      onMessage: {
-        addListener: onMessageAddListener
-      },
-      openOptionsPage: openOptionsPageMock
-    },
-    action: {
-      setIcon: setIconMock
-    },
-    tabs: {
-      query: queryTabsMock,
-      get: getTabMock,
-      sendMessage: sendMessageMock,
-      onUpdated: {
-        addListener: onUpdatedAddListener
-      },
-      onActivated: {
-        addListener: onActivatedAddListener
-      }
-    }
-  }
-
-  Object.defineProperty(globalThis, "chrome", {
-    configurable: true,
-    value: extensionApi
+function installBrowserSpies() {
+  vi.spyOn(fakeBrowser.runtime.onInstalled, "addListener").mockImplementation((listener: RuntimeInstalledListener) => {
+    onInstalledAddListener(listener)
   })
-  Object.defineProperty(globalThis, "browser", {
-    configurable: true,
-    value: extensionApi
+  vi.spyOn(fakeBrowser.runtime.onMessage, "addListener").mockImplementation((listener: RuntimeMessageListener) => {
+    onMessageAddListener(listener)
+  })
+  vi.spyOn(fakeBrowser.runtime, "openOptionsPage").mockImplementation(openOptionsPageMock as never)
+  vi.spyOn(fakeBrowser.action, "setIcon").mockImplementation(setIconMock as never)
+  vi.spyOn(fakeBrowser.tabs, "query").mockImplementation(queryTabsMock as never)
+  vi.spyOn(fakeBrowser.tabs, "get").mockImplementation(getTabMock as never)
+  vi.spyOn(fakeBrowser.tabs, "sendMessage").mockImplementation(sendMessageMock as never)
+  vi.spyOn(fakeBrowser.tabs.onUpdated, "addListener").mockImplementation((listener: TabsUpdatedListener) => {
+    onUpdatedAddListener(listener)
+  })
+  vi.spyOn(fakeBrowser.tabs.onActivated, "addListener").mockImplementation((listener: TabsActivatedListener) => {
+    onActivatedAddListener(listener)
   })
 }
 
 describe("resolveIsSupportedSite", () => {
   beforeEach(async () => {
     vi.resetModules()
+    vi.restoreAllMocks()
     vi.clearAllMocks()
-    installChromeMock()
+    installBrowserSpies()
   })
 
   it("returns true for supported kisssub URL", async () => {
@@ -146,8 +136,9 @@ describe("resolveIsSupportedSite", () => {
 describe("background action icon listeners", () => {
   beforeEach(async () => {
     vi.resetModules()
+    vi.restoreAllMocks()
     vi.clearAllMocks()
-    installChromeMock()
+    installBrowserSpies()
     const { registerBackgroundRuntime } = await import("../../../src/entrypoints/background/runtime")
     registerBackgroundRuntime()
   })

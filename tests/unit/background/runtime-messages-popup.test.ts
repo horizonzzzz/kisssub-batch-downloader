@@ -1,4 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
+import { fakeBrowser } from "wxt/testing/fake-browser"
+
+type RuntimeInstalledListener = Parameters<typeof fakeBrowser.runtime.onInstalled.addListener>[0]
+type RuntimeMessageListener = Parameters<typeof fakeBrowser.runtime.onMessage.addListener>[0]
+type TabsUpdatedListener = Parameters<typeof fakeBrowser.tabs.onUpdated.addListener>[0]
+type TabsActivatedListener = Parameters<typeof fakeBrowser.tabs.onActivated.addListener>[0]
 
 const {
   activeJobsMock,
@@ -38,49 +44,35 @@ vi.mock("../../../src/lib/background", async () => {
   }
 })
 
-function installChromeMock() {
-  const extensionApi = {
-    runtime: {
-      onInstalled: {
-        addListener: onInstalledAddListener
-      },
-      onMessage: {
-        addListener: onMessageAddListener
-      },
-      openOptionsPage: runtimeOpenOptionsPage
-    },
-    action: {
-      setIcon: vi.fn(() => Promise.resolve())
-    },
-    tabs: {
-      query: vi.fn(async () => []),
-      get: vi.fn(async () => ({ id: 1, url: "https://example.com/" })),
-      onUpdated: {
-        addListener: onUpdatedAddListener
-      },
-      onActivated: {
-        addListener: onActivatedAddListener
-      },
-      sendMessage: vi.fn()
-    }
-  }
-
-  Object.defineProperty(globalThis, "chrome", {
-    configurable: true,
-    value: extensionApi
+function installBrowserSpies() {
+  vi.spyOn(fakeBrowser.runtime.onInstalled, "addListener").mockImplementation((listener: RuntimeInstalledListener) => {
+    onInstalledAddListener(listener)
   })
-  Object.defineProperty(globalThis, "browser", {
-    configurable: true,
-    value: extensionApi
+  vi.spyOn(fakeBrowser.runtime.onMessage, "addListener").mockImplementation((listener: RuntimeMessageListener) => {
+    onMessageAddListener(listener)
   })
+  vi.spyOn(fakeBrowser.runtime, "openOptionsPage").mockImplementation(runtimeOpenOptionsPage as never)
+  vi.spyOn(fakeBrowser.action, "setIcon").mockImplementation(vi.fn(() => Promise.resolve()) as never)
+  vi.spyOn(fakeBrowser.tabs, "query").mockImplementation(vi.fn(async () => []) as never)
+  vi.spyOn(fakeBrowser.tabs, "get").mockImplementation(
+    vi.fn(async () => ({ id: 1, url: "https://example.com/" })) as never
+  )
+  vi.spyOn(fakeBrowser.tabs.onUpdated, "addListener").mockImplementation((listener: TabsUpdatedListener) => {
+    onUpdatedAddListener(listener)
+  })
+  vi.spyOn(fakeBrowser.tabs.onActivated, "addListener").mockImplementation((listener: TabsActivatedListener) => {
+    onActivatedAddListener(listener)
+  })
+  vi.spyOn(fakeBrowser.tabs, "sendMessage").mockImplementation(vi.fn() as never)
 }
 
 describe("background popup runtime boundary", () => {
   beforeEach(async () => {
     vi.resetModules()
+    vi.restoreAllMocks()
     vi.clearAllMocks()
     activeJobsMock.clear()
-    installChromeMock()
+    installBrowserSpies()
     const { registerBackgroundRuntime } = await import("../../../src/entrypoints/background/runtime")
     registerBackgroundRuntime()
   })

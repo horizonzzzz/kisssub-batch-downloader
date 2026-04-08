@@ -1,4 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
+import { fakeBrowser } from "wxt/testing/fake-browser"
+
+type RuntimeMessageListener = Parameters<typeof fakeBrowser.runtime.onMessage.addListener>[0]
 
 const FILTERS_ROUTE = "/filters" as const
 
@@ -152,27 +155,14 @@ vi.mock("wxt/utils/content-script-ui/shadow-root", () => ({
   })
 }))
 
-function installChromeMock() {
-  const extensionApi = {
-    runtime: {
-      sendMessage: runtimeSendMessage,
-      getURL: runtimeGetUrl,
-      onMessage: {
-        addListener: runtimeAddListener,
-        removeListener: runtimeRemoveListener
-      }
-    }
-  }
-
-  Object.defineProperty(globalThis, "chrome", {
-    configurable: true,
-    writable: true,
-    value: extensionApi
+function installBrowserSpies() {
+  vi.spyOn(fakeBrowser.runtime, "sendMessage").mockImplementation(runtimeSendMessage as never)
+  vi.spyOn(fakeBrowser.runtime, "getURL").mockImplementation(runtimeGetUrl as never)
+  vi.spyOn(fakeBrowser.runtime.onMessage, "addListener").mockImplementation((listener: RuntimeMessageListener) => {
+    runtimeAddListener(listener)
   })
-  Object.defineProperty(globalThis, "browser", {
-    configurable: true,
-    writable: true,
-    value: extensionApi
+  vi.spyOn(fakeBrowser.runtime.onMessage, "removeListener").mockImplementation((listener: RuntimeMessageListener) => {
+    runtimeRemoveListener(listener)
   })
 }
 
@@ -229,12 +219,13 @@ describe("content script runtime", () => {
 
   beforeEach(() => {
     vi.resetModules()
+    vi.restoreAllMocks()
     vi.clearAllMocks()
     createdRoots.length = 0
     createdUis.length = 0
     document.body.innerHTML = ""
     bundledContentStyleText = ".anime-bt-content-root { color: rgb(37, 99, 235); }"
-    installChromeMock()
+    installBrowserSpies()
     Object.defineProperty(globalThis, "fetch", {
       configurable: true,
       writable: true,
