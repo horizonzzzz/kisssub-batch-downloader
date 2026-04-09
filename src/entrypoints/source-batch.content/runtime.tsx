@@ -9,6 +9,7 @@ import {
 import { BatchPanel } from "../../components/batch-panel"
 import { createBatchPanelFilterStatus } from "../../components/batch-panel/filter-status"
 import { SelectionCheckbox } from "../../components/selection-checkbox"
+import { i18n } from "../../lib/i18n"
 import {
   BATCH_EVENT,
   FILTERS_UPDATED_EVENT,
@@ -26,6 +27,7 @@ import {
 } from "../../lib/content/page"
 import { buildSelectableBatchItem, type SelectableBatchItem } from "../../lib/content/filter-selection"
 import { getBrowser, getExtensionUrl } from "../../lib/shared/browser"
+import { getLocalizedSiteConfigMeta } from "../../lib/sources/site-meta"
 import type { SourceAdapter } from "../../lib/sources/types"
 import type { BatchEventPayload, BatchItem, FilterEntry, Settings } from "../../lib/shared/types"
 import { FILTERS_ROUTE } from "../../lib/shared/options-routes"
@@ -47,7 +49,7 @@ type PanelSnapshot = {
 }
 
 const DEFAULT_SAVE_PATH_HINT =
-  "留空则使用当前下载器默认目录。远程下载器请手动输入目标主机可识别的绝对路径。"
+  i18n.t("batch.advanced.savePathHintDefault")
 const CONTENT_SCRIPT_STYLE_PATH = "/content-scripts/source-batch.css"
 
 const ISOLATED_UI_EVENTS = [
@@ -95,7 +97,7 @@ export async function startSourceBatchContentScript(ctx: ContentScriptContext) {
     isExpanded: true,
     running: false,
     selected: new Map(),
-    statusText: "就绪。先在当前列表页勾选资源。",
+    statusText: i18n.t("content.status.ready"),
     savePath: "",
     savePathHint: DEFAULT_SAVE_PATH_HINT,
     filters: [],
@@ -434,7 +436,7 @@ export async function startSourceBatchContentScript(ctx: ContentScriptContext) {
   function renderPanel() {
     panelUi?.mounted?.render(
       <BatchPanel
-        sourceName={activeSource?.displayName}
+        sourceName={activeSource ? getLocalizedSiteConfigMeta(activeSource.id).displayName : undefined}
         isExpanded={snapshot.isExpanded}
         selectedCount={snapshot.selected.size}
         selectableCount={Array.from(checkboxRoots.values()).filter(({ item }) => item.selectable).length}
@@ -462,8 +464,8 @@ export async function startSourceBatchContentScript(ctx: ContentScriptContext) {
     for (const { item, ui } of checkboxRoots.values()) {
       const disabledReason =
         item.blockedReasonCode === "unmatched-rule"
-          ? "该条目未命中当前筛选规则，无法选择"
-          : item.blockedReason || "该条目未命中当前筛选规则，无法选择"
+          ? i18n.t("content.checkbox.unmatchedRule")
+          : item.blockedReason || i18n.t("content.checkbox.unmatchedRule")
 
       ui.mounted?.render(
         <SelectionCheckbox
@@ -512,7 +514,7 @@ export async function startSourceBatchContentScript(ctx: ContentScriptContext) {
 
   function clearSelection() {
     snapshot.selected.clear()
-    snapshot.statusText = "已清空当前选择。"
+    snapshot.statusText = i18n.t("content.status.cleared")
     renderAll()
   }
 
@@ -540,7 +542,7 @@ export async function startSourceBatchContentScript(ctx: ContentScriptContext) {
     }
 
     snapshot.savePath = loadedPath
-    snapshot.savePathHint = `已载入上次使用的路径：${loadedPath}`
+    snapshot.savePathHint = i18n.t("content.status.loadedLastPath", [loadedPath])
     renderAll()
   }
 
@@ -551,7 +553,7 @@ export async function startSourceBatchContentScript(ctx: ContentScriptContext) {
 
     const items = Array.from(snapshot.selected.values())
     if (!items.length) {
-      snapshot.statusText = "还没有选中任何帖子。"
+      snapshot.statusText = i18n.t("content.status.noSelection")
       renderAll()
       return
     }
@@ -559,8 +561,8 @@ export async function startSourceBatchContentScript(ctx: ContentScriptContext) {
     snapshot.running = true
     const normalizedSavePath = snapshot.savePath.trim()
     snapshot.statusText = normalizedSavePath
-      ? `开始处理 ${items.length} 项，完成后将请求保存到 ${normalizedSavePath}。`
-      : `开始处理 ${items.length} 项，完成后将使用下载器默认目录。`
+      ? i18n.t("content.status.startWithPath", [items.length, normalizedSavePath])
+      : i18n.t("content.status.startDefaultPath", [items.length])
     renderAll()
 
     const response = await sendRuntimeRequest({
@@ -571,7 +573,7 @@ export async function startSourceBatchContentScript(ctx: ContentScriptContext) {
 
     if (!response.ok) {
       snapshot.running = false
-      snapshot.statusText = response.error || "无法启动批量下载任务。"
+      snapshot.statusText = response.error || i18n.t("content.status.startFailed")
       renderAll()
     }
   }
@@ -581,8 +583,8 @@ export async function startSourceBatchContentScript(ctx: ContentScriptContext) {
       snapshot.running = true
       const total = event.stats?.total || snapshot.selected.size
       snapshot.statusText = snapshot.savePath
-        ? `正在整理 ${total} 项资源，稍后将发送到自定义目录。`
-        : `正在整理 ${total} 项资源，稍后将发送到下载器默认目录。`
+        ? i18n.t("content.status.preparingWithCustomPath", [total])
+        : i18n.t("content.status.preparingWithDefaultPath", [total])
       renderAll()
       return
     }
@@ -596,8 +598,8 @@ export async function startSourceBatchContentScript(ctx: ContentScriptContext) {
     if (event.stage === "submitting") {
       const prepared = event.stats?.prepared || 0
       snapshot.statusText = prepared
-        ? `正在提交到 qBittorrent，当前共有 ${prepared} 项待发送。`
-        : "正在提交到 qBittorrent。"
+        ? i18n.t("content.status.submittingPrepared", [prepared])
+        : i18n.t("content.status.submitting")
       renderAll()
       return
     }
@@ -605,14 +607,18 @@ export async function startSourceBatchContentScript(ctx: ContentScriptContext) {
     if (event.stage === "completed") {
       snapshot.running = false
       const summary = event.summary ?? { submitted: 0, duplicated: 0, failed: 0 }
-      snapshot.statusText = `完成。成功提交 ${summary.submitted || 0} 项，重复 ${summary.duplicated || 0} 项，失败 ${summary.failed || 0} 项。`
+      snapshot.statusText = i18n.t("content.status.completed", [
+        summary.submitted || 0,
+        summary.duplicated || 0,
+        summary.failed || 0
+      ])
       renderAll()
       return
     }
 
     if (event.stage === "error" || event.stage === "fatal") {
       snapshot.running = false
-      snapshot.statusText = event.error || "批量任务失败。"
+      snapshot.statusText = event.error || i18n.t("content.status.failed")
       renderAll()
     }
   }
@@ -621,14 +627,14 @@ export async function startSourceBatchContentScript(ctx: ContentScriptContext) {
 function buildSavePathHint(savePath: string) {
   const normalized = savePath.trim()
   return normalized
-    ? `本次任务将请求下载器保存到：${normalized}`
+    ? i18n.t("content.status.savePathHint", [normalized])
     : DEFAULT_SAVE_PATH_HINT
 }
 
 function buildSelectionStatus(selectedCount: number) {
   return selectedCount > 0
-    ? `已选 ${selectedCount} 项，可直接发起批量下载。`
-    : "就绪。先在当前列表页勾选资源。"
+    ? i18n.t("content.status.readyWithSelection", [selectedCount])
+    : i18n.t("content.status.ready")
 }
 
 function buildProgressStatus(event: BatchEventPayload) {
@@ -637,12 +643,12 @@ function buildProgressStatus(event: BatchEventPayload) {
   const itemStatus = event.item?.status
 
   if (itemStatus === "failed") {
-    return `已处理 ${processed}/${total} 项，部分资源提取失败。`
+    return i18n.t("content.status.progressFailed", [processed, total])
   }
 
   if (itemStatus === "duplicate") {
-    return `已处理 ${processed}/${total} 项，检测到重复资源。`
+    return i18n.t("content.status.progressDuplicate", [processed, total])
   }
 
-  return `正在提取真实链接（${processed}/${total}）。`
+  return i18n.t("content.status.progressExtracting", [processed, total])
 }

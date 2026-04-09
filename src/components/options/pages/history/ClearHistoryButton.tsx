@@ -1,3 +1,4 @@
+import { i18n } from "../../../../lib/i18n"
 import { useState } from "react"
 import {
   AlertDialog,
@@ -49,24 +50,24 @@ export function ClearHistoryButton({ onCleared, disabled = false }: ClearHistory
         className="text-red-600 border-red-300 hover:bg-red-50"
       >
         <HiOutlineTrash className="w-4 h-4 mr-1" />
-        清空历史
+        {i18n.t("options.history.clear.button")}
       </Button>
 
       <AlertDialog open={showConfirm} onOpenChange={(open) => !loading && setShowConfirm(open)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>清空全部历史</AlertDialogTitle>
-            <AlertDialogDescription>确定清空所有历史记录吗？此操作不可恢复。</AlertDialogDescription>
+            <AlertDialogTitle>{i18n.t("options.history.clear.title")}</AlertDialogTitle>
+            <AlertDialogDescription>{i18n.t("options.history.clear.description")}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={loading}>取消</AlertDialogCancel>
+            <AlertDialogCancel disabled={loading}>{i18n.t("common.cancel")}</AlertDialogCancel>
             <AlertDialogAction
               disabled={loading}
               onClick={(event) => {
                 event.preventDefault()
                 void handleClear()
               }}>
-              {loading ? "处理中..." : "清空全部"}
+              {loading ? i18n.t("common.processing") : i18n.t("options.history.clear.confirm")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

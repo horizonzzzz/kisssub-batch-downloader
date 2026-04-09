@@ -1,3 +1,5 @@
+import { i18n } from "../i18n"
+
 import { SOURCE_IDS } from "./catalog"
 import type { DeliveryMode, Settings, SourceId } from "../shared/types"
 
@@ -56,12 +58,13 @@ export function getDeliveryModePriority(
 
 export function getDeliveryModeLabel(mode: DeliveryMode): string {
   if (mode === "magnet") {
-    return "优先磁力链"
+    return i18n.t("options.sites.deliveryMode.magnet")
   }
 
   if (mode === "torrent-url") {
-    return "直接提交种子链接"
+    return i18n.t("options.sites.deliveryMode.torrentUrl")
   }
 
-  return "先下载种子再上传到 qB"
+  return i18n.t("options.sites.deliveryMode.torrentFile")
 }
+

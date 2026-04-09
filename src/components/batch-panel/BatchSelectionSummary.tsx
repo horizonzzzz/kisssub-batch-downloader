@@ -1,3 +1,5 @@
+import { i18n } from "../../lib/i18n"
+
 type BatchSelectionSummaryProps = {
   selectedCount: number
   statusText: string
@@ -14,7 +16,7 @@ export function BatchSelectionSummary({
       aria-live="polite">
       <span className="block text-[52px] font-light leading-none text-[#142131]">{selectedCount}</span>
       <span className="mt-[6px] block text-[11px] font-bold uppercase tracking-[0.18em] text-[#687586]">
-        已选资源
+        {i18n.t("batch.summary.selectedItems")}
       </span>
       <p className="mt-[12px] text-[12px] leading-[1.55] text-[#4d5d70]">{statusText}</p>
     </section>

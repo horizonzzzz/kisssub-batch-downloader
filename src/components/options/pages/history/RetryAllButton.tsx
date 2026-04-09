@@ -1,3 +1,4 @@
+import { i18n } from "../../../../lib/i18n"
 import { useState } from "react"
 import {
   AlertDialog,
@@ -63,20 +64,22 @@ export function RetryAllButton({ currentDownloaderId, record, onRetryComplete }:
         disabled={loading}
       >
         <HiOutlineArrowPath className="w-4 h-4 mr-1" />
-        重试全部失败项
+        {i18n.t("options.history.retryAll.button")}
       </Button>
 
       <AlertDialog open={showConfirm} onOpenChange={(open) => !loading && setShowConfirm(open)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>重试失败条目</AlertDialogTitle>
+            <AlertDialogTitle>{i18n.t("options.history.retryAll.title")}</AlertDialogTitle>
             <AlertDialogDescription>
-              <span className="block">{`确定重试 ${failedCount} 个失败条目吗？`}</span>
-              <span className="mt-1 block">{`将使用当前配置的下载器 ${currentDownloaderName} 重新提交。`}</span>
+              <span className="block">{i18n.t("options.history.retryAll.description", [failedCount])}</span>
+              <span className="mt-1 block">
+                {i18n.t("options.history.retryAll.downloaderHint", [currentDownloaderName])}
+              </span>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={loading}>取消</AlertDialogCancel>
+            <AlertDialogCancel disabled={loading}>{i18n.t("common.cancel")}</AlertDialogCancel>
             <AlertDialogAction
               disabled={loading}
               className="border-blue-600 bg-blue-600 hover:bg-blue-700"
@@ -84,7 +87,7 @@ export function RetryAllButton({ currentDownloaderId, record, onRetryComplete }:
                 event.preventDefault()
                 void handleRetry()
               }}>
-              {loading ? "处理中..." : "重试"}
+              {loading ? i18n.t("common.processing") : i18n.t("common.retry")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

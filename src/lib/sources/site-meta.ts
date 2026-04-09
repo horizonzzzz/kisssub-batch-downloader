@@ -1,18 +1,24 @@
+import { i18n } from "../i18n"
+
 import type { SourceId } from "../shared/types"
 
 export type SiteConfigMeta = {
   id: SourceId
+  url: string
+  storageDisplayName: string
+  overviewAccent: "default" | "emerald" | "cyan"
+  strategyMode: "editable" | "locked"
+  hasKisssubScriptFields?: boolean
+  noteTone?: "info" | "warning" | "neutral"
+}
+
+export type LocalizedSiteConfigMeta = SiteConfigMeta & {
   navLabel: string
   displayName: string
   summary: string
-  url: string
-  overviewAccent: "default" | "emerald" | "cyan"
   badgeWhenEnabled: string
   badgeWhenDisabled: string
-  strategyMode: "editable" | "locked"
   lockedStrategyLabel?: string
-  hasKisssubScriptFields?: boolean
-  noteTone?: "info" | "warning" | "neutral"
   noteTitle?: string
   noteDescription?: string
 }
@@ -20,53 +26,55 @@ export type SiteConfigMeta = {
 export const SITE_CONFIG_META: Record<SourceId, SiteConfigMeta> = Object.freeze({
   kisssub: {
     id: "kisssub",
-    navLabel: "Kisssub",
-    displayName: "Kisssub 爱恋动漫",
-    summary: "整合番组表与字幕组的动漫资源站",
     url: "kisssub.org",
+    storageDisplayName: "Kisssub 爱恋动漫",
     overviewAccent: "default",
-    badgeWhenEnabled: "已启用",
-    badgeWhenDisabled: "未启用",
     strategyMode: "editable",
     hasKisssubScriptFields: true
   },
   dongmanhuayuan: {
     id: "dongmanhuayuan",
-    navLabel: "Dongmanhuayuan",
-    displayName: "Dongmanhuayuan 动漫花园",
-    summary: "面向动漫爱好者的BT资源交流站",
     url: "dongmanhuayuan.com",
+    storageDisplayName: "Dongmanhuayuan 动漫花园",
     overviewAccent: "emerald",
-    badgeWhenEnabled: "已启用",
-    badgeWhenDisabled: "未启用",
     strategyMode: "locked",
-    lockedStrategyLabel: "当前仅支持磁力链下载方式",
     noteTone: "info",
-    noteDescription: "动漫花园当前仅支持提取磁力链接，无需额外配置。"
   },
   acgrip: {
     id: "acgrip",
-    navLabel: "ACG.RIP",
-    displayName: "ACG.RIP",
-    summary: "分类清晰、以种子直下为主的ACG站",
     url: "acg.rip",
+    storageDisplayName: "ACG.RIP",
     overviewAccent: "cyan",
-    badgeWhenEnabled: "已启用",
-    badgeWhenDisabled: "未启用",
     strategyMode: "editable",
     noteTone: "warning",
-    noteTitle: "建议先下载种子再上传到 qB",
-    noteDescription: "qB 直接拉取该站种子链接可能失效。"
   },
   bangumimoe: {
     id: "bangumimoe",
-    navLabel: "Bangumi.moe",
-    displayName: "Bangumi.moe",
-    summary: "追番日历结合最新种子发布的社区",
     url: "bangumi.moe",
+    storageDisplayName: "Bangumi.moe",
     overviewAccent: "default",
-    badgeWhenEnabled: "已启用",
-    badgeWhenDisabled: "未启用",
     strategyMode: "editable"
   }
 })
+
+export function getLocalizedSiteConfigMeta(sourceId: SourceId): LocalizedSiteConfigMeta {
+  const site = SITE_CONFIG_META[sourceId]
+  const baseKey = `options.sites.catalog.${sourceId}` as const
+
+  return {
+    ...site,
+    navLabel: i18n.t(`${baseKey}.navLabel`),
+    displayName: i18n.t(`${baseKey}.displayName`),
+    summary: i18n.t(`${baseKey}.summary`),
+    badgeWhenEnabled: i18n.t("options.sites.badge.enabled"),
+    badgeWhenDisabled: i18n.t("options.sites.badge.disabled"),
+    lockedStrategyLabel:
+      site.strategyMode === "locked" ? i18n.t(`${baseKey}.lockedStrategyLabel`) : undefined,
+    noteTitle: sourceId === "acgrip" ? i18n.t(`${baseKey}.noteTitle`) : undefined,
+    noteDescription:
+      sourceId === "dongmanhuayuan" || sourceId === "acgrip"
+        ? i18n.t(`${baseKey}.noteDescription`)
+        : undefined
+  }
+}
+

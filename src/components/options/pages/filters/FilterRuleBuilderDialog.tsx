@@ -1,3 +1,4 @@
+import { i18n } from "../../../../lib/i18n"
 import { useEffect, useId, useState } from "react"
 
 import {
@@ -25,9 +26,9 @@ import {
 } from "react-icons/hi2"
 
 import {
-  ANY_CONDITION_FIELD_OPTIONS,
-  MUST_CONDITION_FIELD_OPTIONS,
-  SOURCE_OPTIONS,
+  getAnyConditionFieldOptions,
+  getMustConditionFieldOptions,
+  getSourceOptions,
   createCondition,
   createFilterDraft,
   getConditionFieldLabel,
@@ -56,6 +57,9 @@ export function FilterRuleBuilderDialog({
   const [filter, setFilter] = useState<FilterWorkbenchFilter>(() => createFilterDraft())
   const [error, setError] = useState("")
   const nameId = useId()
+  const mustConditionFieldOptions = getMustConditionFieldOptions()
+  const anyConditionFieldOptions = getAnyConditionFieldOptions()
+  const sourceOptions = getSourceOptions()
 
   useEffect(() => {
     if (!open) {
@@ -108,18 +112,18 @@ export function FilterRuleBuilderDialog({
 
   const handleSave = () => {
     if (!filter.name.trim()) {
-      setError("请输入筛选器名称")
+      setError(i18n.t("options.validation.filterNameRequired"))
       return
     }
 
     if (!filter.must.length) {
-      setError("至少需要一个必须满足条件")
+      setError(i18n.t("options.filters.dialog.mustConditionRequired"))
       return
     }
 
     const conditions = [...filter.must, ...filter.any]
     if (conditions.some((condition) => !condition.value.trim())) {
-      setError("每个条件都需要填写条件值")
+      setError(i18n.t("options.filters.dialog.conditionValueRequired"))
       return
     }
 
@@ -143,15 +147,15 @@ export function FilterRuleBuilderDialog({
       <SheetContent side="right" className="flex h-full w-full max-w-2xl flex-col p-0 sm:max-w-2xl">
         <div className="flex items-center justify-between border-b border-zinc-100 px-6 py-4">
           <SheetHeader className="space-y-0">
-            <SheetTitle>{initialFilter ? "编辑筛选器" : "新增筛选器"}</SheetTitle>
+            <SheetTitle>{initialFilter ? i18n.t("options.filters.dialog.editTitle") : i18n.t("options.filters.dialog.addTitle")}</SheetTitle>
             <SheetDescription className="sr-only">
-              编辑筛选器名称、条件和启用状态
+              {i18n.t("options.filters.dialog.description")}
             </SheetDescription>
           </SheetHeader>
           <SheetClose asChild>
             <button
               type="button"
-              aria-label="关闭筛选器面板"
+              aria-label={i18n.t("options.filters.dialog.close")}
               className="rounded-full p-2 text-zinc-400 transition hover:bg-zinc-100 hover:text-zinc-600">
               <HiOutlineXMark className="h-5 w-5" />
             </button>
@@ -160,28 +164,28 @@ export function FilterRuleBuilderDialog({
 
         <div className="flex-1 space-y-6 overflow-y-auto p-6">
           <div className="space-y-2">
-            <Label htmlFor={nameId}>筛选器名称</Label>
+            <Label htmlFor={nameId}>{i18n.t("options.filters.dialog.nameLabel")}</Label>
             <Input
               id={nameId}
               autoFocus
               data-autofocus="true"
-              aria-label="筛选器名称"
+              aria-label={i18n.t("options.filters.dialog.nameLabel")}
               value={filter.name}
               onChange={(event) =>
                 setFilter((current) => ({ ...current, name: event.target.value }))
               }
-              placeholder="例如：爱恋 1080 简繁"
+              placeholder={i18n.t("options.filters.dialog.namePlaceholder")}
             />
           </div>
 
           <ConditionSection
-            title="必须满足"
-            labelPrefix="必须"
-            description="这些条件需要全部命中。"
-            emptyText="还没有必须满足条件。"
-            fieldOptions={MUST_CONDITION_FIELD_OPTIONS}
+            title={i18n.t("options.filters.mustTitle")}
+            labelPrefix={i18n.t("options.filters.mustPrefix")}
+            description={i18n.t("options.filters.dialog.mustDescription")}
+            emptyText={i18n.t("options.filters.dialog.mustEmpty")}
+            fieldOptions={mustConditionFieldOptions}
             conditions={filter.must}
-            addLabel="添加必须条件"
+            addLabel={i18n.t("options.filters.dialog.addMust")}
             onAdd={() => addCondition("must")}
             onFieldChange={(id, field) => updateConditionField("must", id, field)}
             onValueChange={(id, value) => updateCondition("must", id, { value })}
@@ -189,13 +193,13 @@ export function FilterRuleBuilderDialog({
           />
 
           <ConditionSection
-            title="满足任一"
-            labelPrefix="任一"
-            description="可选；只要其中一条命中即可，不用于限定站点范围。"
-            emptyText="未设置额外的“任一”条件。"
-            fieldOptions={ANY_CONDITION_FIELD_OPTIONS}
+            title={i18n.t("options.filters.anyTitle")}
+            labelPrefix={i18n.t("options.filters.anyPrefix")}
+            description={i18n.t("options.filters.dialog.anyDescription")}
+            emptyText={i18n.t("options.filters.dialog.anyEmpty")}
+            fieldOptions={anyConditionFieldOptions}
             conditions={filter.any}
-            addLabel="添加任一条件"
+            addLabel={i18n.t("options.filters.dialog.addAny")}
             onAdd={() => addCondition("any")}
             onFieldChange={(id, field) => updateConditionField("any", id, field)}
             onValueChange={(id, value) => updateCondition("any", id, { value })}
@@ -203,20 +207,20 @@ export function FilterRuleBuilderDialog({
           />
 
           <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4">
-            <p className="text-sm font-medium text-zinc-900">当前摘要</p>
+            <p className="text-sm font-medium text-zinc-900">{i18n.t("options.filters.dialog.currentSummary")}</p>
             <p className="mt-2 text-sm leading-6 text-zinc-600">
-              必须满足：{summarizeConditionList(filter.must)}
+              {i18n.t("options.filters.dialog.mustSummary", [summarizeConditionList(filter.must)])}
             </p>
             <p className="mt-2 text-sm leading-6 text-zinc-600">
-              满足任一：{summarizeConditionList(filter.any)}
+              {i18n.t("options.filters.dialog.anySummary", [summarizeConditionList(filter.any)])}
             </p>
           </div>
 
           <label className="flex items-center justify-between rounded-xl border border-zinc-200 p-4 transition-colors hover:bg-zinc-50">
             <div>
-              <div className="text-sm font-medium text-zinc-900">启用筛选器</div>
+              <div className="text-sm font-medium text-zinc-900">{i18n.t("options.filters.dialog.enableTitle")}</div>
               <div className="text-xs text-zinc-500">
-                停用后保留配置，但不会参与实际筛选。
+                {i18n.t("options.filters.dialog.enableDescription")}
               </div>
             </div>
             <Switch
@@ -224,7 +228,7 @@ export function FilterRuleBuilderDialog({
               onCheckedChange={(checked) =>
                 setFilter((current) => ({ ...current, enabled: checked }))
               }
-              aria-label="启用筛选器"
+              aria-label={i18n.t("options.filters.dialog.enableTitle")}
             />
           </label>
 
@@ -238,10 +242,10 @@ export function FilterRuleBuilderDialog({
 
         <div className="flex gap-3 border-t border-zinc-100 bg-zinc-50 p-4">
           <Button type="button" variant="outline" className="flex-1" onClick={onClose}>
-            取消
+            {i18n.t("common.cancel")}
           </Button>
           <Button type="button" className="flex-1" onClick={handleSave}>
-            保存筛选器
+            {i18n.t("options.filters.dialog.save")}
           </Button>
         </div>
       </SheetContent>
@@ -279,6 +283,8 @@ function ConditionSection({
   onValueChange,
   onRemove
 }: ConditionSectionProps) {
+  const sourceOptions = getSourceOptions()
+
   return (
     <section className="space-y-4">
       <div className="flex items-start justify-between gap-3">
@@ -302,13 +308,13 @@ function ConditionSection({
                 </div>
                 <div className="grid flex-1 gap-3 md:grid-cols-[180px_minmax(0,1fr)]">
                   <div className="space-y-1">
-                    <Label className="text-xs text-zinc-500">字段</Label>
+                    <Label className="text-xs text-zinc-500">{i18n.t("options.filters.dialog.fieldLabel")}</Label>
                     <Select
                       value={condition.field}
                       onValueChange={(value: string) =>
                         onFieldChange(idToString(condition.id), value as FilterWorkbenchCondition["field"])
                       }>
-                      <SelectTrigger aria-label={`${labelPrefix}条件字段 ${index + 1}`}>
+                      <SelectTrigger aria-label={i18n.t("options.filters.dialog.fieldAriaLabel", [labelPrefix, index + 1])}>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -323,17 +329,19 @@ function ConditionSection({
 
                   <div className="space-y-1">
                     <Label className="text-xs text-zinc-500">
-                      {condition.field === "source" ? "站点" : `${getConditionFieldLabel(condition.field)}内容`}
+                      {condition.field === "source"
+                        ? i18n.t("options.filters.field.source")
+                        : i18n.t("options.filters.dialog.fieldValueLabel", [getConditionFieldLabel(condition.field)])}
                     </Label>
                     {condition.field === "source" ? (
                       <Select
                         value={condition.value}
                         onValueChange={(value: string) => onValueChange(condition.id, value)}>
-                        <SelectTrigger aria-label={`${labelPrefix}条件值 ${index + 1}`}>
+                        <SelectTrigger aria-label={i18n.t("options.filters.dialog.valueAriaLabel", [labelPrefix, index + 1])}>
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          {SOURCE_OPTIONS.map((option) => (
+                          {sourceOptions.map((option) => (
                             <SelectItem key={option.value} value={option.value}>
                               {option.label}
                             </SelectItem>
@@ -342,10 +350,10 @@ function ConditionSection({
                       </Select>
                     ) : (
                       <Input
-                        aria-label={`${labelPrefix}条件值 ${index + 1}`}
+                        aria-label={i18n.t("options.filters.dialog.valueAriaLabel", [labelPrefix, index + 1])}
                         value={condition.value}
                         onChange={(event) => onValueChange(condition.id, event.target.value)}
-                        placeholder={`输入${getConditionFieldLabel(condition.field)}关键词`}
+                        placeholder={i18n.t("options.filters.dialog.valuePlaceholder", [getConditionFieldLabel(condition.field)])}
                       />
                     )}
                   </div>
@@ -355,7 +363,7 @@ function ConditionSection({
                   type="button"
                   variant="ghost"
                   size="sm"
-                  aria-label={`删除条件 ${index + 1}`}
+                  aria-label={i18n.t("options.filters.dialog.removeCondition", [index + 1])}
                   onClick={() => onRemove(condition.id)}>
                   <HiOutlineTrash className="h-4 w-4" />
                 </Button>

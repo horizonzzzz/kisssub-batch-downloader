@@ -1,13 +1,13 @@
 import type { JSX } from "react"
 
-import type { SiteConfigMeta } from "../../../../lib/sources/site-meta"
+import type { LocalizedSiteConfigMeta } from "../../../../lib/sources/site-meta"
 import { cn } from "../../../../lib/shared/cn"
 
 type SiteNotePanelProps = {
-  site: SiteConfigMeta
+  site: LocalizedSiteConfigMeta
 }
 
-function getSiteNoteClassName(site: SiteConfigMeta): string {
+function getSiteNoteClassName(site: LocalizedSiteConfigMeta): string {
   if (site.noteTone === "warning") {
     return "grid gap-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-4"
   }
@@ -19,7 +19,7 @@ function getSiteNoteClassName(site: SiteConfigMeta): string {
   return "grid gap-2 rounded-lg border border-blue-100 bg-blue-50 px-4 py-4"
 }
 
-function getSiteNoteTitleClassName(site: SiteConfigMeta): string {
+function getSiteNoteTitleClassName(site: LocalizedSiteConfigMeta): string {
   return cn(
     "text-sm font-semibold",
     site.noteTone === "warning" ? "text-amber-800" : "text-blue-800"

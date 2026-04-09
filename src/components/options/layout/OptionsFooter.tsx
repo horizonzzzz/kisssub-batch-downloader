@@ -1,3 +1,4 @@
+import { i18n } from "../../../lib/i18n"
 import { HiOutlineArrowPath } from "react-icons/hi2"
 
 import { Button } from "../../ui"
@@ -14,8 +15,10 @@ export function OptionsFooter({
       <div className="text-sm text-zinc-500">{footerLabel}</div>
       <Button type="submit" size="lg" className="min-w-[120px]" disabled={saving}>
         {saving ? <HiOutlineArrowPath className="h-4 w-4 animate-spin" aria-hidden="true" /> : null}
-        <span>保存所有设置</span>
+        <span>{i18n.t("options.footer.saveAll")}</span>
       </Button>
     </footer>
   )
 }
+
+

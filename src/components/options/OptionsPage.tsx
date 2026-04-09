@@ -14,7 +14,7 @@ import { getDownloaderMeta } from "../../lib/downloader"
 import type { Settings, TestDownloaderConnectionResult } from "../../lib/shared/types"
 import {
   DEFAULT_OPTIONS_ROUTE,
-  OPTIONS_ROUTES,
+  getOptionsRoutes,
   getOptionsRouteMeta
 } from "./config/routes"
 import { useSettingsForm } from "./hooks/use-settings-form"
@@ -103,6 +103,7 @@ function OptionsWorkspace({ api }: OptionsPageProps) {
     () => getOptionsRouteMeta(location.pathname),
     [location.pathname]
   )
+  const localizedRoutes = useMemo(() => getOptionsRoutes(), [])
 
   const {
     form,
@@ -140,7 +141,7 @@ function OptionsWorkspace({ api }: OptionsPageProps) {
   return (
     <div className="min-h-screen bg-zinc-50 text-zinc-900 lg:flex lg:items-start">
       <OptionsSidebar
-        routes={OPTIONS_ROUTES}
+        routes={localizedRoutes}
         activePath={activeMeta.path}
         currentDownloaderName={currentDownloaderName}
         onNavigate={navigate}

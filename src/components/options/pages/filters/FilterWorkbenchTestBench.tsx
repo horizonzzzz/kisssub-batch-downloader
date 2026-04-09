@@ -1,3 +1,4 @@
+import { i18n } from "../../../../lib/i18n"
 import {
   HiOutlineCheckCircle,
   HiOutlinePlay,
@@ -17,7 +18,7 @@ import {
   SelectValue
 } from "../../../ui"
 import {
-  SOURCE_OPTIONS,
+  getSourceOptions,
   type FilterWorkbenchTestInput,
   type FilterWorkbenchTestResult
 } from "./filter-workbench"
@@ -35,25 +36,27 @@ export function FilterWorkbenchTestBench({
   onChange,
   onRun
 }: FilterWorkbenchTestBenchProps) {
+  const sourceOptions = getSourceOptions()
+
   return (
     <Card>
       <div className="border-b border-zinc-100 px-6 py-5">
         <div className="flex items-center gap-2">
           <HiOutlinePlay className="h-4 w-4 text-blue-600" />
-          <h3 className="text-lg font-semibold text-zinc-900">快速测试</h3>
+          <h3 className="text-lg font-semibold text-zinc-900">{i18n.t("options.filters.testBench.title")}</h3>
         </div>
         <p className="mt-2 text-sm leading-6 text-zinc-500">
-          输入资源标题，确认当前筛选器会不会保留它。
+          {i18n.t("options.filters.testBench.description")}
         </p>
       </div>
 
       <div className="space-y-5 px-6 py-5">
         <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_220px]">
           <div className="space-y-2">
-            <Label htmlFor="filters-test-title">资源标题</Label>
+            <Label htmlFor="filters-test-title">{i18n.t("options.filters.testBench.titleLabel")}</Label>
             <Input
               id="filters-test-title"
-              aria-label="资源标题"
+              aria-label={i18n.t("options.filters.testBench.titleLabel")}
               value={value.title}
               onChange={(event) =>
                 onChange({
@@ -61,12 +64,12 @@ export function FilterWorkbenchTestBench({
                   title: event.target.value
                 })
               }
-              placeholder="例如：[爱恋字幕社][Medalist][08][1080p][GB][简中]"
+              placeholder={i18n.t("options.filters.testBench.titlePlaceholder")}
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="filters-test-source">来源站点</Label>
+            <Label htmlFor="filters-test-source">{i18n.t("options.filters.testBench.sourceLabel")}</Label>
             <Select
               value={value.source}
               onValueChange={(source: string) =>
@@ -75,11 +78,11 @@ export function FilterWorkbenchTestBench({
                   source: source as FilterWorkbenchTestInput["source"]
                 })
               }>
-              <SelectTrigger id="filters-test-source" aria-label="来源站点">
+              <SelectTrigger id="filters-test-source" aria-label={i18n.t("options.filters.testBench.sourceLabel")}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {SOURCE_OPTIONS.map((option) => (
+                {sourceOptions.map((option) => (
                   <SelectItem key={option.value} value={option.value}>
                     {option.label}
                   </SelectItem>
@@ -101,7 +104,7 @@ export function FilterWorkbenchTestBench({
                   source: "kisssub"
                 })
               }>
-              爱恋 1080 简中
+              {i18n.t("options.filters.testBench.presetAilian")}
             </Button>
             <Button
               type="button"
@@ -113,19 +116,19 @@ export function FilterWorkbenchTestBench({
                   source: "kisssub"
                 })
               }>
-              未命中样例
+              {i18n.t("options.filters.testBench.presetMiss")}
             </Button>
           </div>
 
           <Button type="button" onClick={onRun}>
-            开始测试
+            {i18n.t("options.filters.testBench.run")}
           </Button>
         </div>
 
         {result ? (
           <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4">
             <div className="flex items-center justify-between gap-3">
-              <span className="text-sm font-medium text-zinc-700">测试结果</span>
+              <span className="text-sm font-medium text-zinc-700">{i18n.t("options.filters.testBench.resultTitle")}</span>
               {result.state === "result" ? (
                 <div
                   className={[
@@ -142,25 +145,25 @@ export function FilterWorkbenchTestBench({
                   {result.label}
                 </div>
               ) : (
-                <Badge variant="warning">待补充输入</Badge>
+                <Badge variant="warning">{i18n.t("options.filters.testBench.awaitingInput")}</Badge>
               )}
             </div>
 
             <p className="mt-4 text-sm leading-6 text-zinc-700">{result.summary}</p>
             {result.subgroup ? (
               <p className="mt-2 text-xs text-zinc-500">
-                自动识别的字幕组：{result.subgroup}
+                {i18n.t("options.filters.testBench.detectedSubgroup", [result.subgroup])}
               </p>
             ) : (
               <p className="mt-2 text-xs text-zinc-500">
-                当前未识别出字幕组。
+                {i18n.t("options.filters.testBench.noSubgroup")}
               </p>
             )}
             {result.state === "result" ? (
               <p className="mt-2 text-xs text-zinc-500">
                 {result.matchedFilterName
-                  ? `命中筛选器：${result.matchedFilterName}`
-                  : "未命中任何筛选器"}
+                  ? i18n.t("options.filters.testBench.matchedFilterLabel", [result.matchedFilterName])
+                  : i18n.t("options.filters.testBench.noMatchedFilter")}
               </p>
             ) : null}
           </div>

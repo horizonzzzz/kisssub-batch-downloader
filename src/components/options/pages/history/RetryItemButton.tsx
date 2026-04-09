@@ -1,3 +1,4 @@
+import { i18n } from "../../../../lib/i18n"
 import { useState } from "react"
 import {
   AlertDialog,
@@ -59,14 +60,14 @@ export function RetryItemButton({ currentDownloaderId, record, item, onRetryComp
         size="sm"
         onClick={() => setShowConfirm(true)}
         disabled={loading}
-        title="重试此条目"
+        title={i18n.t("options.history.retryItem.button")}
       >
         {loading ? (
-          <span className="text-xs">重试中...</span>
+          <span className="text-xs">{i18n.t("options.history.retryItem.loading")}</span>
         ) : (
           <>
             <HiOutlineArrowPath className="w-4 h-4 mr-1" />
-            重试
+            {i18n.t("common.retry")}
           </>
         )}
       </Button>
@@ -74,14 +75,16 @@ export function RetryItemButton({ currentDownloaderId, record, item, onRetryComp
       <AlertDialog open={showConfirm} onOpenChange={(open) => !loading && setShowConfirm(open)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>重试失败条目</AlertDialogTitle>
+            <AlertDialogTitle>{i18n.t("options.history.retryItem.title")}</AlertDialogTitle>
             <AlertDialogDescription>
-              <span className="block">确定重试当前失败条目吗？</span>
-              <span className="mt-1 block">{`将使用当前配置的下载器 ${currentDownloaderName} 重新提交。`}</span>
+              <span className="block">{i18n.t("options.history.retryItem.description")}</span>
+              <span className="mt-1 block">
+                {i18n.t("options.history.retryItem.downloaderHint", [currentDownloaderName])}
+              </span>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={loading}>取消</AlertDialogCancel>
+            <AlertDialogCancel disabled={loading}>{i18n.t("common.cancel")}</AlertDialogCancel>
             <AlertDialogAction
               disabled={loading}
               className="border-blue-600 bg-blue-600 hover:bg-blue-700"
@@ -89,7 +92,7 @@ export function RetryItemButton({ currentDownloaderId, record, item, onRetryComp
                 event.preventDefault()
                 void handleRetry()
               }}>
-              {loading ? "处理中..." : "重试"}
+              {loading ? i18n.t("common.processing") : i18n.t("common.retry")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

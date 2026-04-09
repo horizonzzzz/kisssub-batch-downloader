@@ -1,5 +1,4 @@
 import { SOURCE_IDS } from "../sources/catalog"
-import { SITE_CONFIG_META } from "../sources/site-meta"
 import type { OptionsRoutePath } from "./options-routes"
 import type { DownloaderId, SourceId } from "./types"
 
@@ -36,5 +35,3 @@ export type PopupStateViewModel = {
 }
 
 export const POPUP_SUPPORTED_SITE_IDS = SOURCE_IDS
-
-export const POPUP_SUPPORTED_SITE_META = SITE_CONFIG_META

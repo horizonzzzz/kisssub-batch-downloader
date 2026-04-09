@@ -1,4 +1,4 @@
-import type { SiteConfigMeta } from "../../../../lib/sources/site-meta"
+import type { LocalizedSiteConfigMeta } from "../../../../lib/sources/site-meta"
 import type { DeliveryMode, SourceId } from "../../../../lib/shared/types"
 import { cn } from "../../../../lib/shared/cn"
 import { Card } from "../../../ui"
@@ -8,7 +8,7 @@ import { SiteNotePanel } from "./SiteNotePanel"
 import { SiteScriptFieldsSection } from "./SiteScriptFieldsSection"
 
 type SiteCardProps = {
-  site: SiteConfigMeta
+  site: LocalizedSiteConfigMeta
   siteIcon: string
   isEnabled: boolean
   isExpanded: boolean

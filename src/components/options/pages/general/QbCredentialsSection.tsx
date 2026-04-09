@@ -1,3 +1,4 @@
+import { i18n } from "../../../../lib/i18n"
 import type { JSX } from "react"
 
 import { HiOutlineArrowPath } from "react-icons/hi2"
@@ -50,16 +51,16 @@ export function QbCredentialsSection({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>qBittorrent 配置</CardTitle>
+        <CardTitle>{i18n.t("options.general.qb.title")}</CardTitle>
         <CardDescription>
-          配置扩展用于测试连接和提交任务的 WebUI 地址与账号信息。
+          {i18n.t("options.general.qb.description")}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="grid gap-5 md:grid-cols-2">
           <div className="md:col-span-2">
             <FormField
-              label="qBittorrent WebUI 地址"
+              label={i18n.t("options.general.qb.baseUrlLabel")}
               htmlFor="downloaders.qbittorrent.baseUrl"
               required
               error={errors.downloaders?.qbittorrent?.baseUrl?.message}>
@@ -73,7 +74,7 @@ export function QbCredentialsSection({
           </div>
 
           <FormField
-            label="用户名"
+            label={i18n.t("options.general.common.usernameLabel")}
             htmlFor="downloaders.qbittorrent.username"
             error={errors.downloaders?.qbittorrent?.username?.message}>
             <Input
@@ -85,13 +86,13 @@ export function QbCredentialsSection({
           </FormField>
 
           <FormField
-            label="密码"
+            label={i18n.t("options.general.common.passwordLabel")}
             htmlFor="downloaders.qbittorrent.password"
             error={errors.downloaders?.qbittorrent?.password?.message}>
             <Input
               id="downloaders.qbittorrent.password"
               type="password"
-              placeholder="你的 WebUI 密码"
+              placeholder={i18n.t("options.general.qb.passwordPlaceholder")}
               autoComplete="current-password"
               {...register("downloaders.qbittorrent.password")}
             />
@@ -102,18 +103,24 @@ export function QbCredentialsSection({
           <Button
             type="button"
             variant="secondary"
-            aria-label="测试连接"
+            aria-label={i18n.t("options.general.common.testConnection")}
             onClick={() => void onTestConnection()}
             disabled={testing}>
             {testing ? (
               <HiOutlineArrowPath className="h-4 w-4 animate-spin" aria-hidden="true" />
             ) : null}
-            <span>{testing ? "测试中..." : "测试连接"}</span>
+            <span>
+              {testing
+                ? i18n.t("options.general.common.testingConnection")
+                : i18n.t("options.general.common.testConnection")}
+            </span>
           </Button>
 
           {connectionState !== "idle" ? (
             <span className={getConnectionStatusClassName(connectionState)}>
-              {connectionState === "success" ? "连接成功" : "连接失败"}
+              {connectionState === "success"
+                ? i18n.t("options.general.common.connectionSuccess")
+                : i18n.t("options.general.common.connectionFailed")}
               {connectionMessage ? ` · ${connectionMessage}` : ""}
             </span>
           ) : null}
@@ -122,3 +129,5 @@ export function QbCredentialsSection({
     </Card>
   )
 }
+
+

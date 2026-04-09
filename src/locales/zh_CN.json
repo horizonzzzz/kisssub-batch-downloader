@@ -1,0 +1,494 @@
+{
+  "extensionName": {
+    "message": "Anime BT Batch"
+  },
+  "extensionDescription": {
+    "message": "从支持的动漫 BT 源站列表页选择条目，解析真实下载链接，并一键批量发送到当前下载器。"
+  },
+  "actionDefaultTitle": {
+    "message": "Anime BT Batch"
+  },
+  "popup": {
+    "header": {
+      "subtitle": "一键发送到当前下载器",
+      "openSettings": "打开设置"
+    },
+    "quickActions": {
+      "title": "快捷操作",
+      "history": "批次历史",
+      "filters": "过滤规则"
+    },
+    "supportedSites": {
+      "title": "支持的资源站"
+    },
+    "footer": {
+      "help": "帮助文档"
+    },
+    "container": {
+      "loading": "加载中...",
+      "loadError": "加载弹窗状态失败，请重试。",
+      "actionError": "操作失败，请稍后重试。",
+      "disableBlockedWhileRunning": "当前页面正在执行批量下载，暂时不能禁用该站点。"
+    },
+    "status": {
+      "currentSiteEnabled": "在当前站点启用",
+      "currentSiteEnabledSwitch": "当前站点启用开关",
+      "batchRunningHint": "当前批次任务进行中，需等待完成后才能关闭站点。",
+      "checking": {
+        "title": "正在检测下载器连接",
+        "description": "正在验证当前下载器 $1 是否可用。检测完成后，会显示可直接批量发送，或提示您前往配置页检查连接信息。"
+      },
+      "failed": {
+        "title": "下载器连接失败",
+        "description": "当前页面已就绪，但扩展暂时无法连接到 $1。请前往配置页检查连接地址、账号密码或目标客户端是否已启动。",
+        "action": "前往配置"
+      },
+      "unsupported": {
+        "title": "当前页面暂不支持批量下载",
+        "description": "插件在当前网站未激活。请访问下方支持的动漫资源站点，即可使用批量下载功能。"
+      },
+      "siteDisabled": {
+        "title": "当前站点已关闭",
+        "description": "$1 已在扩展中关闭。重新开启后，页面右下角的批量下载面板和勾选框才会出现。"
+      },
+      "ready": {
+        "title": "插件已就绪",
+        "description": "当前页面受支持！您可以在页面右下角找到批量下载面板，快速勾选并发送种子。"
+      }
+    }
+  },
+  "batch": {
+    "panel": {
+      "ariaLabel": "批量下载面板",
+      "currentSite": "当前站点",
+      "title": "$1 批量下载",
+      "openSettings": "打开设置页",
+      "minimize": "最小化批量下载面板",
+      "expand": "展开批量下载面板",
+      "selectedCount": "当前已选 $1 项"
+    },
+    "summary": {
+      "selectedItems": "已选资源"
+    },
+    "filter": {
+      "title": "筛选规则",
+      "openSettings": "打开过滤规则配置",
+      "summary": {
+        "enabled": "筛选规则：已启用 $1 条",
+        "disabled": "筛选规则：未启用"
+      },
+      "emptyState": {
+        "noEnabledFilters": "当前站点未启用筛选规则，默认全部保留。",
+        "noEffectiveFilters": "当前站点未启用筛选规则，默认全部保留。"
+      },
+      "unsetSummary": "未设置。"
+    },
+    "actions": {
+      "selectAll": "全选本页",
+      "clearSelection": "清空选择",
+      "download": "批量下载",
+      "running": "发送中..."
+    },
+    "advanced": {
+      "toggle": "高级选项",
+      "savePathLabel": "临时下载路径",
+      "savePathPlaceholder": "留空使用默认目录",
+      "clearPath": "清空路径",
+      "savePathHintDefault": "留空则使用当前下载器默认目录。远程下载器请手动输入目标主机可识别的绝对路径。"
+    }
+  },
+  "options": {
+    "validation": {
+      "conditionIdRequired": "条件 ID 不能为空",
+      "conditionValueRequired": "请输入条件值",
+      "filterIdRequired": "筛选器 ID 不能为空",
+      "filterNameRequired": "请输入筛选器名称",
+      "filterMustConditionRequired": "至少填写一个必须满足条件",
+      "minValue": "最小值为 $1",
+      "maxValue": "最大值为 $1",
+      "qbBaseUrlRequired": "请输入 qBittorrent WebUI 地址",
+      "transmissionBaseUrlRequired": "请输入 Transmission RPC 地址"
+    },
+    "status": {
+      "validationError": "请先修正表单中的错误。",
+      "loadingSettings": "正在读取已保存设置。",
+      "settingsLoaded": "设置已加载。",
+      "loadFailed": "无法读取设置。",
+      "savingSettings": "正在保存设置。",
+      "settingsSaved": "设置已保存。",
+      "saveFailed": "保存失败。",
+      "testingConnection": "正在测试连接。",
+      "connectedTo": "已连接到 $1（$2）。",
+      "noAddressReturned": "未返回地址",
+      "connectionSucceeded": "连接成功。$1 $2 版本 $3",
+      "connectionTestFailed": "连接测试失败。"
+    },
+    "sidebar": {
+      "subtitle": "Extension Settings",
+      "supportedSources": "$1 个支持源站",
+      "currentDownloader": "当前下载器：$1",
+      "viewGithubRepo": "查看 GitHub 仓库"
+    },
+    "footer": {
+      "saveAll": "保存所有设置"
+    },
+    "routes": {
+      "general": {
+        "label": "下载器与基础设置",
+        "title": "下载器与基础设置",
+        "description": "选择当前下载器，配置连接信息，并调整全局批量提取节奏。",
+        "footerLabel": "正在编辑全局配置"
+      },
+      "sites": {
+        "label": "站点配置",
+        "title": "站点配置",
+        "description": "统一管理 4 个站点的启用状态和专属配置。",
+        "footerLabel": "正在编辑站点配置"
+      },
+      "filters": {
+        "label": "过滤规则",
+        "title": "过滤规则",
+        "description": "只保留命中筛选器的资源，让批量提交更贴近真实使用场景。",
+        "footerLabel": "正在编辑过滤规则"
+      },
+      "history": {
+        "label": "批次历史",
+        "title": "批次历史",
+        "description": "查看历史批量提交记录，追溯下载状态和失败原因。",
+        "footerLabel": "正在查看批次历史"
+      },
+      "overview": {
+        "label": "源站概览",
+        "title": "源站概览",
+        "description": "查看当前支持站点的简介与访问入口。",
+        "footerLabel": "正在查看支持源站概览"
+      }
+    },
+    "general": {
+      "downloaderSelector": {
+        "title": "下载器选择",
+        "description": "先选择当前使用的下载器，再填写对应连接信息。",
+        "qbDescription": "通过 qBittorrent WebUI 测试连接并提交 magnet、种子链接或种子文件。",
+        "transmissionDescription": "通过 Transmission RPC 测试连接并提交 magnet、种子链接或种子文件。"
+      },
+      "common": {
+        "usernameLabel": "用户名",
+        "passwordLabel": "密码",
+        "testConnection": "测试连接",
+        "testingConnection": "测试中...",
+        "connectionSuccess": "连接成功",
+        "connectionFailed": "连接失败"
+      },
+      "qb": {
+        "title": "qBittorrent 配置",
+        "description": "配置扩展用于测试连接和提交任务的 WebUI 地址与账号信息。",
+        "baseUrlLabel": "qBittorrent WebUI 地址",
+        "passwordPlaceholder": "你的 WebUI 密码"
+      },
+      "transmission": {
+        "title": "Transmission 配置",
+        "description": "配置扩展用于测试连接和提交任务的 Transmission RPC 地址与账号信息。",
+        "baseUrlLabel": "Transmission RPC 地址",
+        "passwordPlaceholder": "你的 Transmission 密码"
+      },
+      "extractionCadence": {
+        "title": "批量提取节奏",
+        "description": "配置并发数、重试次数以及注入和稳定等待时间。",
+        "concurrencyLabel": "并发数",
+        "retryCountLabel": "重试次数",
+        "injectTimeoutLabel": "注入超时(ms)",
+        "domSettleLabel": "稳定等待(ms)"
+      },
+      "connectionHelp": {
+        "title": "下载器兼容性提示",
+        "body1": {
+          "prefix": "当前仅支持通过浏览器扩展上下文访问本机下载器 WebUI。若 qBittorrent 连接测试返回 401，而账号密码确认无误，请先在 qBittorrent 的",
+          "middle": "中关闭",
+          "suffix": "。"
+        },
+        "body2": {
+          "prefix": "如果关闭后仍失败，再关闭",
+          "suffix": "。仅建议在 WebUI 只供本机使用时这样配置，不建议暴露到局域网或公网。"
+        }
+      }
+    },
+    "sites": {
+      "badge": {
+        "enabled": "已启用",
+        "disabled": "未启用"
+      },
+      "enableLabel": "启用",
+      "enableSwitchSuffix": "启用开关",
+      "expandConfigSuffix": "展开配置",
+      "collapseConfigSuffix": "收起配置",
+      "enabledSummary": "当前已启用 $1 / $2 个站点",
+      "deliveryMode": {
+        "magnet": "优先磁力链",
+        "torrentUrl": "直接提交种子链接",
+        "torrentFile": "先下载种子再上传到 qB"
+      },
+      "delivery": {
+        "title": "下载策略",
+        "lockedDescription": "该站点当前使用固定下载方式，不提供额外切换项。",
+        "currentDescription": "当前策略：$1"
+      },
+      "scriptFields": {
+        "title": "脚本参数",
+        "description": "保留历史脚本配置，重新启用后会继续沿用当前参数。",
+        "remoteScriptUrlLabel": "Kisssub 外部脚本地址",
+        "remoteScriptRevisionLabel": "Kisssub 脚本版本号"
+      },
+      "catalog": {
+        "kisssub": {
+          "navLabel": "Kisssub",
+          "displayName": "Kisssub 爱恋动漫",
+          "summary": "整合番组表与字幕组的动漫资源站"
+        },
+        "dongmanhuayuan": {
+          "navLabel": "Dongmanhuayuan",
+          "displayName": "Dongmanhuayuan 动漫花园",
+          "summary": "面向动漫爱好者的BT资源交流站",
+          "lockedStrategyLabel": "当前仅支持磁力链下载方式",
+          "noteDescription": "动漫花园当前仅支持提取磁力链接，无需额外配置。"
+        },
+        "acgrip": {
+          "navLabel": "ACG.RIP",
+          "displayName": "ACG.RIP",
+          "summary": "分类清晰、以种子直下为主的ACG站",
+          "noteTitle": "建议先下载种子再上传到 qB",
+          "noteDescription": "qB 直接拉取该站种子链接可能失效。"
+        },
+        "bangumimoe": {
+          "navLabel": "Bangumi.moe",
+          "displayName": "Bangumi.moe",
+          "summary": "追番日历结合最新种子发布的社区"
+        }
+      }
+    },
+    "overview": {
+      "supportHealthy": "支持良好",
+      "visitSite": "访问站点",
+      "capabilitiesTitle": "当前能力",
+      "capabilities": {
+        "0": "统一的站点配置页集中管理 4 个受支持站点的启用状态和专属参数。",
+        "1": "禁用站点后不会注入批量下载 UI，后台批处理也会同步拒绝该站点请求。",
+        "2": "源站概览保留为独立页面，方便查看站点简介与快速访问。"
+      }
+    },
+    "history": {
+      "loading": "加载中...",
+      "loadFailed": "加载历史记录失败",
+      "empty": {
+        "title": "暂无下载历史记录",
+        "description": "开始批量下载后，历史记录将在此显示"
+      },
+      "latest": "最新",
+      "viewDetail": "详情",
+      "stats": {
+        "success": "成功",
+        "failed": "$1 失败"
+      },
+      "clear": {
+        "button": "清空历史",
+        "title": "清空全部历史",
+        "description": "确定清空所有历史记录吗？此操作不可恢复。",
+        "confirm": "清空全部"
+      },
+      "deleteRecord": {
+        "button": "删除记录",
+        "title": "删除历史记录",
+        "description": "确定删除\"$1\"吗？此操作不可恢复。"
+      },
+      "retryAll": {
+        "button": "重试全部失败项",
+        "title": "重试失败条目",
+        "description": "确定重试 $1 个失败条目吗？",
+        "downloaderHint": "将使用当前配置的下载器 $1 重新提交。"
+      },
+      "retryItem": {
+        "button": "重试此条目",
+        "loading": "重试中...",
+        "title": "重试失败条目",
+        "description": "确定重试当前失败条目吗？",
+        "downloaderHint": "将使用当前配置的下载器 $1 重新提交。"
+      },
+      "retryErrors": {
+        "noSubmissionResult": "下载器未返回提交结果",
+        "recordNotFound": "历史记录不存在",
+        "noUsableUrl": "无可用的 magnet 或 torrent 链接",
+        "authFailed": "下载器登录失败: $1",
+        "submitFailed": "下载器提交失败: $1"
+      },
+      "detail": {
+        "back": "返回",
+        "completed": "已完成",
+        "partialFailure": "部分失败",
+        "total": "总条目",
+        "duplicated": "重复",
+        "failed": "失败",
+        "originalDownloader": "原始提交下载器",
+        "lastRetriedDownloader": "最近重试下载器",
+        "unknownOriginalDownloader": "未知（旧记录）",
+        "notRetried": "未重试",
+        "failureSummary": "失败原因汇总",
+        "failureCount": "$1 条",
+        "itemDetails": "条目详情",
+        "viewSource": "在源站查看详情",
+        "duplicateMessage": "该条目已在 qBittorrent 中存在，跳过提交"
+      },
+      "failure": {
+        "parse_error": {
+          "label": "页面解析失败",
+          "desc": "可能是源站结构变化，导致无法提取种子链接。",
+          "suggestion": "建议等待扩展更新适配，或手动下载。"
+        },
+        "timeout": {
+          "label": "详情页超时",
+          "desc": "请求源站详情页时响应超时。",
+          "suggestion": "建议稍后重试，或检查网络连接。"
+        },
+        "qb_error": {
+          "label": "qB 返回错误",
+          "desc": "qBittorrent 拒绝了添加请求。",
+          "suggestion": "检查 WebUI 连接、参数设置或磁盘空间。"
+        },
+        "network_error": {
+          "label": "网络错误",
+          "desc": "网络连接失败。",
+          "suggestion": "检查网络连接后重试。"
+        },
+        "filtered_out": {
+          "label": "筛选规则拦截",
+          "desc": "该条目被后台筛选兜底拦截，没有进入 qBittorrent 提交流程。",
+          "suggestion": "如需保留该条目，请调整筛选规则后回到源页面重新发起批量。"
+        },
+        "unknown": {
+          "label": "未知错误",
+          "desc": "发生了未知的错误。",
+          "suggestion": "请重试或检查日志。"
+        }
+      }
+    },
+    "filters": {
+      "title": "筛选器",
+      "description": "只配置你想保留的资源特征。只要命中任一启用中的筛选器就保留；如果没有启用筛选器，则默认全部保留。",
+      "addPreset": "添加实例规则",
+      "add": "新增筛选器",
+      "startConfig": "开始配置",
+      "configuredCount": "已配置 $1 条筛选器",
+      "enabledCount": "已启用 $1 条",
+      "listTitle": "筛选器列表",
+      "listDescription": "推荐一条筛选器对应一个真实场景，例如“爱恋 1080 简繁”。",
+      "emptyTitle": "还没有筛选器",
+      "emptyDescription": "新增一条筛选器，告诉扩展什么样的资源应该被保留。",
+      "deleteTitle": "删除筛选器",
+      "deleteDescriptionNamed": "确定删除筛选器“$1”吗？",
+      "deleteDescription": "确定删除这条筛选器吗？",
+      "edit": "编辑",
+      "badge": {
+        "enabled": "已启用",
+        "disabled": "已停用"
+      },
+      "enableSwitchSuffix": "启用开关",
+      "cardDescription": "命中后保留资源；未命中任何启用筛选器时拦截。",
+      "mustTitle": "必须满足",
+      "anyTitle": "满足任一",
+      "mustPrefix": "必须",
+      "anyPrefix": "任一",
+      "field": {
+        "title": "标题",
+        "subgroup": "字幕组",
+        "source": "站点"
+      },
+      "summary": {
+        "sourceIs": "站点是 $1",
+        "contains": "$1包含“$2”",
+        "unset": "未设置。"
+      },
+      "dialog": {
+        "addTitle": "新增筛选器",
+        "editTitle": "编辑筛选器",
+        "description": "编辑筛选器名称、条件和启用状态",
+        "close": "关闭筛选器面板",
+        "nameLabel": "筛选器名称",
+        "namePlaceholder": "例如：爱恋 1080 简繁",
+        "fieldLabel": "字段",
+        "fieldValueLabel": "$1内容",
+        "fieldAriaLabel": "$1条件字段 $2",
+        "valueAriaLabel": "$1条件值 $2",
+        "valuePlaceholder": "输入$1关键词",
+        "removeCondition": "删除条件 $1",
+        "mustDescription": "这些条件需要全部命中。",
+        "mustEmpty": "还没有必须满足条件。",
+        "addMust": "添加必须条件",
+        "anyDescription": "可选；只要其中一条命中即可，不用于限定站点范围。",
+        "anyEmpty": "未设置额外的“任一”条件。",
+        "addAny": "添加任一条件",
+        "currentSummary": "当前摘要",
+        "mustSummary": "必须满足：$1",
+        "anySummary": "满足任一：$1",
+        "enableTitle": "启用筛选器",
+        "enableDescription": "停用后保留配置，但不会参与实际筛选。",
+        "save": "保存筛选器",
+        "mustConditionRequired": "至少需要一个必须满足条件",
+        "conditionValueRequired": "每个条件都需要填写条件值"
+      },
+      "testBench": {
+        "title": "快速测试",
+        "description": "输入资源标题，确认当前筛选器会不会保留它。",
+        "titleLabel": "资源标题",
+        "titlePlaceholder": "例如：[爱恋字幕社][Medalist][08][1080p][GB][简中]",
+        "sourceLabel": "来源站点",
+        "run": "开始测试",
+        "presetAilian": "爱恋 1080 简中",
+        "presetMiss": "未命中样例",
+        "resultTitle": "测试结果",
+        "awaitingInput": "待补充输入",
+        "detectedSubgroup": "自动识别的字幕组：$1",
+        "noSubgroup": "当前未识别出字幕组。",
+        "matchedFilterLabel": "命中筛选器：$1",
+        "noMatchedFilter": "未命中任何筛选器",
+        "enterTitle": "请输入资源标题后再测试。",
+        "accepted": "保留",
+        "matchedFilter": "命中筛选器「$1」，该资源会被保留。",
+        "acceptedByDefault": "当前没有启用筛选器，该资源会直接保留。",
+        "blocked": "拦截",
+        "blockedSummary": "未命中任何启用中的筛选器，该资源会被拦截。"
+      }
+    }
+  },
+  "content": {
+    "checkbox": {
+      "label": "批量",
+      "selectTitle": "选择这条帖子进行批量下载",
+      "disabledAriaLabel": "该条帖子不可选择",
+      "unmatchedRule": "该条目未命中当前筛选规则，无法选择"
+    },
+    "status": {
+      "ready": "就绪。先在当前列表页勾选资源。",
+      "readyWithSelection": "已选 $1 项，可直接发起批量下载。",
+      "cleared": "已清空当前选择。",
+      "loadedLastPath": "已载入上次使用的路径：$1",
+      "noSelection": "还没有选中任何帖子。",
+      "startWithPath": "开始处理 $1 项，完成后将请求保存到 $2。",
+      "startDefaultPath": "开始处理 $1 项，完成后将使用下载器默认目录。",
+      "startFailed": "无法启动批量下载任务。",
+      "preparingWithCustomPath": "正在整理 $1 项资源，稍后将发送到自定义目录。",
+      "preparingWithDefaultPath": "正在整理 $1 项资源，稍后将发送到下载器默认目录。",
+      "submitting": "正在提交到 qBittorrent。",
+      "submittingPrepared": "正在提交到 qBittorrent，当前共有 $1 项待发送。",
+      "completed": "完成。成功提交 $1 项，重复 $2 项，失败 $3 项。",
+      "failed": "批量任务失败。",
+      "savePathHint": "本次任务将请求下载器保存到：$1",
+      "progressFailed": "已处理 $1/$2 项，部分资源提取失败。",
+      "progressDuplicate": "已处理 $1/$2 项，检测到重复资源。",
+      "progressExtracting": "正在提取真实链接（$1/$2）。"
+    }
+  },
+  "common": {
+    "cancel": "取消",
+    "processing": "处理中...",
+    "delete": "删除",
+    "retry": "重试"
+  }
+}

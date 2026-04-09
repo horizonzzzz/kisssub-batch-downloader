@@ -1,3 +1,4 @@
+import { i18n } from "../../../../lib/i18n"
 import { useState } from "react"
 
 import { useFormContext, useWatch } from "react-hook-form"
@@ -103,17 +104,17 @@ export function FiltersPage() {
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="min-w-0 flex-1 space-y-2">
               <h2 className="text-2xl font-semibold tracking-tight text-zinc-900">
-                筛选器
+                {i18n.t("options.filters.title")}
               </h2>
               <p className="max-w-2xl text-sm leading-6 text-zinc-500">
-                只配置你想保留的资源特征。只要命中任一启用中的筛选器就保留；如果没有启用筛选器，则默认全部保留。
+                {i18n.t("options.filters.description")}
               </p>
             </div>
 
             <div className="flex flex-wrap gap-2">
               <Button type="button" variant="outline" onClick={handleAddPresetFilter}>
                 <HiOutlinePlus className="h-4 w-4" />
-                添加实例规则
+                {i18n.t("options.filters.addPreset")}
               </Button>
               <Button
                 type="button"
@@ -122,17 +123,17 @@ export function FiltersPage() {
                   setCreatingFilter(true)
                 }}>
                 <HiOutlinePlus className="h-4 w-4" />
-                新增筛选器
+                {i18n.t("options.filters.add")}
               </Button>
             </div>
           </div>
 
           <div className="flex flex-wrap gap-3 text-sm text-zinc-600">
             <div className="rounded-full border border-zinc-200 bg-zinc-50 px-3 py-2">
-              已配置 <span className="font-medium text-zinc-900">{filters.length}</span> 条筛选器
+              {i18n.t("options.filters.configuredCount", [filters.length])}
             </div>
             <div className="rounded-full border border-zinc-200 bg-zinc-50 px-3 py-2">
-              已启用 <span className="font-medium text-zinc-900">{enabledFiltersCount}</span> 条
+              {i18n.t("options.filters.enabledCount", [enabledFiltersCount])}
             </div>
           </div>
         </div>
@@ -140,9 +141,9 @@ export function FiltersPage() {
 
       <section className="space-y-4" data-testid="filters-list">
         <div>
-          <h3 className="text-lg font-semibold text-zinc-900">筛选器列表</h3>
+          <h3 className="text-lg font-semibold text-zinc-900">{i18n.t("options.filters.listTitle")}</h3>
           <p className="mt-1 text-sm leading-6 text-zinc-500">
-            推荐一条筛选器对应一个真实场景，例如“爱恋 1080 简繁”。
+            {i18n.t("options.filters.listDescription")}
           </p>
         </div>
 
@@ -164,14 +165,14 @@ export function FiltersPage() {
         ) : (
           <Card>
             <div className="space-y-4 px-6 py-10 text-center">
-              <h4 className="text-base font-medium text-zinc-900">还没有筛选器</h4>
+              <h4 className="text-base font-medium text-zinc-900">{i18n.t("options.filters.emptyTitle")}</h4>
               <p className="text-sm leading-6 text-zinc-500">
-                新增一条筛选器，告诉扩展什么样的资源应该被保留。
+                {i18n.t("options.filters.emptyDescription")}
               </p>
               <div className="flex flex-wrap justify-center gap-2">
                 <Button type="button" variant="outline" onClick={handleAddPresetFilter}>
                   <HiOutlinePlus className="h-4 w-4" />
-                  添加实例规则
+                  {i18n.t("options.filters.addPreset")}
                 </Button>
                 <Button
                   type="button"
@@ -180,7 +181,7 @@ export function FiltersPage() {
                     setCreatingFilter(true)
                   }}>
                   <HiOutlinePlus className="h-4 w-4" />
-                  开始配置
+                  {i18n.t("options.filters.startConfig")}
                 </Button>
               </div>
             </div>
@@ -216,15 +217,15 @@ export function FiltersPage() {
         }}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>删除筛选器</AlertDialogTitle>
+            <AlertDialogTitle>{i18n.t("options.filters.deleteTitle")}</AlertDialogTitle>
             <AlertDialogDescription>
               {pendingDeleteFilter
-                ? `确定删除筛选器“${pendingDeleteFilter.name}”吗？`
-                : "确定删除这条筛选器吗？"}
+                ? i18n.t("options.filters.deleteDescriptionNamed", [pendingDeleteFilter.name])
+                : i18n.t("options.filters.deleteDescription")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>取消</AlertDialogCancel>
+            <AlertDialogCancel>{i18n.t("common.cancel")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={(event) => {
                 event.preventDefault()
@@ -235,7 +236,7 @@ export function FiltersPage() {
                 handleDeleteFilter(pendingDeleteIndex)
                 setPendingDeleteIndex(null)
               }}>
-              删除
+              {i18n.t("common.delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

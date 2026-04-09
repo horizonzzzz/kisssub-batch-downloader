@@ -1,3 +1,4 @@
+import { i18n } from "../../../lib/i18n"
 import { z } from "zod"
 
 import { DEFAULT_SETTINGS, sanitizeSettings } from "../../../lib/settings"
@@ -47,14 +48,14 @@ const sourceConditionOperatorSchema = z.literal(
 )
 
 const textConditionSchema = z.object({
-  id: z.string().trim().min(1, "条件 ID 不能为空"),
+  id: z.string().trim().min(1, i18n.t("options.validation.conditionIdRequired")),
   field: textConditionFieldSchema,
   operator: textConditionOperatorSchema,
-  value: z.string().trim().min(1, "请输入条件值")
+  value: z.string().trim().min(1, i18n.t("options.validation.conditionValueRequired"))
 })
 
 const sourceConditionSchema = z.object({
-  id: z.string().trim().min(1, "条件 ID 不能为空"),
+  id: z.string().trim().min(1, i18n.t("options.validation.conditionIdRequired")),
   field: z.literal("source"),
   operator: sourceConditionOperatorSchema,
   value: sourceIdSchema
@@ -68,10 +69,10 @@ const filterConditionSchema = z.union([
 const filterAnyConditionSchema = textConditionSchema
 
 const filterSchema = z.object({
-  id: z.string().trim().min(1, "筛选器 ID 不能为空"),
-  name: z.string().trim().min(1, "请输入筛选器名称"),
+  id: z.string().trim().min(1, i18n.t("options.validation.filterIdRequired")),
+  name: z.string().trim().min(1, i18n.t("options.validation.filterNameRequired")),
   enabled: z.boolean(),
-  must: z.array(filterConditionSchema).min(1, "至少填写一个必须满足条件"),
+  must: z.array(filterConditionSchema).min(1, i18n.t("options.validation.filterMustConditionRequired")),
   any: z.array(filterAnyConditionSchema)
 })
 
@@ -89,10 +90,10 @@ export const settingsFormSchema = z.object({
       password: z.string()
     })
   }),
-  concurrency: z.coerce.number().int().min(1, "最小值为 1").max(5, "最大值为 5"),
-  injectTimeoutMs: z.coerce.number().int().min(3000, "最小值为 3000").max(60000, "最大值为 60000"),
-  domSettleMs: z.coerce.number().int().min(200, "最小值为 200").max(10000, "最大值为 10000"),
-  retryCount: z.coerce.number().int().min(0, "最小值为 0").max(5, "最大值为 5"),
+  concurrency: z.coerce.number().int().min(1, i18n.t("options.validation.minValue", ["1"])).max(5, i18n.t("options.validation.maxValue", ["5"])),
+  injectTimeoutMs: z.coerce.number().int().min(3000, i18n.t("options.validation.minValue", ["3000"])).max(60000, i18n.t("options.validation.maxValue", ["60000"])),
+  domSettleMs: z.coerce.number().int().min(200, i18n.t("options.validation.minValue", ["200"])).max(10000, i18n.t("options.validation.maxValue", ["10000"])),
+  retryCount: z.coerce.number().int().min(0, i18n.t("options.validation.minValue", ["0"])).max(5, i18n.t("options.validation.maxValue", ["5"])),
   remoteScriptUrl: z.string().trim(),
   remoteScriptRevision: z.string().trim(),
   lastSavePath: z.string().trim(),
@@ -113,7 +114,7 @@ export const settingsFormSchema = z.object({
   if (!values.downloaders.qbittorrent.baseUrl && values.currentDownloaderId === "qbittorrent") {
     context.addIssue({
       code: z.ZodIssueCode.custom,
-      message: "请输入 qBittorrent WebUI 地址",
+      message: i18n.t("options.validation.qbBaseUrlRequired"),
       path: ["downloaders", "qbittorrent", "baseUrl"]
     })
   }
@@ -121,7 +122,7 @@ export const settingsFormSchema = z.object({
   if (!values.downloaders.transmission.baseUrl && values.currentDownloaderId === "transmission") {
     context.addIssue({
       code: z.ZodIssueCode.custom,
-      message: "请输入 Transmission RPC 地址",
+      message: i18n.t("options.validation.transmissionBaseUrlRequired"),
       path: ["downloaders", "transmission", "baseUrl"]
     })
   }

@@ -3,7 +3,7 @@ export type BatchPanelViewState = {
   disablePathActions: boolean
   disableClear: boolean
   disableDownload: boolean
-  downloadLabel: string
+  downloadState: "idle" | "running"
 }
 
 type BatchPanelViewStateInput = {
@@ -22,6 +22,6 @@ export function getBatchPanelViewState({
     disablePathActions: running,
     disableClear: running || selectedCount === 0,
     disableDownload: running || selectedCount === 0,
-    downloadLabel: running ? "发送中..." : "批量下载"
+    downloadState: running ? "running" : "idle"
   }
 }

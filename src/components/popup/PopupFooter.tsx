@@ -1,3 +1,5 @@
+import { i18n } from "../../lib/i18n"
+
 type PopupFooterProps = {
   version: string
   helpUrl: string
@@ -14,9 +16,11 @@ export function PopupFooter({ version, helpUrl }: PopupFooterProps) {
           target="_blank"
           className="hover:text-zinc-600 hover:underline transition-colors"
         >
-          帮助文档
+          {i18n.t("popup.footer.help")}
         </a>
       </p>
     </footer>
   )
 }
+
+

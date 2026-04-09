@@ -33,6 +33,26 @@ function renderBatchPanel(overrides: Record<string, unknown> = {}) {
 }
 
 describe("BatchPanel", () => {
+  it("renders English panel controls when the browser locale is English", () => {
+    ;(globalThis as typeof globalThis & { __animeBtTestLocale?: string }).__animeBtTestLocale = "en"
+
+    renderBatchPanel({
+      statusText: "Ready. Select items on the page first.",
+      savePathHint: "Leave blank to use the downloader default directory.",
+      filterStatus: {
+        summaryText: "Filters: disabled",
+        emptyStateText: "No effective filters are loaded for this site. Everything will be kept by default.",
+        filters: []
+      }
+    })
+
+    expect(screen.getByRole("button", { name: "Batch download" })).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Select all on page" })).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Clear selection" })).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Advanced options" })).toBeInTheDocument()
+    expect(screen.queryByText("批量下载")).not.toBeInTheDocument()
+  })
+
   it("shows filter status empty state by default", () => {
     renderBatchPanel()
 

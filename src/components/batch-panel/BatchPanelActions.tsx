@@ -1,3 +1,5 @@
+import { i18n } from "../../lib/i18n"
+
 import { cn } from "../../lib/shared/cn"
 import { ContentButton } from "../content-ui/button"
 
@@ -32,7 +34,7 @@ export function BatchPanelActions({
           className="max-[680px]:flex-1"
           onClick={onSelectAll}
           disabled={disableSelectAll}>
-          全选本页
+          {i18n.t("batch.actions.selectAll")}
         </ContentButton>
         <ContentButton
           type="button"
@@ -41,7 +43,7 @@ export function BatchPanelActions({
           className="max-[680px]:flex-1"
           onClick={onClear}
           disabled={disableClear}>
-          清空选择
+          {i18n.t("batch.actions.clearSelection")}
         </ContentButton>
       </div>
       <ContentButton
@@ -60,3 +62,5 @@ export function BatchPanelActions({
     </div>
   )
 }
+
+

@@ -75,7 +75,7 @@ export function buildHistoryRecord(
   job: BatchJob,
   sourceId: SourceId
 ): TaskHistoryRecord {
-  const siteName = SITE_CONFIG_META[sourceId]?.displayName ?? sourceId
+  const siteName = SITE_CONFIG_META[sourceId]?.storageDisplayName ?? sourceId
   const dateStr = new Date().toISOString().split("T")[0]
   const recordId = createHistoryRecordId()
   const items = buildHistoryItems(job.results, recordId, sourceId)

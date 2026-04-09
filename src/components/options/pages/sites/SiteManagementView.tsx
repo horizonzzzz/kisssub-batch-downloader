@@ -1,3 +1,4 @@
+import { i18n } from "../../../../lib/i18n"
 import { useEffect, useMemo, useRef, useState } from "react"
 
 import { useFormContext, useWatch } from "react-hook-form"
@@ -8,6 +9,7 @@ import dongmanhuayuanSiteIcon from "../../../../assets/site-icon-dongmanhuayuan.
 import kisssubSiteIcon from "../../../../assets/site-icon-kisssub.png"
 import { resolveSourceDeliveryMode } from "../../../../lib/sources/delivery"
 import { SOURCE_IDS } from "../../../../lib/sources/catalog"
+import { getLocalizedSiteConfigMeta } from "../../../../lib/sources/site-meta"
 import { normalizeEnabledSources, resolveSourceEnabled } from "../../../../lib/settings"
 import type { SourceId } from "../../../../lib/shared/types"
 import type {
@@ -96,11 +98,12 @@ export function SiteManagementView() {
   return (
     <div className="space-y-4">
       <div className="rounded-lg border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm font-medium text-zinc-700">
-        当前已启用 {enabledCount} / {SOURCE_IDS.length} 个站点
+        {i18n.t("options.sites.enabledSummary", [enabledCount, SOURCE_IDS.length])}
       </div>
 
       <div className="grid gap-4">
         {sortedSites.map((site) => {
+          const localizedSite = getLocalizedSiteConfigMeta(site.id)
           const isEnabled = resolveSourceEnabled(site.id, { enabledSources })
           const isExpanded = isEnabled && expandedSites.includes(site.id)
           const currentMode = resolveSourceDeliveryMode(site.id, { sourceDeliveryModes })
@@ -108,7 +111,7 @@ export function SiteManagementView() {
           return (
             <SiteCard
               key={site.id}
-              site={site}
+              site={localizedSite}
               siteIcon={SITE_ICONS[site.id]}
               isEnabled={isEnabled}
               isExpanded={isExpanded}
@@ -122,3 +125,5 @@ export function SiteManagementView() {
     </div>
   )
 }
+
+

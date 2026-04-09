@@ -1,6 +1,7 @@
 import packageJson from "../../../package.json"
 import { getDownloaderMeta } from "../downloader"
 import { getSourceAdapterForPage } from "../sources"
+import { getLocalizedSiteConfigMeta } from "../sources/site-meta"
 import { getSettings, resolveSourceEnabled, saveSettings } from "../settings"
 import {
   FILTERS_UPDATED_EVENT,
@@ -13,7 +14,6 @@ import { DEFAULT_OPTIONS_ROUTE, isOptionsRoutePath, type OptionsRoutePath } from
 import {
   POPUP_HELP_URL,
   POPUP_SUPPORTED_SITE_IDS,
-  POPUP_SUPPORTED_SITE_META,
   type PopupDownloaderConnectionStatus,
   type PopupStateViewModel
 } from "../shared/popup"
@@ -145,7 +145,7 @@ export async function buildPopupState(
       batchRunning: activeTabBatchRunning
     },
     supportedSites: POPUP_SUPPORTED_SITE_IDS.map((sourceId) => {
-      const siteMeta = POPUP_SUPPORTED_SITE_META[sourceId]
+      const siteMeta = getLocalizedSiteConfigMeta(sourceId)
       return {
         id: sourceId,
         label: siteMeta.navLabel,

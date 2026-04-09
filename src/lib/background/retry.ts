@@ -1,3 +1,4 @@
+import { i18n } from "../i18n"
 import type { DownloaderAdapter, DownloaderTorrentFile } from "../downloader"
 import type { TaskHistoryItem, TaskHistoryRecord } from "../history/types"
 import type { Settings } from "../shared/types"
@@ -61,7 +62,7 @@ function updateItemAfterFailure(item: TaskHistoryItem, message: string): TaskHis
 }
 
 function getUrlSubmissionFailure(resultMessage?: string): string {
-  return resultMessage || "下载器未返回提交结果"
+  return resultMessage || i18n.t("options.history.retryErrors.noSubmissionResult")
 }
 
 function recalculateStats(items: TaskHistoryItem[]): TaskHistoryRecord["stats"] {
@@ -78,7 +79,7 @@ export async function retryFailedItems(
 ): Promise<RetryResult> {
   const record = await deps.getHistoryRecord(request.recordId)
   if (!record) {
-    throw new Error("历史记录不存在")
+    throw new Error(i18n.t("options.history.retryErrors.recordNotFound"))
   }
 
   const targetItems = request.itemIds
@@ -102,7 +103,7 @@ export async function retryFailedItems(
   for (const item of targetItems) {
     const url = getSubmitUrl(item)
     if (!url) {
-      itemsWithoutUrls.push(updateItemAfterFailure(item, "无可用的 magnet 或 torrent 链接"))
+      itemsWithoutUrls.push(updateItemAfterFailure(item, i18n.t("options.history.retryErrors.noUsableUrl")))
       continue
     }
 
@@ -131,7 +132,7 @@ export async function retryFailedItems(
     try {
       await downloader.authenticate(settings)
     } catch (error) {
-      throw new Error(`下载器登录失败: ${error instanceof Error ? error.message : String(error)}`)
+      throw new Error(i18n.t("options.history.retryErrors.authFailed", [error instanceof Error ? error.message : String(error)]))
     }
   }
 
@@ -149,13 +150,13 @@ export async function retryFailedItems(
           continue
         }
 
-        const message = `下载器提交失败: ${getUrlSubmissionFailure(submission?.error)}`
+        const message = i18n.t("options.history.retryErrors.submitFailed", [getUrlSubmissionFailure(submission?.error)])
         if (index !== -1) {
           updatedItems[index] = updateItemAfterFailure(item, message)
         }
         failedCount++
       } catch (error) {
-        const message = `下载器提交失败: ${error instanceof Error ? error.message : String(error)}`
+        const message = i18n.t("options.history.retryErrors.submitFailed", [error instanceof Error ? error.message : String(error)])
         const index = updatedItems.findIndex(i => i.id === item.id)
         if (index !== -1) {
           updatedItems[index] = updateItemAfterFailure(item, message)
@@ -176,7 +177,7 @@ export async function retryFailedItems(
         }
         successCount++
       } catch (error) {
-        const message = `下载器提交失败: ${error instanceof Error ? error.message : String(error)}`
+        const message = i18n.t("options.history.retryErrors.submitFailed", [error instanceof Error ? error.message : String(error)])
         const index = updatedItems.findIndex(i => i.id === item.id)
         if (index !== -1) {
           updatedItems[index] = updateItemAfterFailure(item, message)

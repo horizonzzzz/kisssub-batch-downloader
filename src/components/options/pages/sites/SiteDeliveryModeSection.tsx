@@ -1,3 +1,4 @@
+import { i18n } from "../../../../lib/i18n"
 import type { JSX } from "react"
 
 import { useFormContext } from "react-hook-form"
@@ -6,7 +7,7 @@ import {
   getDeliveryModeLabel,
   getSupportedDeliveryModes
 } from "../../../../lib/sources/delivery"
-import type { SiteConfigMeta } from "../../../../lib/sources/site-meta"
+import type { LocalizedSiteConfigMeta } from "../../../../lib/sources/site-meta"
 import type { DeliveryMode } from "../../../../lib/shared/types"
 import { cn } from "../../../../lib/shared/cn"
 import { Label, RadioGroup, RadioGroupItem } from "../../../ui"
@@ -17,7 +18,7 @@ import type {
 } from "../../schema/settings-form"
 
 type SiteDeliveryModeSectionProps = {
-  site: SiteConfigMeta
+  site: LocalizedSiteConfigMeta
   currentMode: DeliveryMode
 }
 
@@ -36,8 +37,8 @@ export function SiteDeliveryModeSection({
     return (
       <section className="grid gap-3">
         <SectionHeading
-          title="下载策略"
-          description="该站点当前使用固定下载方式，不提供额外切换项。"
+          title={i18n.t("options.sites.delivery.title")}
+          description={i18n.t("options.sites.delivery.lockedDescription")}
         />
         <div className="rounded-lg border border-zinc-200 bg-zinc-50 px-4 py-3">
           <span className="text-sm font-medium text-zinc-700">
@@ -51,8 +52,8 @@ export function SiteDeliveryModeSection({
   return (
     <section className="grid gap-4">
       <SectionHeading
-        title="下载策略"
-        description={`当前策略：${getDeliveryModeLabel(currentMode)}`}
+        title={i18n.t("options.sites.delivery.title")}
+        description={i18n.t("options.sites.delivery.currentDescription", [getDeliveryModeLabel(currentMode)])}
       />
       <RadioGroup
         value={currentMode}
@@ -86,3 +87,5 @@ export function SiteDeliveryModeSection({
     </section>
   )
 }
+
+

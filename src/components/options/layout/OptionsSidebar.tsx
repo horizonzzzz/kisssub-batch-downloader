@@ -1,3 +1,4 @@
+import { i18n } from "../../../lib/i18n"
 import { FaGithub } from "react-icons/fa6"
 import { HiOutlineGlobeAlt } from "react-icons/hi2"
 
@@ -69,7 +70,9 @@ export function OptionsSidebar({
         </div>
         <div>
           <div className="font-semibold tracking-tight text-zinc-100">{BRAND_NAME}</div>
-          <div className="mt-0.5 text-[11px] uppercase tracking-[0.18em] text-zinc-500">Extension Settings</div>
+          <div className="mt-0.5 text-[11px] uppercase tracking-[0.18em] text-zinc-500">
+            {i18n.t("options.sidebar.subtitle")}
+          </div>
         </div>
       </div>
 
@@ -90,20 +93,24 @@ export function OptionsSidebar({
         <div className="grid gap-2">
           <div className="inline-flex items-center gap-2 text-zinc-500">
             <HiOutlineGlobeAlt className="h-4 w-4" aria-hidden="true" />
-            <span>{SOURCE_IDS.length} 个支持源站</span>
+            <span>{i18n.t("options.sidebar.supportedSources", [SOURCE_IDS.length])}</span>
           </div>
-          <strong className="text-sm font-medium text-zinc-100">当前下载器：{currentDownloaderName}</strong>
+          <strong className="text-sm font-medium text-zinc-100">
+            {i18n.t("options.sidebar.currentDownloader", [currentDownloaderName])}
+          </strong>
         </div>
         <a
           className="inline-flex items-center justify-center gap-2 rounded-md border border-zinc-800 bg-zinc-800/80 px-4 py-2.5 font-medium text-zinc-200 transition-colors hover:bg-zinc-800 hover:text-white"
           href={REPO_URL}
           target="_blank"
           rel="noopener noreferrer"
-          aria-label="查看 GitHub 仓库">
+          aria-label={i18n.t("options.sidebar.viewGithubRepo")}>
           <FaGithub className="h-4 w-4" aria-hidden="true" />
-          <span>查看 GitHub 仓库</span>
+          <span>{i18n.t("options.sidebar.viewGithubRepo")}</span>
         </a>
       </div>
     </aside>
   )
 }
+
+

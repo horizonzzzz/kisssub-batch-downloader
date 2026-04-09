@@ -1,5 +1,6 @@
+import { i18n } from "../../../../lib/i18n"
 import type { TaskHistoryRecord } from "../../../../lib/history/types"
-import { SITE_CONFIG_META } from "../../../../lib/sources/site-meta"
+import { getLocalizedSiteConfigMeta } from "../../../../lib/sources/site-meta"
 import { cn } from "../../../../lib/shared/cn"
 import { Button } from "../../../ui/button"
 import { HiOutlineClock, HiOutlineGlobeAlt } from "react-icons/hi2"
@@ -53,8 +54,8 @@ export function HistoryListView({ records, onViewDetail, onRefresh }: HistoryLis
         </div>
         <div className="flex flex-col items-center justify-center py-12 text-zinc-500">
           <HiOutlineClock className="w-10 h-10 mb-3 opacity-50" />
-          <p className="text-sm">暂无下载历史记录</p>
-          <p className="text-xs mt-1 text-zinc-400">开始批量下载后，历史记录将在此显示</p>
+          <p className="text-sm">{i18n.t("options.history.empty.title")}</p>
+          <p className="text-xs mt-1 text-zinc-400">{i18n.t("options.history.empty.description")}</p>
         </div>
       </div>
     )
@@ -66,7 +67,7 @@ export function HistoryListView({ records, onViewDetail, onRefresh }: HistoryLis
         <ClearHistoryButton onCleared={onRefresh} disabled={records.length === 0} />
       </div>
       {records.map((record, index) => {
-        const siteMeta = SITE_CONFIG_META[record.sourceId]
+        const siteMeta = getLocalizedSiteConfigMeta(record.sourceId)
         const isLatest = index === 0
 
         return (
@@ -86,7 +87,7 @@ export function HistoryListView({ records, onViewDetail, onRefresh }: HistoryLis
               </span>
               {isLatest && (
                 <span className="inline-flex items-center rounded px-1.5 py-0.5 text-xs font-medium bg-blue-100 text-blue-700">
-                  最新
+                  {i18n.t("options.history.latest")}
                 </span>
               )}
             </div>
@@ -103,9 +104,9 @@ export function HistoryListView({ records, onViewDetail, onRefresh }: HistoryLis
 
             <div className="col-span-2 flex items-center gap-2 text-sm">
               <span className="font-medium text-zinc-900">{formatStats(record.stats)}</span>
-              <span className="text-zinc-500">成功</span>
+              <span className="text-zinc-500">{i18n.t("options.history.stats.success")}</span>
               {record.stats.failed > 0 && (
-                <span className="text-red-600">{record.stats.failed} 失败</span>
+                <span className="text-red-600">{i18n.t("options.history.stats.failed", [record.stats.failed])}</span>
               )}
             </div>
 
@@ -122,7 +123,7 @@ export function HistoryListView({ records, onViewDetail, onRefresh }: HistoryLis
                  onClick={() => onViewDetail(record.id)}
                  className="text-xs"
                >
-                 详情
+                 {i18n.t("options.history.viewDetail")}
                </Button>
              </div>
           </div>

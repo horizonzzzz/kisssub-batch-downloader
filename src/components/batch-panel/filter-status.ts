@@ -1,3 +1,4 @@
+import { i18n } from "../../lib/i18n"
 import {
   deriveEffectiveFilterSummary,
   type EffectiveFilterSummary,
@@ -9,8 +10,8 @@ import type { BatchPanelFilterStatus } from "./types"
 
 function buildFilterSummaryText(summary: EffectiveFilterSummary) {
   return summary.effectiveCount > 0
-    ? `筛选规则：已启用 ${summary.effectiveCount} 条`
-    : "筛选规则：未启用"
+    ? i18n.t("batch.filter.summary.enabled", [summary.effectiveCount])
+    : i18n.t("batch.filter.summary.disabled")
 }
 
 function buildEmptyStateText(summary: EffectiveFilterSummary) {
@@ -19,8 +20,8 @@ function buildEmptyStateText(summary: EffectiveFilterSummary) {
   }
 
   return summary.emptyStateReason === "no-enabled-filters"
-    ? "当前站点未启用筛选规则，默认全部保留。"
-    : "当前站点未启用筛选规则，默认全部保留。"
+    ? i18n.t("batch.filter.emptyState.noEnabledFilters")
+    : i18n.t("batch.filter.emptyState.noEffectiveFilters")
 }
 
 function createFilterStatusItem(
@@ -34,7 +35,7 @@ function createFilterStatusItem(
     name: filter.name,
     summary: matchedFilter
       ? summarizeConditionList([...matchedFilter.must, ...matchedFilter.any])
-      : "未设置。"
+      : i18n.t("batch.filter.unsetSummary")
   }
 }
 

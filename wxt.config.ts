@@ -4,7 +4,7 @@ import { CONTENT_SCRIPT_MATCH_PATTERNS } from "./src/lib/sources/matching"
 
 export default defineConfig({
   browser: "chrome",
-  modules: ["@wxt-dev/module-react"],
+  modules: ["@wxt-dev/module-react", "@wxt-dev/i18n/module"],
   srcDir: "src",
   outDir: "build",
   outDirTemplate: "chrome-mv3-prod",
@@ -19,9 +19,9 @@ export default defineConfig({
     }
   }),
   manifest: {
-    name: "Anime BT Batch",
-    description:
-      "Select posts from supported anime BT source pages, resolve real download links, and send them to qBittorrent in one batch.",
+    name: "__MSG_extensionName__",
+    description: "__MSG_extensionDescription__",
+    default_locale: "zh_CN",
     minimum_chrome_version: "114",
     permissions: ["storage", "tabs", "scripting"],
     host_permissions: CONTENT_SCRIPT_MATCH_PATTERNS,
@@ -33,7 +33,7 @@ export default defineConfig({
       128: "/icon.png"
     },
     action: {
-      default_title: "Anime BT Batch",
+      default_title: "__MSG_actionDefaultTitle__",
       default_popup: "popup.html",
       default_icon: {
         16: "/icon.png",

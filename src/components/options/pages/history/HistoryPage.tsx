@@ -1,3 +1,4 @@
+import { i18n } from "../../../../lib/i18n"
 import { useEffect, useState } from "react"
 import type { TaskHistoryRecord } from "../../../../lib/history/types"
 import { sendRuntimeRequest } from "../../../../lib/shared/messages"
@@ -34,7 +35,7 @@ export function HistoryPage() {
         setCurrentDownloaderId(settingsResponse.settings.currentDownloaderId)
       }
     } catch {
-      setError("加载历史记录失败")
+      setError(i18n.t("options.history.loadFailed"))
     } finally {
       setLoading(false)
     }
@@ -47,7 +48,7 @@ export function HistoryPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12 text-zinc-500">
-        加载中...
+        {i18n.t("options.history.loading")}
       </div>
     )
   }

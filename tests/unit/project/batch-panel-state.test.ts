@@ -15,7 +15,7 @@ describe("getBatchPanelViewState", () => {
       disablePathActions: false,
       disableClear: true,
       disableDownload: true,
-      downloadLabel: "批量下载"
+      downloadState: "idle"
     })
   })
 
@@ -31,7 +31,7 @@ describe("getBatchPanelViewState", () => {
       disablePathActions: true,
       disableClear: true,
       disableDownload: true,
-      downloadLabel: "发送中..."
+      downloadState: "running"
     })
   })
 })

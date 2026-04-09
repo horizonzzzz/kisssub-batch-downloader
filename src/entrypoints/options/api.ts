@@ -1,3 +1,4 @@
+import { i18n } from "../../lib/i18n"
 import type { OptionsApi } from "../../components/options/OptionsPage"
 import { sendRuntimeRequest } from "../../lib/shared/messages"
 
@@ -5,7 +6,7 @@ export const optionsApi: OptionsApi = {
   async loadSettings() {
     const response = await sendRuntimeRequest({ type: "GET_SETTINGS" })
     if (!response.ok) {
-      throw new Error(response.error || "无法读取设置。")
+      throw new Error(response.error || i18n.t("options.status.loadFailed"))
     }
 
     return response.settings
@@ -17,7 +18,7 @@ export const optionsApi: OptionsApi = {
     })
 
     if (!response.ok) {
-      throw new Error(response.error || "保存失败。")
+      throw new Error(response.error || i18n.t("options.status.saveFailed"))
     }
 
     return response.settings
@@ -29,7 +30,7 @@ export const optionsApi: OptionsApi = {
     })
 
     if (!response.ok) {
-      throw new Error(response.error || "连接测试失败。")
+      throw new Error(response.error || i18n.t("options.status.connectionTestFailed"))
     }
 
     return response.result

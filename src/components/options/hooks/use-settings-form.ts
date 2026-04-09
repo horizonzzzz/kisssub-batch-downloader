@@ -1,3 +1,4 @@
+import { i18n } from "../../../lib/i18n"
 import { useEffect, useState } from "react"
 
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -17,7 +18,7 @@ export type StatusTone = "info" | "success" | "error"
 export type ConnectionState = "idle" | "success" | "error"
 
 function buildValidationMessage() {
-  return "请先修正表单中的错误。"
+  return i18n.t("options.status.validationError")
 }
 
 export function useSettingsForm(api: OptionsApi) {
@@ -28,7 +29,7 @@ export function useSettingsForm(api: OptionsApi) {
   })
   const [status, setStatus] = useState<{ tone: StatusTone; message: string }>({
     tone: "info",
-    message: "正在读取已保存设置。"
+    message: i18n.t("options.status.loadingSettings")
   })
   const [connectionState, setConnectionState] = useState<ConnectionState>("idle")
   const [connectionMessage, setConnectionMessage] = useState("")
@@ -52,7 +53,7 @@ export function useSettingsForm(api: OptionsApi) {
         form.reset(createSettingsFormDefaults(loaded))
         setStatus({
           tone: "success",
-          message: "设置已加载。"
+          message: i18n.t("options.status.settingsLoaded")
         })
       })
       .catch((error: unknown) => {
@@ -62,7 +63,7 @@ export function useSettingsForm(api: OptionsApi) {
 
         setStatus({
           tone: "error",
-          message: error instanceof Error ? error.message : "无法读取设置。"
+          message: error instanceof Error ? error.message : i18n.t("options.status.loadFailed")
         })
       })
 
@@ -81,7 +82,7 @@ export function useSettingsForm(api: OptionsApi) {
       setSaving(true)
       setStatus({
         tone: "info",
-        message: "正在保存设置。"
+        message: i18n.t("options.status.savingSettings")
       })
 
       try {
@@ -89,12 +90,12 @@ export function useSettingsForm(api: OptionsApi) {
         form.reset(createSettingsFormDefaults(saved))
         setStatus({
           tone: "success",
-          message: "设置已保存。"
+          message: i18n.t("options.status.settingsSaved")
         })
       } catch (error: unknown) {
         setStatus({
           tone: "error",
-          message: error instanceof Error ? error.message : "保存失败。"
+          message: error instanceof Error ? error.message : i18n.t("options.status.saveFailed")
         })
       } finally {
         setSaving(false)
@@ -126,7 +127,7 @@ export function useSettingsForm(api: OptionsApi) {
     setConnectionMessage("")
     setStatus({
       tone: "info",
-      message: "正在测试连接。"
+      message: i18n.t("options.status.testingConnection")
     })
 
     try {
@@ -134,13 +135,19 @@ export function useSettingsForm(api: OptionsApi) {
         toSettingsPayload(form.getValues())
       )) as TestDownloaderConnectionResult
       setConnectionState("success")
-      setConnectionMessage(`已连接到 ${result.displayName}（${result.baseUrl || "未返回地址"}）。`)
+      setConnectionMessage(
+        i18n.t("options.status.connectedTo", [result.displayName, result.baseUrl || i18n.t("options.status.noAddressReturned")])
+      )
       setStatus({
         tone: "success",
-        message: `连接成功。${result.displayName} ${result.baseUrl || ""} 版本 ${result.version || "unknown"}`
+        message: i18n.t("options.status.connectionSucceeded", [
+          result.displayName,
+          result.baseUrl || "",
+          result.version || "unknown"
+        ])
       })
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : "连接测试失败。"
+      const message = error instanceof Error ? error.message : i18n.t("options.status.connectionTestFailed")
       setConnectionState("error")
       setConnectionMessage(message)
       setStatus({

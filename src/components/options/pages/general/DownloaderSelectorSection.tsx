@@ -1,3 +1,4 @@
+import { i18n } from "../../../../lib/i18n"
 import type { JSX } from "react"
 
 import { useFormContext } from "react-hook-form"
@@ -14,9 +15,9 @@ export function DownloaderSelectorSection(): JSX.Element {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>下载器选择</CardTitle>
+        <CardTitle>{i18n.t("options.general.downloaderSelector.title")}</CardTitle>
         <CardDescription>
-          先选择当前使用的下载器，再填写对应连接信息。
+          {i18n.t("options.general.downloaderSelector.description")}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -40,7 +41,7 @@ export function DownloaderSelectorSection(): JSX.Element {
             <div className="space-y-1">
               <div className="text-sm font-medium text-zinc-950">qBittorrent</div>
               <p className="text-sm leading-relaxed text-zinc-500">
-                通过 qBittorrent WebUI 测试连接并提交 magnet、种子链接或种子文件。
+                {i18n.t("options.general.downloaderSelector.qbDescription")}
               </p>
             </div>
           </label>
@@ -50,7 +51,7 @@ export function DownloaderSelectorSection(): JSX.Element {
             <div className="space-y-1">
               <div className="text-sm font-medium text-zinc-950">Transmission</div>
               <p className="text-sm leading-relaxed text-zinc-500">
-                通过 Transmission RPC 测试连接并提交 magnet、种子链接或种子文件。
+                {i18n.t("options.general.downloaderSelector.transmissionDescription")}
               </p>
             </div>
           </label>
@@ -59,3 +60,5 @@ export function DownloaderSelectorSection(): JSX.Element {
     </Card>
   )
 }
+
+

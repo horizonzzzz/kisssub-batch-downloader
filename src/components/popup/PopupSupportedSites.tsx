@@ -1,6 +1,8 @@
+import { i18n } from "../../lib/i18n"
 import { HiOutlineArrowTopRightOnSquare } from "react-icons/hi2"
 
-import { POPUP_SUPPORTED_SITE_IDS, POPUP_SUPPORTED_SITE_META, type PopupStateViewModel } from "../../lib/shared/popup"
+import { POPUP_SUPPORTED_SITE_IDS, type PopupStateViewModel } from "../../lib/shared/popup"
+import { getLocalizedSiteConfigMeta } from "../../lib/sources/site-meta"
 
 type PopupSupportedSitesProps = {
   supportedSites: PopupStateViewModel["supportedSites"]
@@ -19,12 +21,16 @@ export function PopupSupportedSites({ supportedSites }: PopupSupportedSitesProps
   return (
     <div>
       <h3 className="mb-3 text-[11px] font-bold uppercase tracking-wider text-zinc-400">
-        支持的资源站
+        {i18n.t("popup.supportedSites.title")}
       </h3>
       <div className="grid gap-2.5">
         {POPUP_SUPPORTED_SITE_IDS.map((sourceId) => {
-          const siteMeta = POPUP_SUPPORTED_SITE_META[sourceId]
+          const siteMeta = getLocalizedSiteConfigMeta(sourceId)
           const siteState = supportedSiteLookup.get(sourceId)
+
+          if (!siteState) {
+            return null
+          }
 
           return (
             <a
@@ -51,3 +57,5 @@ export function PopupSupportedSites({ supportedSites }: PopupSupportedSitesProps
     </div>
   )
 }
+
+

@@ -7,6 +7,10 @@ import { PopupPage } from "../../src/components/popup/PopupPage"
 import type { PopupStateViewModel } from "../../src/lib/shared/popup"
 
 type PopupPageProps = ComponentProps<typeof PopupPage>
+type RuntimeI18n = {
+  getMessage: (messageName: string, substitutions?: string | string[]) => string
+  getUILanguage?: () => string
+}
 
 function createState(overrides: Partial<PopupStateViewModel> = {}): PopupStateViewModel {
   return {
@@ -74,6 +78,22 @@ function renderPopup(overrides: Partial<PopupPageProps> = {}) {
     onOpenOptionsRoute,
     onToggleCurrentSiteEnabled
   }
+}
+
+function installI18nStub(messages: Record<string, string>, locale = "en") {
+  const i18n: RuntimeI18n = {
+    getMessage: (messageName) => messages[messageName] ?? messageName,
+    getUILanguage: () => locale
+  }
+
+  Object.defineProperty(globalThis.chrome, "i18n", {
+    configurable: true,
+    value: i18n
+  })
+  Object.defineProperty((globalThis as typeof globalThis & { browser: object }).browser, "i18n", {
+    configurable: true,
+    value: i18n
+  })
 }
 
 describe("PopupPage", () => {
@@ -206,6 +226,22 @@ describe("PopupPage", () => {
     expect(screen.getByText("正在检测下载器连接")).toBeInTheDocument()
     expect(screen.getByRole("switch", { name: "当前站点启用开关" })).toBeInTheDocument()
     expect(screen.queryByText("插件已就绪")).not.toBeInTheDocument()
+  })
+
+  it("renders English popup copy when the browser locale is English", () => {
+    installI18nStub({
+      popup_header_subtitle: "Send to current downloader",
+      popup_quickActions_history: "History",
+      popup_quickActions_filters: "Filters",
+      popup_status_unsupported_title: "This page is not supported for batch download"
+    })
+
+    renderPopup()
+
+    expect(screen.getByText("Send to current downloader")).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "History" })).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Filters" })).toBeInTheDocument()
+    expect(screen.getByText("This page is not supported for batch download")).toBeInTheDocument()
   })
 
   it("renders a failed-connection card with a configure CTA", () => {

@@ -1,3 +1,4 @@
+import { i18n } from "../../lib/i18n"
 import { useEffect, useState } from "react"
 
 import { sendRuntimeRequest } from "../../lib/shared/messages"
@@ -10,8 +11,8 @@ import type { Settings, SourceId } from "../../lib/shared/types"
 import { Alert, Button } from "../ui"
 import { PopupPage } from "./PopupPage"
 
-const DEFAULT_LOAD_ERROR = "加载弹窗状态失败，请重试。"
-const DEFAULT_ACTION_ERROR = "操作失败，请稍后重试。"
+const DEFAULT_LOAD_ERROR = i18n.t("popup.container.loadError")
+const DEFAULT_ACTION_ERROR = i18n.t("popup.container.actionError")
 
 async function requestPopupState(): Promise<PopupStateViewModel> {
   const response = await sendRuntimeRequest({ type: "GET_POPUP_STATE" })
@@ -202,7 +203,7 @@ export function PopupContainer() {
   if (loading && !state) {
     return (
       <div className="w-[360px] bg-zinc-50 p-3 text-sm text-zinc-600" role="status">
-        加载中...
+        {i18n.t("popup.container.loading")}
       </div>
     )
   }
@@ -212,7 +213,7 @@ export function PopupContainer() {
       <div className="w-[360px] space-y-3 bg-zinc-50 p-3 text-zinc-900">
         <Alert tone="error" title={loadError} />
         <Button type="button" onClick={() => void loadState(true)}>
-          重试
+          {i18n.t("common.retry")}
         </Button>
       </div>
     )

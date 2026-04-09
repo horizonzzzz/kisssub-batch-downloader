@@ -1,3 +1,4 @@
+import { i18n } from "../../../../lib/i18n"
 import { decideFilterAction } from "../../../../lib/filter-rules"
 import type {
   FilterCondition,
@@ -32,38 +33,44 @@ export type FilterWorkbenchTestResult =
   | {
       state: "result"
       accepted: boolean
-      label: "保留" | "拦截"
+      label: string
       summary: string
       subgroup: string
       matchedFilterName: string | null
     }
 
-export const SOURCE_OPTIONS: Array<{
+export function getSourceOptions(): Array<{
   value: FilterWorkbenchSourceId
   label: string
-}> = [
-  { value: "kisssub", label: "Kisssub" },
-  { value: "dongmanhuayuan", label: "Dongmanhuayuan" },
-  { value: "acgrip", label: "ACG.RIP" },
-  { value: "bangumimoe", label: "Bangumi.moe" }
-]
+}> {
+  return [
+    { value: "kisssub", label: i18n.t("options.sites.catalog.kisssub.navLabel") },
+    { value: "dongmanhuayuan", label: i18n.t("options.sites.catalog.dongmanhuayuan.navLabel") },
+    { value: "acgrip", label: i18n.t("options.sites.catalog.acgrip.navLabel") },
+    { value: "bangumimoe", label: i18n.t("options.sites.catalog.bangumimoe.navLabel") }
+  ]
+}
 
-export const MUST_CONDITION_FIELD_OPTIONS: Array<{
+export function getMustConditionFieldOptions(): Array<{
   value: FilterWorkbenchCondition["field"]
   label: string
-}> = [
-  { value: "title", label: "标题" },
-  { value: "subgroup", label: "字幕组" },
-  { value: "source", label: "站点" }
-]
+}> {
+  return [
+    { value: "title", label: i18n.t("options.filters.field.title") },
+    { value: "subgroup", label: i18n.t("options.filters.field.subgroup") },
+    { value: "source", label: i18n.t("options.filters.field.source") }
+  ]
+}
 
-export const ANY_CONDITION_FIELD_OPTIONS: Array<{
+export function getAnyConditionFieldOptions(): Array<{
   value: Extract<FilterWorkbenchCondition["field"], "title" | "subgroup">
   label: string
-}> = [
-  { value: "title", label: "标题" },
-  { value: "subgroup", label: "字幕组" }
-]
+}> {
+  return [
+    { value: "title", label: i18n.t("options.filters.field.title") },
+    { value: "subgroup", label: i18n.t("options.filters.field.subgroup") }
+  ]
+}
 
 export function createWorkbenchId(prefix: string) {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
@@ -140,15 +147,18 @@ export function createAilian1080SimplifiedChineseFilter(): FilterWorkbenchFilter
 
 export function summarizeCondition(condition: FilterWorkbenchCondition) {
   if (condition.field === "source") {
-    return `站点是 ${getSourceLabel(condition.value)}`
+    return i18n.t("options.filters.summary.sourceIs", [getSourceLabel(condition.value)])
   }
 
-  return `${getConditionFieldLabel(condition.field)}包含“${condition.value || "..."}”`
+  return i18n.t("options.filters.summary.contains", [
+    getConditionFieldLabel(condition.field),
+    condition.value || "..."
+  ])
 }
 
 export function summarizeConditionList(conditions: FilterWorkbenchCondition[]) {
   if (!conditions.length) {
-    return "未设置。"
+    return i18n.t("options.filters.summary.unset")
   }
 
   return conditions.map(summarizeCondition).join("；")
@@ -157,11 +167,11 @@ export function summarizeConditionList(conditions: FilterWorkbenchCondition[]) {
 export function getConditionFieldLabel(
   field: FilterWorkbenchCondition["field"]
 ) {
-  return MUST_CONDITION_FIELD_OPTIONS.find((item) => item.value === field)?.label ?? field
+  return getMustConditionFieldOptions().find((item) => item.value === field)?.label ?? field
 }
 
 export function getSourceLabel(source: FilterWorkbenchSourceId) {
-  return SOURCE_OPTIONS.find((item) => item.value === source)?.label ?? source
+  return getSourceOptions().find((item) => item.value === source)?.label ?? source
 }
 
 export function normalizeConditionField(
@@ -192,7 +202,7 @@ export function runWorkbenchTest(
   if (!input.title.trim()) {
     return {
       state: "error",
-      summary: "请输入资源标题后再测试。",
+      summary: i18n.t("options.filters.testBench.enterTitle"),
       subgroup: ""
     }
   }
@@ -207,10 +217,10 @@ export function runWorkbenchTest(
     return {
       state: "result",
       accepted: true,
-      label: "保留",
+      label: i18n.t("options.filters.testBench.accepted"),
       summary: decision.matchedFilter
-        ? `命中筛选器「${decision.matchedFilter.name}」，该资源会被保留。`
-        : "当前没有启用筛选器，该资源会直接保留。",
+        ? i18n.t("options.filters.testBench.matchedFilter", [decision.matchedFilter.name])
+        : i18n.t("options.filters.testBench.acceptedByDefault"),
       subgroup: decision.subgroup,
       matchedFilterName: decision.matchedFilter?.name ?? null
     }
@@ -219,8 +229,8 @@ export function runWorkbenchTest(
   return {
     state: "result",
     accepted: false,
-    label: "拦截",
-    summary: "未命中任何启用中的筛选器，该资源会被拦截。",
+    label: i18n.t("options.filters.testBench.blocked"),
+    summary: i18n.t("options.filters.testBench.blockedSummary"),
     subgroup: decision.subgroup,
     matchedFilterName: null
   }

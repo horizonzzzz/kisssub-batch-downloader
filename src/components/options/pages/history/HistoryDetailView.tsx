@@ -1,6 +1,7 @@
+import { i18n } from "../../../../lib/i18n"
 import type { FailureReason, TaskHistoryItem, TaskHistoryRecord } from "../../../../lib/history/types"
 import { getDownloaderMeta } from "../../../../lib/downloader"
-import { SITE_CONFIG_META } from "../../../../lib/sources/site-meta"
+import { getLocalizedSiteConfigMeta } from "../../../../lib/sources/site-meta"
 import { cn } from "../../../../lib/shared/cn"
 import type { DownloaderId } from "../../../../lib/shared/types"
 import { Button } from "../../../ui/button"
@@ -48,14 +49,14 @@ function StatusBadge({ status }: { status: TaskHistoryRecord["status"] }) {
     return (
       <span className="inline-flex items-center gap-1.5 rounded px-2 py-0.5 text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
         <HiOutlineCheckCircle className="w-3.5 h-3.5" />
-        已完成
+        {i18n.t("options.history.detail.completed")}
       </span>
     )
   }
   return (
     <span className="inline-flex items-center gap-1.5 rounded px-2 py-0.5 text-xs font-medium bg-red-50 text-red-700 border border-red-200">
       <HiOutlineExclamationTriangle className="w-3.5 h-3.5" />
-      部分失败
+      {i18n.t("options.history.detail.partialFailure")}
     </span>
   )
 }
@@ -104,11 +105,17 @@ function aggregateFailures(items: TaskHistoryItem[]): Map<FailureReason, { count
 }
 
 export function HistoryDetailView({ currentDownloaderId, record, onBack, onRecordChanged }: HistoryDetailViewProps) {
-  const siteMeta = SITE_CONFIG_META[record.sourceId]
+  const siteMeta = getLocalizedSiteConfigMeta(record.sourceId)
   const failures = aggregateFailures(record.items)
   const hasFailures = record.stats.failed > 0
-  const originalDownloaderName = getDownloaderDisplayName(record.originalDownloaderId, "未知（旧记录）")
-  const lastRetriedDownloaderName = getDownloaderDisplayName(record.lastRetriedDownloaderId, "未重试")
+  const originalDownloaderName = getDownloaderDisplayName(
+    record.originalDownloaderId,
+    i18n.t("options.history.detail.unknownOriginalDownloader")
+  )
+  const lastRetriedDownloaderName = getDownloaderDisplayName(
+    record.lastRetriedDownloaderId,
+    i18n.t("options.history.detail.notRetried")
+  )
 
   const handleDeleted = () => {
     onRecordChanged()
@@ -121,7 +128,7 @@ export function HistoryDetailView({ currentDownloaderId, record, onBack, onRecor
       <div className="flex items-center gap-3">
         <Button variant="ghost" size="sm" onClick={onBack}>
           <HiOutlineArrowLeft className="w-4 h-4" />
-          返回
+          {i18n.t("options.history.detail.back")}
         </Button>
         <span className="text-lg font-medium text-zinc-900 truncate">{record.name}</span>
         <StatusBadge status={record.status} />
@@ -141,25 +148,25 @@ export function HistoryDetailView({ currentDownloaderId, record, onBack, onRecor
         <Card>
           <CardContent className="p-4 text-center">
             <div className="text-2xl font-bold text-zinc-900">{record.stats.total}</div>
-            <div className="text-xs text-zinc-500 mt-1">总条目</div>
+            <div className="text-xs text-zinc-500 mt-1">{i18n.t("options.history.detail.total")}</div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4 text-center">
             <div className="text-2xl font-bold text-emerald-600">{record.stats.success}</div>
-            <div className="text-xs text-zinc-500 mt-1">成功</div>
+            <div className="text-xs text-zinc-500 mt-1">{i18n.t("options.history.stats.success")}</div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4 text-center">
             <div className="text-2xl font-bold text-blue-600">{record.stats.duplicated}</div>
-            <div className="text-xs text-zinc-500 mt-1">重复</div>
+            <div className="text-xs text-zinc-500 mt-1">{i18n.t("options.history.detail.duplicated")}</div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4 text-center">
             <div className="text-2xl font-bold text-red-600">{record.stats.failed}</div>
-            <div className="text-xs text-zinc-500 mt-1">失败</div>
+            <div className="text-xs text-zinc-500 mt-1">{i18n.t("options.history.detail.failed")}</div>
           </CardContent>
         </Card>
       </div>
@@ -179,11 +186,11 @@ export function HistoryDetailView({ currentDownloaderId, record, onBack, onRecor
       <Card>
         <CardContent className="grid gap-3 p-4 text-sm text-zinc-700 md:grid-cols-2">
           <div className="grid gap-1">
-            <span className="text-xs text-zinc-500">原始提交下载器</span>
+            <span className="text-xs text-zinc-500">{i18n.t("options.history.detail.originalDownloader")}</span>
             <span className="font-medium text-zinc-900">{originalDownloaderName}</span>
           </div>
           <div className="grid gap-1">
-            <span className="text-xs text-zinc-500">最近重试下载器</span>
+            <span className="text-xs text-zinc-500">{i18n.t("options.history.detail.lastRetriedDownloader")}</span>
             <span className="font-medium text-zinc-900">{lastRetriedDownloaderName}</span>
           </div>
         </CardContent>
@@ -194,7 +201,7 @@ export function HistoryDetailView({ currentDownloaderId, record, onBack, onRecor
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
               <HiOutlineExclamationTriangle className="w-4 h-4 text-red-500" />
-              失败原因汇总
+              {i18n.t("options.history.detail.failureSummary")}
             </CardTitle>
           </CardHeader>
           <CardContent className="grid gap-3">
@@ -204,7 +211,7 @@ export function HistoryDetailView({ currentDownloaderId, record, onBack, onRecor
                 <div key={reason} className="grid gap-1">
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-medium text-zinc-900">{explanation.label}</span>
-                    <span className="text-xs text-zinc-500">{count} 条</span>
+                    <span className="text-xs text-zinc-500">{i18n.t("options.history.detail.failureCount", [count])}</span>
                   </div>
                   <div className="text-xs text-zinc-600">{explanation.desc}</div>
                   <div className="text-xs text-zinc-500">{explanation.suggestion}</div>
@@ -222,7 +229,7 @@ export function HistoryDetailView({ currentDownloaderId, record, onBack, onRecor
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">条目详情</CardTitle>
+          <CardTitle className="text-base">{i18n.t("options.history.detail.itemDetails")}</CardTitle>
         </CardHeader>
         <CardContent className="grid gap-2">
           {record.items.map((item) => (
@@ -256,10 +263,10 @@ export function HistoryDetailView({ currentDownloaderId, record, onBack, onRecor
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 hover:underline"
-                  title="在源站查看详情"
+                  title={i18n.t("options.history.detail.viewSource")}
                 >
                   <HiOutlineArrowTopRightOnSquare className="w-3.5 h-3.5" />
-                  详情
+                  {i18n.t("options.history.viewDetail")}
                 </a>
               </div>
               <div className="col-span-2 flex justify-end">
@@ -279,7 +286,7 @@ export function HistoryDetailView({ currentDownloaderId, record, onBack, onRecor
               )}
               {item.status === "duplicate" && (
                 <div className="col-span-12 mt-1 px-2 py-1.5 rounded bg-blue-100 text-xs text-blue-700">
-                  {item.message || "该条目已在 qBittorrent 中存在，跳过提交"}
+                  {item.message || i18n.t("options.history.detail.duplicateMessage")}
                 </div>
               )}
             </div>

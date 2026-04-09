@@ -1,3 +1,4 @@
+import { i18n } from "../../lib/i18n"
 import { HiOutlineCog6Tooth } from "react-icons/hi2"
 
 import brandIcon from "../../assets/anime-bt-icon-speedline.svg"
@@ -40,13 +41,15 @@ export function PopupPage({
           </div>
           <div>
             <h1 className="text-sm font-semibold leading-none tracking-tight text-zinc-100">Anime BT Batch</h1>
-            <p className="text-[11px] text-zinc-500 mt-1 font-medium">一键发送到当前下载器</p>
+            <p className="text-[11px] text-zinc-500 mt-1 font-medium">
+              {i18n.t("popup.header.subtitle")}
+            </p>
           </div>
         </div>
         <button
           onClick={onOpenGeneralOptions}
           disabled={actionsDisabled}
-          aria-label="打开设置"
+          aria-label={i18n.t("popup.header.openSettings")}
           className="rounded-lg p-2 text-zinc-400 transition-colors hover:bg-zinc-800/50 hover:text-zinc-200 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <HiOutlineCog6Tooth className="h-5 w-5" />
@@ -72,3 +75,5 @@ export function PopupPage({
     </div>
   )
 }
+
+

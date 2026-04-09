@@ -1,3 +1,4 @@
+import { i18n } from "../../lib/i18n"
 import { HiOutlineAdjustmentsHorizontal } from "react-icons/hi2"
 
 import { ContentButton } from "../content-ui/button"
@@ -22,7 +23,7 @@ export function BatchFilterStatusCard({
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 space-y-1">
           <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#687586]">
-            筛选规则
+            {i18n.t("batch.filter.title")}
           </p>
           <p className="text-[13px] font-medium leading-[1.5] text-[#182636]">
             {filterStatus.summaryText}
@@ -34,8 +35,8 @@ export function BatchFilterStatusCard({
             variant="icon"
             className="h-[28px] w-[28px] border border-[rgba(188,200,214,0.92)] bg-white/90 text-[#526375] hover:enabled:border-[rgba(121,139,160,0.86)] hover:enabled:bg-white hover:enabled:text-[#182636]"
             onClick={onOpenSettings}
-            aria-label="打开过滤规则配置"
-            title="打开过滤规则配置">
+            aria-label={i18n.t("batch.filter.openSettings")}
+            title={i18n.t("batch.filter.openSettings")}>
             <HiOutlineAdjustmentsHorizontal
               className="h-[15px] w-[15px]"
               aria-hidden="true"

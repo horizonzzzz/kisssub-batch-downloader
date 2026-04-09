@@ -25,6 +25,11 @@ The extension injects selection UI into supported list pages, reuses direct magn
   - loading extension runtime status for quick checks before opening options
   - probing current-downloader connectivity on the active supported/enabled source page, surfacing active-tab source support/enabled state, and linking to configuration when the connection check fails
   - offering quick links into options routes and one-click enable/disable for the active supported source, with immediate sync to the current tab's injected UI
+- Runtime UI copy is localized with `@wxt-dev/i18n` for Simplified Chinese and English:
+  - the extension follows the browser UI language
+  - no extension-level manual language switch is exposed
+  - manifest strings, popup, options, and injected contents UI all resolve through the same locale catalogs
+  - BT-site raw data, parser heuristics, and persisted history/source strings are not retroactively localized in storage
 - the options workspace uses hash-routed navigation with:
   - `options.html#/general`
   - `options.html#/sites`
@@ -53,6 +58,7 @@ The extension injects selection UI into supported list pages, reuses direct magn
 - `WXT`
 - `React 19`
 - `TypeScript`
+- `@wxt-dev/i18n` for browser-locale-driven extension localization
 - `Tailwind CSS` for the options UI layout and visual styling, plus scoped contents UI styling bundled once and mounted into WXT Shadow Root UIs
 - lightweight `shadcn/ui`-style primitives built in-repo with `Radix UI`
 - icon-library policy:

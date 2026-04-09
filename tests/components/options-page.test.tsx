@@ -92,6 +92,22 @@ describe("OptionsPage", () => {
     expect(window.location.hash).toBe("#/general")
   })
 
+  it("renders English options chrome when the browser locale is English", async () => {
+    ;(globalThis as typeof globalThis & { __animeBtTestLocale?: string }).__animeBtTestLocale = "en"
+    const api = createOptionsApi()
+
+    window.location.hash = ""
+    render(<OptionsPage api={api} />)
+
+    expect(await screen.findByRole("heading", { name: "Downloader & Basic Settings" })).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Sites" })).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Filters" })).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "History" })).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Overview" })).toBeInTheDocument()
+    expect(screen.getByText("Extension Settings")).toBeInTheDocument()
+    expect(screen.getByRole("link", { name: "View GitHub Repository" })).toBeInTheDocument()
+  })
+
   it("renders the redesigned general workspace on the default route", async () => {
     const api = createOptionsApi()
 

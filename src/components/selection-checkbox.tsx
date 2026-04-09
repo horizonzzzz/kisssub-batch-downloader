@@ -1,5 +1,6 @@
 import type { SyntheticEvent } from "react"
 
+import { i18n } from "../lib/i18n"
 import { ContentCheckbox } from "./content-ui/checkbox"
 
 type SelectionCheckboxProps = {
@@ -19,9 +20,11 @@ export function SelectionCheckbox({ checked, disabled = false, disabledReason, o
       <ContentCheckbox
         checked={checked}
         disabled={disabled}
-        label="批量"
-        title={disabled ? disabledReason : "选择这条帖子进行批量下载"}
-        aria-label={disabled ? "该条帖子不可选择" : "选择这条帖子进行批量下载"}
+        label={i18n.t("content.checkbox.label")}
+        title={disabled ? disabledReason : i18n.t("content.checkbox.selectTitle")}
+        aria-label={
+          disabled ? i18n.t("content.checkbox.disabledAriaLabel") : i18n.t("content.checkbox.selectTitle")
+        }
         data-anime-bt-batch-checkbox="1"
         onCheckedChange={onChange}
         containerClassName="mr-[8px]"

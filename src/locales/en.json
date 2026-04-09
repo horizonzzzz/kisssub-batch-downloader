@@ -1,0 +1,494 @@
+{
+  "extensionName": {
+    "message": "Anime BT Batch"
+  },
+  "extensionDescription": {
+    "message": "Select items from supported anime BT source pages, resolve the real download links, and send them to the current downloader in one batch."
+  },
+  "actionDefaultTitle": {
+    "message": "Anime BT Batch"
+  },
+  "popup": {
+    "header": {
+      "subtitle": "Send to current downloader",
+      "openSettings": "Open settings"
+    },
+    "quickActions": {
+      "title": "Quick actions",
+      "history": "History",
+      "filters": "Filters"
+    },
+    "supportedSites": {
+      "title": "Supported sites"
+    },
+    "footer": {
+      "help": "Help docs"
+    },
+    "container": {
+      "loading": "Loading...",
+      "loadError": "Failed to load popup state. Please retry.",
+      "actionError": "The action failed. Please try again later.",
+      "disableBlockedWhileRunning": "A batch is currently running on this page, so this site cannot be disabled yet."
+    },
+    "status": {
+      "currentSiteEnabled": "Enable on current site",
+      "currentSiteEnabledSwitch": "Current site enable switch",
+      "batchRunningHint": "A batch is currently running. Wait for it to finish before disabling this site.",
+      "checking": {
+        "title": "Checking downloader connection",
+        "description": "Verifying whether the current downloader $1 is available. When the check finishes, the popup will either confirm batch sending is ready or direct you to the configuration page."
+      },
+      "failed": {
+        "title": "Downloader connection failed",
+        "description": "This page is ready, but the extension cannot connect to $1 right now. Check the endpoint, credentials, or whether the target client is running.",
+        "action": "Open settings"
+      },
+      "unsupported": {
+        "title": "This page is not supported for batch download",
+        "description": "The extension is inactive on this website. Open one of the supported anime BT sites below to use batch download."
+      },
+      "siteDisabled": {
+        "title": "This site is disabled",
+        "description": "$1 is disabled in the extension. Re-enable it to show the batch panel and selection checkboxes on the page."
+      },
+      "ready": {
+        "title": "Extension is ready",
+        "description": "This page is supported. Use the batch panel in the bottom-right corner to select and send torrents quickly."
+      }
+    }
+  },
+  "batch": {
+    "panel": {
+      "ariaLabel": "Batch download panel",
+      "currentSite": "Current site",
+      "title": "$1 batch download",
+      "openSettings": "Open settings page",
+      "minimize": "Minimize batch download panel",
+      "expand": "Expand batch download panel",
+      "selectedCount": "$1 item(s) selected"
+    },
+    "summary": {
+      "selectedItems": "Selected items"
+    },
+    "filter": {
+      "title": "Filters",
+      "openSettings": "Open filter settings",
+      "summary": {
+        "enabled": "Filters: $1 enabled",
+        "disabled": "Filters: disabled"
+      },
+      "emptyState": {
+        "noEnabledFilters": "No filters are enabled for this site. Everything will be kept by default.",
+        "noEffectiveFilters": "No effective filters are loaded for this site. Everything will be kept by default."
+      },
+      "unsetSummary": "Not configured."
+    },
+    "actions": {
+      "selectAll": "Select all on page",
+      "clearSelection": "Clear selection",
+      "download": "Batch download",
+      "running": "Sending..."
+    },
+    "advanced": {
+      "toggle": "Advanced options",
+      "savePathLabel": "Temporary save path",
+      "savePathPlaceholder": "Leave blank to use the default path",
+      "clearPath": "Clear path",
+      "savePathHintDefault": "Leave this empty to use the downloader default directory. For remote downloaders, enter an absolute path recognized by the target host."
+    }
+  },
+  "options": {
+    "validation": {
+      "conditionIdRequired": "Condition ID is required",
+      "conditionValueRequired": "Enter a condition value",
+      "filterIdRequired": "Filter ID is required",
+      "filterNameRequired": "Enter a filter name",
+      "filterMustConditionRequired": "Add at least one required condition",
+      "minValue": "Minimum value is $1",
+      "maxValue": "Maximum value is $1",
+      "qbBaseUrlRequired": "Enter the qBittorrent WebUI URL",
+      "transmissionBaseUrlRequired": "Enter the Transmission RPC URL"
+    },
+    "status": {
+      "validationError": "Please fix the validation errors in the form first.",
+      "loadingSettings": "Loading saved settings.",
+      "settingsLoaded": "Settings loaded.",
+      "loadFailed": "Failed to load settings.",
+      "savingSettings": "Saving settings.",
+      "settingsSaved": "Settings saved.",
+      "saveFailed": "Failed to save settings.",
+      "testingConnection": "Testing the connection.",
+      "connectedTo": "Connected to $1 ($2).",
+      "noAddressReturned": "no address returned",
+      "connectionSucceeded": "Connection succeeded. $1 $2 version $3",
+      "connectionTestFailed": "Connection test failed."
+    },
+    "sidebar": {
+      "subtitle": "Extension Settings",
+      "supportedSources": "$1 supported sites",
+      "currentDownloader": "Current downloader: $1",
+      "viewGithubRepo": "View GitHub Repository"
+    },
+    "footer": {
+      "saveAll": "Save All Settings"
+    },
+    "routes": {
+      "general": {
+        "label": "Downloader & Basic Settings",
+        "title": "Downloader & Basic Settings",
+        "description": "Choose the active downloader, configure the connection, and adjust the global extraction cadence.",
+        "footerLabel": "Editing global settings"
+      },
+      "sites": {
+        "label": "Sites",
+        "title": "Sites",
+        "description": "Manage enablement and site-specific options for all four supported sites in one place.",
+        "footerLabel": "Editing site settings"
+      },
+      "filters": {
+        "label": "Filters",
+        "title": "Filters",
+        "description": "Keep only items that match your filters so batch submission stays aligned with real usage.",
+        "footerLabel": "Editing filters"
+      },
+      "history": {
+        "label": "History",
+        "title": "History",
+        "description": "Review previous batch submissions and trace statuses and failure reasons.",
+        "footerLabel": "Viewing history"
+      },
+      "overview": {
+        "label": "Overview",
+        "title": "Overview",
+        "description": "Review the supported sites and jump to them quickly.",
+        "footerLabel": "Viewing source overview"
+      }
+    },
+    "general": {
+      "downloaderSelector": {
+        "title": "Downloader selection",
+        "description": "Choose the downloader you currently use before editing its connection settings.",
+        "qbDescription": "Test the qBittorrent WebUI connection and submit magnet links, torrent URLs, or torrent files.",
+        "transmissionDescription": "Test the Transmission RPC connection and submit magnet links, torrent URLs, or torrent files."
+      },
+      "common": {
+        "usernameLabel": "Username",
+        "passwordLabel": "Password",
+        "testConnection": "Test Connection",
+        "testingConnection": "Testing...",
+        "connectionSuccess": "Connection succeeded",
+        "connectionFailed": "Connection failed"
+      },
+      "qb": {
+        "title": "qBittorrent settings",
+        "description": "Configure the WebUI endpoint and credentials used for connection testing and submissions.",
+        "baseUrlLabel": "qBittorrent WebUI URL",
+        "passwordPlaceholder": "Your WebUI password"
+      },
+      "transmission": {
+        "title": "Transmission settings",
+        "description": "Configure the Transmission RPC endpoint and credentials used for connection testing and submissions.",
+        "baseUrlLabel": "Transmission RPC URL",
+        "passwordPlaceholder": "Your Transmission password"
+      },
+      "extractionCadence": {
+        "title": "Extraction cadence",
+        "description": "Adjust concurrency, retry count, and the inject/dom-settle wait timings.",
+        "concurrencyLabel": "Concurrency",
+        "retryCountLabel": "Retry count",
+        "injectTimeoutLabel": "Inject timeout (ms)",
+        "domSettleLabel": "DOM settle wait (ms)"
+      },
+      "connectionHelp": {
+        "title": "Downloader compatibility note",
+        "body1": {
+          "prefix": "At the moment the extension only supports accessing a local downloader WebUI from the browser extension context. If qBittorrent returns 401 while the credentials are correct, first disable",
+          "middle": "and turn off",
+          "suffix": "."
+        },
+        "body2": {
+          "prefix": "If it still fails, disable",
+          "suffix": ". Only do this when the WebUI is meant for local-only use; do not expose it to your LAN or the public internet."
+        }
+      }
+    },
+    "sites": {
+      "badge": {
+        "enabled": "Enabled",
+        "disabled": "Disabled"
+      },
+      "enableLabel": "Enabled",
+      "enableSwitchSuffix": "enable switch",
+      "expandConfigSuffix": "expand config",
+      "collapseConfigSuffix": "collapse config",
+      "enabledSummary": "$1 / $2 sites enabled",
+      "deliveryMode": {
+        "magnet": "Prefer magnet links",
+        "torrentUrl": "Submit torrent URL directly",
+        "torrentFile": "Download torrent first, then upload to qB"
+      },
+      "delivery": {
+        "title": "Delivery strategy",
+        "lockedDescription": "This site currently uses a fixed delivery strategy and does not expose additional switching.",
+        "currentDescription": "Current strategy: $1"
+      },
+      "scriptFields": {
+        "title": "Script parameters",
+        "description": "Keep the legacy script configuration so it is restored if the site is enabled again.",
+        "remoteScriptUrlLabel": "Kisssub remote script URL",
+        "remoteScriptRevisionLabel": "Kisssub script revision"
+      },
+      "catalog": {
+        "kisssub": {
+          "navLabel": "Kisssub",
+          "displayName": "Kisssub",
+          "summary": "An anime BT site that combines seasonal listings with fansub groups."
+        },
+        "dongmanhuayuan": {
+          "navLabel": "Dongmanhuayuan",
+          "displayName": "Dongmanhuayuan",
+          "summary": "A BT sharing site aimed at anime fans.",
+          "lockedStrategyLabel": "Only magnet-link delivery is currently supported",
+          "noteDescription": "Dongmanhuayuan currently supports magnet-link extraction only and needs no extra configuration."
+        },
+        "acgrip": {
+          "navLabel": "ACG.RIP",
+          "displayName": "ACG.RIP",
+          "summary": "A clearly categorized ACG source that leans toward direct torrent download.",
+          "noteTitle": "Recommended: download the torrent, then upload it to qB",
+          "noteDescription": "qB may fail to fetch torrent URLs from this site directly."
+        },
+        "bangumimoe": {
+          "navLabel": "Bangumi.moe",
+          "displayName": "Bangumi.moe",
+          "summary": "A community that combines seasonal calendars with the latest torrent releases."
+        }
+      }
+    },
+    "overview": {
+      "supportHealthy": "Well supported",
+      "visitSite": "Visit site",
+      "capabilitiesTitle": "Current capabilities",
+      "capabilities": {
+        "0": "A unified site settings page manages enablement and site-specific parameters for all four supported sources.",
+        "1": "Disabled sites stop injecting the batch UI, and background batch processing rejects requests from them as well.",
+        "2": "The overview stays as a separate page so you can review site summaries and jump to them quickly."
+      }
+    },
+    "history": {
+      "loading": "Loading...",
+      "loadFailed": "Failed to load history",
+      "empty": {
+        "title": "No download history yet",
+        "description": "History records will appear here after you start a batch download"
+      },
+      "latest": "Latest",
+      "viewDetail": "Details",
+      "stats": {
+        "success": "Success",
+        "failed": "$1 failed"
+      },
+      "clear": {
+        "button": "Clear history",
+        "title": "Clear all history",
+        "description": "Are you sure you want to clear all history records? This cannot be undone.",
+        "confirm": "Clear all"
+      },
+      "deleteRecord": {
+        "button": "Delete record",
+        "title": "Delete history record",
+        "description": "Are you sure you want to delete \"$1\"? This cannot be undone."
+      },
+      "retryAll": {
+        "button": "Retry all failed items",
+        "title": "Retry failed items",
+        "description": "Retry $1 failed item(s)?",
+        "downloaderHint": "The current downloader $1 will be used for the retry."
+      },
+      "retryItem": {
+        "button": "Retry this item",
+        "loading": "Retrying...",
+        "title": "Retry failed item",
+        "description": "Retry this failed item?",
+        "downloaderHint": "The current downloader $1 will be used for the retry."
+      },
+      "retryErrors": {
+        "noSubmissionResult": "The downloader did not return a submission result",
+        "recordNotFound": "History record not found",
+        "noUsableUrl": "No usable magnet or torrent URL is available",
+        "authFailed": "Downloader authentication failed: $1",
+        "submitFailed": "Downloader submission failed: $1"
+      },
+      "detail": {
+        "back": "Back",
+        "completed": "Completed",
+        "partialFailure": "Partial failure",
+        "total": "Total items",
+        "duplicated": "Duplicates",
+        "failed": "Failed",
+        "originalDownloader": "Original downloader",
+        "lastRetriedDownloader": "Last retry downloader",
+        "unknownOriginalDownloader": "Unknown (legacy record)",
+        "notRetried": "Not retried",
+        "failureSummary": "Failure summary",
+        "failureCount": "$1 item(s)",
+        "itemDetails": "Item details",
+        "viewSource": "View on source site",
+        "duplicateMessage": "This item already exists in qBittorrent and was skipped"
+      },
+      "failure": {
+        "parse_error": {
+          "label": "Page parse failed",
+          "desc": "The source site structure may have changed and the torrent link could not be extracted.",
+          "suggestion": "Wait for an extension update or download it manually."
+        },
+        "timeout": {
+          "label": "Detail page timed out",
+          "desc": "The request to the source detail page timed out.",
+          "suggestion": "Retry later or check your network connection."
+        },
+        "qb_error": {
+          "label": "qB returned an error",
+          "desc": "qBittorrent rejected the add request.",
+          "suggestion": "Check the WebUI connection, settings, or available disk space."
+        },
+        "network_error": {
+          "label": "Network error",
+          "desc": "The network request failed.",
+          "suggestion": "Check the network connection and retry."
+        },
+        "filtered_out": {
+          "label": "Blocked by filters",
+          "desc": "This item was blocked by the backend filter fallback and never entered the qBittorrent submission flow.",
+          "suggestion": "If you want to keep it, adjust the filters and restart the batch from the source page."
+        },
+        "unknown": {
+          "label": "Unknown error",
+          "desc": "An unknown error occurred.",
+          "suggestion": "Retry or check the logs."
+        }
+      }
+    },
+    "filters": {
+      "title": "Filters",
+      "description": "Define only the resource traits you want to keep. Any item matching an enabled filter is kept; if no filters are enabled, everything is kept by default.",
+      "addPreset": "Add preset",
+      "add": "Add filter",
+      "startConfig": "Start configuring",
+      "configuredCount": "$1 filters configured",
+      "enabledCount": "$1 filters enabled",
+      "listTitle": "Filter list",
+      "listDescription": "A good default is one filter per real-world scenario, for example \"Ailian 1080 SC\".",
+      "emptyTitle": "No filters yet",
+      "emptyDescription": "Create a filter so the extension knows which resources should be kept.",
+      "deleteTitle": "Delete filter",
+      "deleteDescriptionNamed": "Delete the filter \"$1\"?",
+      "deleteDescription": "Delete this filter?",
+      "edit": "Edit",
+      "badge": {
+        "enabled": "Enabled",
+        "disabled": "Disabled"
+      },
+      "enableSwitchSuffix": "enable switch",
+      "cardDescription": "Matching items are kept; items that match no enabled filter are blocked.",
+      "mustTitle": "Must match",
+      "anyTitle": "Match any",
+      "mustPrefix": "Must",
+      "anyPrefix": "Any",
+      "field": {
+        "title": "Title",
+        "subgroup": "Subgroup",
+        "source": "Source"
+      },
+      "summary": {
+        "sourceIs": "Source is $1",
+        "contains": "$1 contains \"$2\"",
+        "unset": "Not configured."
+      },
+      "dialog": {
+        "addTitle": "Add filter",
+        "editTitle": "Edit filter",
+        "description": "Edit the filter name, conditions, and enabled state",
+        "close": "Close filter panel",
+        "nameLabel": "Filter name",
+        "namePlaceholder": "For example: Ailian 1080 SC",
+        "fieldLabel": "Field",
+        "fieldValueLabel": "$1 value",
+        "fieldAriaLabel": "$1 condition field $2",
+        "valueAriaLabel": "$1 condition value $2",
+        "valuePlaceholder": "Enter a $1 keyword",
+        "removeCondition": "Remove condition $1",
+        "mustDescription": "All of these conditions must match.",
+        "mustEmpty": "No required conditions yet.",
+        "addMust": "Add required condition",
+        "anyDescription": "Optional. Matching any one of these keeps the item; it is not used to scope sites.",
+        "anyEmpty": "No additional \"any\" conditions are configured.",
+        "addAny": "Add any condition",
+        "currentSummary": "Current summary",
+        "mustSummary": "Must match: $1",
+        "anySummary": "Match any: $1",
+        "enableTitle": "Enable filter",
+        "enableDescription": "The configuration is kept when disabled, but it will not participate in real filtering.",
+        "save": "Save filter",
+        "mustConditionRequired": "At least one required condition is needed",
+        "conditionValueRequired": "Every condition needs a value"
+      },
+      "testBench": {
+        "title": "Quick test",
+        "description": "Enter a resource title to confirm whether the current filters would keep it.",
+        "titleLabel": "Resource title",
+        "titlePlaceholder": "For example: [Ailian][Medalist][08][1080p][GB][SC]",
+        "sourceLabel": "Source site",
+        "run": "Run test",
+        "presetAilian": "Ailian 1080 SC",
+        "presetMiss": "Miss example",
+        "resultTitle": "Result",
+        "awaitingInput": "Waiting for input",
+        "detectedSubgroup": "Detected subgroup: $1",
+        "noSubgroup": "No subgroup was detected.",
+        "matchedFilterLabel": "Matched filter: $1",
+        "noMatchedFilter": "No filter matched",
+        "enterTitle": "Enter a resource title before testing.",
+        "accepted": "Keep",
+        "matchedFilter": "Matched filter \"$1\". This resource would be kept.",
+        "acceptedByDefault": "No filters are enabled, so this resource would be kept by default.",
+        "blocked": "Block",
+        "blockedSummary": "No enabled filter matched, so this resource would be blocked."
+      }
+    }
+  },
+  "content": {
+    "checkbox": {
+      "label": "Batch",
+      "selectTitle": "Select this post for batch download",
+      "disabledAriaLabel": "This post cannot be selected",
+      "unmatchedRule": "This item does not match the active filters and cannot be selected"
+    },
+    "status": {
+      "ready": "Ready. Select items on the page first.",
+      "readyWithSelection": "$1 item(s) selected and ready to send.",
+      "cleared": "Selection cleared.",
+      "loadedLastPath": "Loaded the last-used path: $1",
+      "noSelection": "No posts are selected yet.",
+      "startWithPath": "Starting $1 item(s). The downloader will be asked to save them to $2.",
+      "startDefaultPath": "Starting $1 item(s). The downloader default directory will be used.",
+      "startFailed": "Failed to start the batch download task.",
+      "preparingWithCustomPath": "Preparing $1 item(s). They will be sent to the custom path shortly.",
+      "preparingWithDefaultPath": "Preparing $1 item(s). They will be sent to the downloader default directory shortly.",
+      "submitting": "Submitting to qBittorrent.",
+      "submittingPrepared": "Submitting to qBittorrent. $1 item(s) are queued.",
+      "completed": "Done. Submitted $1 item(s), skipped $2 duplicate(s), failed $3 item(s).",
+      "failed": "The batch task failed.",
+      "savePathHint": "The downloader will be asked to save this batch to: $1",
+      "progressFailed": "Processed $1/$2 item(s). Some resources failed to resolve.",
+      "progressDuplicate": "Processed $1/$2 item(s). Duplicate resources were detected.",
+      "progressExtracting": "Resolving real download links ($1/$2)."
+    }
+  },
+  "common": {
+    "cancel": "Cancel",
+    "processing": "Processing...",
+    "delete": "Delete",
+    "retry": "Retry"
+  }
+}

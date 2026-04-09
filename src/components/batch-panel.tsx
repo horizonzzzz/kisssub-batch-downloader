@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react"
+import { i18n } from "../lib/i18n"
 
 import { BatchAdvancedOptions } from "./batch-panel/BatchAdvancedOptions"
 import { BatchFilterStatusCard } from "./batch-panel/BatchFilterStatusCard"
@@ -10,7 +11,7 @@ import { getBatchPanelViewState } from "./batch-panel/state"
 import type { BatchPanelProps } from "./batch-panel/types"
 
 export function BatchPanel({
-  sourceName = "当前站点",
+  sourceName = i18n.t("batch.panel.currentSite"),
   isExpanded,
   selectedCount,
   selectableCount = Number.POSITIVE_INFINITY,
@@ -90,7 +91,7 @@ export function BatchPanel({
         ref={panelRef}
         data-anime-bt-role="panel-shell"
         className={`${panelAnimationClass} w-[min(var(--anime-bt-panel-width),calc(100vw-24px))] overflow-hidden rounded-[var(--anime-bt-radius-xl)] border border-[rgba(135,151,173,0.24)] bg-[linear-gradient(180deg,rgba(252,253,255,0.98)_0%,rgba(243,247,252,0.98)_100%)] text-[#182636] shadow-[var(--anime-bt-shadow-floating)] backdrop-blur-[18px] max-[680px]:w-full`}
-        aria-label="批量下载面板">
+        aria-label={i18n.t("batch.panel.ariaLabel")}>
         <BatchPanelHeader
           sourceName={sourceName}
           onOpenSettings={onOpenSettings}
@@ -123,7 +124,11 @@ export function BatchPanel({
           disableSelectAll={running || selectableCount === 0}
           disableClear={viewState.disableClear}
           disableDownload={viewState.disableDownload}
-          downloadLabel={viewState.downloadLabel}
+          downloadLabel={
+            viewState.downloadState === "running"
+              ? i18n.t("batch.actions.running")
+              : i18n.t("batch.actions.download")
+          }
           onSelectAll={onSelectAll}
           onClear={onClear}
           onDownload={onDownload}
@@ -132,3 +137,5 @@ export function BatchPanel({
     </div>
   )
 }
+
+

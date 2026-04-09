@@ -23,6 +23,7 @@
     "noEmit": true
   },
   "include": [
+    ".wxt/**/*.d.ts",
     "**/*.d.ts",
     "**/*.ts",
     "**/*.tsx"

@@ -1,3 +1,4 @@
+import { i18n } from "../../../../lib/i18n"
 import type { JSX } from "react"
 
 import * as Collapsible from "@radix-ui/react-collapsible"
@@ -41,9 +42,11 @@ export function ExtractionCadenceSection({
             className="flex w-full items-center justify-between gap-4 px-6 py-4 text-left hover:bg-zinc-50/80"
             aria-expanded={open}>
             <div>
-              <CardTitle className="text-base">批量提取节奏</CardTitle>
+              <CardTitle className="text-base">
+                {i18n.t("options.general.extractionCadence.title")}
+              </CardTitle>
               <CardDescription className="mt-1">
-                配置并发数、重试次数以及注入和稳定等待时间。
+                {i18n.t("options.general.extractionCadence.description")}
               </CardDescription>
             </div>
             <span className="inline-flex h-8 w-8 items-center justify-center rounded-md bg-zinc-100 text-zinc-500">
@@ -58,14 +61,20 @@ export function ExtractionCadenceSection({
 
         <Collapsible.Content>
           <CardContent className="grid gap-5 border-t border-zinc-100 bg-zinc-50/50 md:grid-cols-2">
-            <FormField label="并发数" htmlFor="concurrency" error={errors.concurrency?.message}>
+            <FormField
+              label={i18n.t("options.general.extractionCadence.concurrencyLabel")}
+              htmlFor="concurrency"
+              error={errors.concurrency?.message}>
               <Input id="concurrency" type="number" {...register("concurrency")} />
             </FormField>
-            <FormField label="重试次数" htmlFor="retryCount" error={errors.retryCount?.message}>
+            <FormField
+              label={i18n.t("options.general.extractionCadence.retryCountLabel")}
+              htmlFor="retryCount"
+              error={errors.retryCount?.message}>
               <Input id="retryCount" type="number" {...register("retryCount")} />
             </FormField>
             <FormField
-              label="注入超时(ms)"
+              label={i18n.t("options.general.extractionCadence.injectTimeoutLabel")}
               htmlFor="injectTimeoutMs"
               error={errors.injectTimeoutMs?.message}>
               <Input
@@ -78,7 +87,7 @@ export function ExtractionCadenceSection({
               />
             </FormField>
             <FormField
-              label="稳定等待(ms)"
+              label={i18n.t("options.general.extractionCadence.domSettleLabel")}
               htmlFor="domSettleMs"
               error={errors.domSettleMs?.message}>
               <Input
@@ -96,3 +105,5 @@ export function ExtractionCadenceSection({
     </Collapsible.Root>
   )
 }
+
+

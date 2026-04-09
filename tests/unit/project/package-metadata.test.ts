@@ -51,8 +51,13 @@ describe("package metadata", () => {
     expect(packageJson.scripts?.package).toBe("wxt clean && wxt zip")
     expect(packageJson.devDependencies?.plasmo).toBeUndefined()
     expect(packageJson.devDependencies?.wxt).toBeTruthy()
+    expect(packageJson.devDependencies?.["@wxt-dev/i18n"]).toBeTruthy()
     expect(wxtConfig).toContain("defineConfig")
-    expect(wxtConfig).toContain("Anime BT Batch")
+    expect(wxtConfig).toContain('@wxt-dev/i18n')
+    expect(wxtConfig).toContain("default_locale")
+    expect(wxtConfig).toContain("__MSG_extensionName__")
+    expect(wxtConfig).toContain("__MSG_extensionDescription__")
+    expect(wxtConfig).toContain("__MSG_actionDefaultTitle__")
     expect(wxtConfig).toContain('srcDir: "src"')
     expect(wxtConfig).toContain("popup.html")
     expect(wxtConfig).toContain("options.html")
@@ -64,6 +69,11 @@ describe("package metadata", () => {
     expect(wxtConfig).toContain("!tests/e2e/fixtures/**")
     expect(wxtConfig).toContain("web_accessible_resources")
     expect(wxtConfig).toContain("content-scripts/source-batch.css")
+  })
+
+  it("defines source locale catalogs for zh_CN and en in the WXT source tree", () => {
+    expect(existsSync(resolve(process.cwd(), "src", "locales", "zh_CN.json"))).toBe(true)
+    expect(existsSync(resolve(process.cwd(), "src", "locales", "en.json"))).toBe(true)
   })
 
   it("keeps manifest host permissions aligned with the shared source match patterns instead of broad wildcards", () => {

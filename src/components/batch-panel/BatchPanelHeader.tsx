@@ -1,3 +1,4 @@
+import { i18n } from "../../lib/i18n"
 import { HiChevronDown, HiOutlineCog6Tooth } from "react-icons/hi2"
 
 import speedlineBrandIcon from "../../assets/anime-bt-icon-speedline.svg"
@@ -34,7 +35,7 @@ export function BatchPanelHeader({
           </p>
         </div>
         <strong className="block text-[14px] font-semibold tracking-[0.01em]">
-          {sourceName} 批量下载
+          {i18n.t("batch.panel.title", [sourceName])}
         </strong>
       </div>
 
@@ -43,7 +44,7 @@ export function BatchPanelHeader({
           type="button"
           variant="icon"
           data-anime-bt-role="header-settings"
-          aria-label="打开设置页"
+          aria-label={i18n.t("batch.panel.openSettings")}
           onClick={onOpenSettings}>
           <HiOutlineCog6Tooth className="h-[16px] w-[16px]" aria-hidden="true" focusable="false" />
         </ContentButton>
@@ -51,7 +52,7 @@ export function BatchPanelHeader({
           type="button"
           variant="icon"
           data-anime-bt-role="header-minimize"
-          aria-label="最小化批量下载面板"
+          aria-label={i18n.t("batch.panel.minimize")}
           onClick={onMinimize}>
           <HiChevronDown className="h-[16px] w-[16px]" aria-hidden="true" focusable="false" />
         </ContentButton>

@@ -25,6 +25,7 @@ import {
   createRuntimeSuccessResponse,
   type RuntimeRequest
 } from "../../lib/shared/messages"
+import { i18n } from "../../lib/i18n"
 import { isOptionsRoutePath } from "../../lib/shared/options-routes"
 import { getBrowser } from "../../lib/shared/browser"
 import type { SourceId } from "../../lib/shared/types"
@@ -145,7 +146,9 @@ export function registerBackgroundRuntime() {
             }
 
             if (!message.enabled && (await hasRunningBatchForSource(message.sourceId))) {
-              sendResponse(createRuntimeErrorResponse("当前页面正在执行批量下载，暂时不能禁用该站点。"))
+              sendResponse(
+                createRuntimeErrorResponse(i18n.t("popup.container.disableBlockedWhileRunning"))
+              )
               return
             }
 

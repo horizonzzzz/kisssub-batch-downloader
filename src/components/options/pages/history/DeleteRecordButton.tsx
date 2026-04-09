@@ -1,3 +1,4 @@
+import { i18n } from "../../../../lib/i18n"
 import { useState } from "react"
 import {
   AlertDialog,
@@ -55,7 +56,7 @@ export function DeleteRecordButton({
           size="sm"
           onClick={() => setShowConfirm(true)}
           className="text-zinc-400 hover:text-red-600"
-          title="删除记录"
+          title={i18n.t("options.history.deleteRecord.button")}
         >
           <HiOutlineTrash className="w-4 h-4" />
         </Button>
@@ -67,25 +68,27 @@ export function DeleteRecordButton({
           className="text-red-600 border-red-300 hover:bg-red-50"
         >
           <HiOutlineTrash className="w-4 h-4 mr-1" />
-          删除记录
+          {i18n.t("options.history.deleteRecord.button")}
         </Button>
       )}
 
       <AlertDialog open={showConfirm} onOpenChange={(open) => !loading && setShowConfirm(open)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>删除历史记录</AlertDialogTitle>
-            <AlertDialogDescription>{`确定删除"${recordName}"吗？此操作不可恢复。`}</AlertDialogDescription>
+            <AlertDialogTitle>{i18n.t("options.history.deleteRecord.title")}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {i18n.t("options.history.deleteRecord.description", [recordName])}
+            </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={loading}>取消</AlertDialogCancel>
+            <AlertDialogCancel disabled={loading}>{i18n.t("common.cancel")}</AlertDialogCancel>
             <AlertDialogAction
               disabled={loading}
               onClick={(event) => {
                 event.preventDefault()
                 void handleDelete()
               }}>
-              {loading ? "处理中..." : "删除"}
+              {loading ? i18n.t("common.processing") : i18n.t("common.delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
