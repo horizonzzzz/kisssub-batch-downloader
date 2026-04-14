@@ -16,7 +16,7 @@ import type {
   SubscriptionHitRecord,
   SubscriptionRuntimeState
 } from "../shared/types"
-import { getSettings, saveSettings } from "../settings"
+import { getSettings, resolveSourceEnabled, saveSettings } from "../settings"
 import { extractSingleItem } from "../sources/extraction"
 import {
   buildSubscriptionRoundNotification,
@@ -36,9 +36,16 @@ import { i18n } from "../i18n"
 
 let queuedSubscriptionMutation: Promise<void> = Promise.resolve()
 
+type SubscriptionRuntimeSettingsPatch = Pick<
+  Settings,
+  "lastSchedulerRunAt" | "subscriptionRuntimeStateById" | "subscriptionNotificationRounds"
+>
+
+type SubscriptionDownloadRuntimeSettingsPatch = Pick<Settings, "subscriptionRuntimeStateById">
+
 export type ExecuteSubscriptionScanDependencies = ScanSubscriptionsDependencies & {
   getSettings?: () => Promise<Settings>
-  saveSettings?: (settings: Settings) => Promise<Settings>
+  saveSettings?: (settings: SubscriptionRuntimeSettingsPatch) => Promise<Settings>
   createNotification?: (
     notificationId: string,
     options: SubscriptionRoundNotificationPayload["options"]
@@ -56,7 +63,7 @@ export type DownloadSubscriptionHitsRequest = {
 
 export type DownloadSubscriptionHitsDependencies = {
   getSettings?: () => Promise<Settings>
-  saveSettings?: (settings: Settings) => Promise<Settings>
+  saveSettings?: (settings: SubscriptionDownloadRuntimeSettingsPatch) => Promise<Settings>
   getDownloader?: (settings: Settings) => DownloaderAdapter
   fetchTorrentForUpload?: (torrentUrl: string) => Promise<DownloaderTorrentFile>
   extractSingleItem?: (item: BatchItem, settings: Settings) => Promise<ExtractionResult>
@@ -126,9 +133,9 @@ async function downloadSubscriptionHitsOnce(
 
   const runtimeStateById = cloneSubscriptionRuntimeStates(settings)
   const retainedHits = resolveRoundHits(notificationRound.hitIds, runtimeStateById)
-  const pendingHits = retainedHits.filter(
-    (hit) => hit.downloadStatus !== "submitted" && hit.downloadStatus !== "duplicate"
-  )
+  const pendingHits = retainedHits
+    .filter((hit) => resolveSourceEnabled(hit.sourceId, settings))
+    .filter((hit) => hit.downloadStatus !== "submitted" && hit.downloadStatus !== "duplicate")
   if (pendingHits.length === 0) {
     return {
       settings,
@@ -210,7 +217,7 @@ async function downloadSubscriptionHitsOnce(
   }
 
   const nextSettings = buildSettingsWithRuntimeStates(settings, runtimeStateById)
-  const savedSettings = await saveSettingsImpl(nextSettings)
+  const savedSettings = await saveSettingsImpl(buildSubscriptionDownloadRuntimePatch(nextSettings))
 
   return {
     settings: savedSettings,
@@ -234,7 +241,7 @@ async function executeSubscriptionScanOnce(
     now: dependencies.now,
     scanCandidatesFromSource: dependencies.scanCandidatesFromSource
   })
-  const savedSettings = await saveSettingsImpl(result.settings)
+  const savedSettings = await saveSettingsImpl(buildSubscriptionScanRuntimePatch(result.settings))
 
   if (result.notificationRound && savedSettings.notificationsEnabled) {
     const hitCount = result.notificationRound.hitIds.length
@@ -260,7 +267,9 @@ async function executeSubscriptionScanOnce(
   }
 }
 
-async function defaultSaveSettings(settings: Settings): Promise<Settings> {
+async function defaultSaveSettings(
+  settings: SubscriptionRuntimeSettingsPatch | SubscriptionDownloadRuntimeSettingsPatch
+): Promise<Settings> {
   return saveSettings(settings)
 }
 
@@ -540,5 +549,23 @@ function buildSettingsWithRuntimeStates(
       ...settings.subscriptionRuntimeStateById,
       ...Object.fromEntries(runtimeStateById.entries())
     }
+  }
+}
+
+function buildSubscriptionScanRuntimePatch(
+  settings: Settings
+): SubscriptionRuntimeSettingsPatch {
+  return {
+    lastSchedulerRunAt: settings.lastSchedulerRunAt,
+    subscriptionRuntimeStateById: settings.subscriptionRuntimeStateById,
+    subscriptionNotificationRounds: settings.subscriptionNotificationRounds
+  }
+}
+
+function buildSubscriptionDownloadRuntimePatch(
+  settings: Pick<Settings, "subscriptionRuntimeStateById">
+): SubscriptionDownloadRuntimeSettingsPatch {
+  return {
+    subscriptionRuntimeStateById: settings.subscriptionRuntimeStateById
   }
 }

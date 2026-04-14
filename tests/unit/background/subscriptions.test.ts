@@ -112,6 +112,13 @@ function createDeferredPromise<T>() {
   return { promise, resolve, reject }
 }
 
+function applySettingsPatch(base: Settings, patch: Partial<Settings>): Settings {
+  return createSettings({
+    ...base,
+    ...patch
+  })
+}
+
 describe("subscription scheduler reconciliation", () => {
   it("creates the polling alarm when subscriptions are enabled and missing", async () => {
     const get = vi.fn().mockResolvedValue(undefined)
@@ -154,6 +161,91 @@ describe("subscription scheduler reconciliation", () => {
 })
 
 describe("downloadSubscriptionHits", () => {
+  it("persists only subscription runtime fields after notification-hit downloads", async () => {
+    const now = "2026-04-14T09:30:00.000Z"
+    const savedPatch: { value: Record<string, unknown> | null } = { value: null }
+    const settings = createSettings({
+      subscriptions: [
+        createSubscription({
+          sourceIds: ["bangumimoe"]
+        })
+      ],
+      subscriptionRuntimeStateById: {
+        "sub-1": createRuntimeState({
+          recentHits: [
+            createHit({
+              id: "hit-direct",
+              sourceId: "bangumimoe",
+              detailUrl: "https://bangumi.moe/torrent/100",
+              magnetUrl: "magnet:?xt=urn:btih:AAA111",
+              torrentUrl: ""
+            })
+          ]
+        })
+      },
+      subscriptionNotificationRounds: [
+        {
+          id: "subscription-round:20260414093000000",
+          createdAt: now,
+          hitIds: ["hit-direct"]
+        }
+      ]
+    })
+    const downloader: DownloaderAdapter = {
+      id: "qbittorrent",
+      displayName: "qBittorrent",
+      authenticate: vi.fn(async () => undefined),
+      addUrls: vi.fn(async () => ({
+        entries: [
+          {
+            url: "magnet:?xt=urn:btih:AAA111",
+            status: "submitted" as const
+          }
+        ]
+      })),
+      addTorrentFiles: vi.fn(async () => undefined),
+      testConnection: vi.fn(async () => ({
+        baseUrl: "http://localhost:8080",
+        version: "5.0.0"
+      }))
+    }
+    const saveSettings = vi.fn(async (patch: Partial<Settings>) => {
+      savedPatch.value = patch as unknown as Record<string, unknown>
+      return applySettingsPatch(settings, patch as unknown as Partial<Settings>)
+    })
+
+    await downloadSubscriptionHits(
+      {
+        roundId: "subscription-round:20260414093000000"
+      },
+      {
+        getSettings: async () => settings,
+        saveSettings,
+        getDownloader: () => downloader,
+        now: () => now
+      }
+    )
+
+    expect(saveSettings).toHaveBeenCalledTimes(1)
+    expect(savedPatch.value).toEqual({
+      subscriptionRuntimeStateById: expect.objectContaining({
+        "sub-1": expect.objectContaining({
+          recentHits: [
+            expect.objectContaining({
+              id: "hit-direct",
+              downloadStatus: "submitted",
+              downloadedAt: now
+            })
+          ]
+        })
+      })
+    })
+    expect(savedPatch.value).not.toHaveProperty("currentDownloaderId")
+    expect(savedPatch.value).not.toHaveProperty("downloaders")
+    expect(savedPatch.value).not.toHaveProperty("enabledSources")
+    expect(savedPatch.value).not.toHaveProperty("subscriptionsEnabled")
+  })
+
   it("downloads retained notification-round hits and persists submission outcomes", async () => {
     const now = "2026-04-14T09:30:00.000Z"
     const savedSettings: { value: Settings | null } = { value: null }
@@ -240,9 +332,9 @@ describe("downloadSubscriptionHits", () => {
         version: "5.0.0"
       }))
     }
-    const saveSettings = vi.fn(async (nextSettings: Settings) => {
-      savedSettings.value = nextSettings
-      return nextSettings
+    const saveSettings = vi.fn(async (nextSettings: Partial<Settings>) => {
+      savedSettings.value = applySettingsPatch(settings, nextSettings as unknown as Partial<Settings>)
+      return savedSettings.value
     })
     const fetchTorrentForUpload = vi.fn(
       async (): Promise<DownloaderTorrentFile> => ({
@@ -360,9 +452,12 @@ describe("downloadSubscriptionHits", () => {
     }
     const authenticateGate = createDeferredPromise<void>()
     const getSettings = vi.fn(async () => persisted.current)
-    const saveSettings = vi.fn(async (nextSettings: Settings) => {
-      persisted.current = nextSettings
-      return nextSettings
+    const saveSettings = vi.fn(async (nextSettings: Partial<Settings>) => {
+      persisted.current = applySettingsPatch(
+        persisted.current,
+        nextSettings as unknown as Partial<Settings>
+      )
+      return persisted.current
     })
     const downloader: DownloaderAdapter = {
       id: "qbittorrent",
@@ -423,9 +518,118 @@ describe("downloadSubscriptionHits", () => {
       })
     ])
   })
+
+  it("skips retained notification hits whose sources are currently disabled", async () => {
+    const now = "2026-04-14T10:00:00.000Z"
+    const settings = createSettings({
+      enabledSources: {
+        ...DEFAULT_SETTINGS.enabledSources,
+        acgrip: false
+      },
+      subscriptions: [createSubscription()],
+      subscriptionRuntimeStateById: {
+        "sub-1": createRuntimeState({
+          recentHits: [
+            createHit({
+              id: "hit-disabled",
+              sourceId: "acgrip",
+              detailUrl: "https://acg.rip/t/100",
+              magnetUrl: "magnet:?xt=urn:btih:AAA111",
+              torrentUrl: ""
+            })
+          ]
+        })
+      },
+      subscriptionNotificationRounds: [
+        {
+          id: "subscription-round:20260414100000000",
+          createdAt: now,
+          hitIds: ["hit-disabled"]
+        }
+      ]
+    })
+    const downloader: DownloaderAdapter = {
+      id: "qbittorrent",
+      displayName: "qBittorrent",
+      authenticate: vi.fn(async () => undefined),
+      addUrls: vi.fn(async () => ({
+        entries: []
+      })),
+      addTorrentFiles: vi.fn(async () => undefined),
+      testConnection: vi.fn(async () => ({
+        baseUrl: "http://localhost:8080",
+        version: "5.0.0"
+      }))
+    }
+    const extractSingleItem = vi.fn()
+    const saveSettings = vi.fn(async (patch: Partial<Settings>) =>
+      applySettingsPatch(settings, patch as unknown as Partial<Settings>)
+    )
+
+    const result = await downloadSubscriptionHits(
+      { roundId: "subscription-round:20260414100000000" },
+      {
+        getSettings: async () => settings,
+        saveSettings,
+        getDownloader: () => downloader,
+        extractSingleItem,
+        now: () => now
+      }
+    )
+
+    expect(result.totalHits).toBe(1)
+    expect(result.attemptedHits).toBe(0)
+    expect(downloader.authenticate).not.toHaveBeenCalled()
+    expect(downloader.addUrls).not.toHaveBeenCalled()
+    expect(downloader.addTorrentFiles).not.toHaveBeenCalled()
+    expect(extractSingleItem).not.toHaveBeenCalled()
+    expect(saveSettings).not.toHaveBeenCalled()
+  })
 })
 
 describe("executeSubscriptionScan", () => {
+  it("persists only subscription runtime fields after a scan completes", async () => {
+    const now = "2026-04-14T08:00:00.000Z"
+    const savedPatch: { value: Record<string, unknown> | null } = { value: null }
+    const baseSettings = createSettings({
+      subscriptions: [createSubscription()],
+      subscriptionRuntimeStateById: {
+        "sub-1": createRuntimeState({
+          seenFingerprints: ["https://acg.rip/t/099.torrent"]
+        })
+      }
+    })
+    const createNotification = vi.fn().mockResolvedValue(undefined)
+    const saveSettings = vi.fn(async (patch: Partial<Settings>) => {
+      savedPatch.value = patch as unknown as Record<string, unknown>
+      return applySettingsPatch(baseSettings, patch as unknown as Partial<Settings>)
+    })
+
+    await executeSubscriptionScan({
+      getSettings: async () => baseSettings,
+      saveSettings,
+      createNotification,
+      now: () => now,
+      scanCandidatesFromSource: vi.fn(async () => [createCandidate()])
+    })
+
+    expect(saveSettings).toHaveBeenCalledTimes(1)
+    expect(savedPatch.value).toEqual({
+      lastSchedulerRunAt: now,
+      subscriptionRuntimeStateById: expect.objectContaining({
+        "sub-1": expect.objectContaining({
+          lastScanAt: now,
+          lastMatchedAt: now
+        })
+      }),
+      subscriptionNotificationRounds: expect.any(Array)
+    })
+    expect(savedPatch.value).not.toHaveProperty("currentDownloaderId")
+    expect(savedPatch.value).not.toHaveProperty("downloaders")
+    expect(savedPatch.value).not.toHaveProperty("enabledSources")
+    expect(savedPatch.value).not.toHaveProperty("subscriptionsEnabled")
+  })
+
   it("creates one aggregated notification round with the retained hit ids", async () => {
     const now = "2026-04-14T08:00:00.000Z"
     const savedSettings: { value: Settings | null } = { value: null }
@@ -438,9 +642,9 @@ describe("executeSubscriptionScan", () => {
       }
     })
     const createNotification = vi.fn().mockResolvedValue(undefined)
-    const saveSettings = vi.fn(async (settings: Settings) => {
-      savedSettings.value = settings
-      return settings
+    const saveSettings = vi.fn(async (settings: Partial<Settings>) => {
+      savedSettings.value = applySettingsPatch(baseSettings, settings as unknown as Partial<Settings>)
+      return savedSettings.value
     })
 
     const result = await executeSubscriptionScan({
@@ -479,7 +683,19 @@ describe("executeSubscriptionScan", () => {
     const candidate = createCandidate()
     const fingerprint = createSubscriptionFingerprint(candidate)
     const createNotification = vi.fn().mockResolvedValue(undefined)
-    const saveSettings = vi.fn(async (settings: Settings) => settings)
+    const saveSettings = vi.fn(async (settings: Partial<Settings>) =>
+      applySettingsPatch(
+        createSettings({
+          subscriptions: [createSubscription()],
+          subscriptionRuntimeStateById: {
+            "sub-1": createRuntimeState({
+              seenFingerprints: [fingerprint]
+            })
+          }
+        }),
+        settings as unknown as Partial<Settings>
+      )
+    )
 
     const result = await executeSubscriptionScan({
       getSettings: async () =>
@@ -516,9 +732,15 @@ describe("executeSubscriptionScan", () => {
           subscriptions: [createSubscription()],
           subscriptionRuntimeStateById: {}
         }),
-      saveSettings: async (settings: Settings) => {
-        savedSettings.value = settings
-        return settings
+      saveSettings: async (settings: Partial<Settings>) => {
+        savedSettings.value = applySettingsPatch(
+          createSettings({
+            subscriptions: [createSubscription()],
+            subscriptionRuntimeStateById: {}
+          }),
+          settings as unknown as Partial<Settings>
+        )
+        return savedSettings.value
       },
       createNotification,
       now: () => now,
@@ -559,9 +781,12 @@ describe("executeSubscriptionScan", () => {
       torrentUrl: "https://acg.rip/t/101.torrent"
     })
     const getSettings = vi.fn(async () => persisted.current)
-    const saveSettings = vi.fn(async (settings: Settings) => {
-      persisted.current = settings
-      return settings
+    const saveSettings = vi.fn(async (settings: Partial<Settings>) => {
+      persisted.current = applySettingsPatch(
+        persisted.current,
+        settings as unknown as Partial<Settings>
+      )
+      return persisted.current
     })
 
     const firstExecution = executeSubscriptionScan({
@@ -595,12 +820,58 @@ describe("executeSubscriptionScan", () => {
     expect(persisted.current.subscriptionNotificationRounds).toHaveLength(2)
   })
 
+  it("skips disabled sources when building the subscription scan set", async () => {
+    const now = "2026-04-14T12:00:00.000Z"
+    const scanCandidatesFromSource = vi.fn(async () => [createCandidate()])
+    const settings = createSettings({
+      enabledSources: {
+        ...DEFAULT_SETTINGS.enabledSources,
+        acgrip: false
+      },
+      subscriptions: [createSubscription()],
+      subscriptionRuntimeStateById: {
+        "sub-1": createRuntimeState({
+          lastScanAt: "2026-04-10T00:00:00.000Z",
+          lastMatchedAt: null
+        })
+      }
+    })
+
+    const result = await executeSubscriptionScan({
+      getSettings: async () => settings,
+      saveSettings: vi.fn(async (patch: Partial<Settings>) =>
+        applySettingsPatch(settings, patch as unknown as Partial<Settings>)
+      ),
+      createNotification: vi.fn().mockResolvedValue(undefined),
+      now: () => now,
+      scanCandidatesFromSource
+    })
+
+    expect(scanCandidatesFromSource).not.toHaveBeenCalled()
+    expect(result.scannedSourceIds).toEqual([])
+    expect(result.newHits).toEqual([])
+    expect(result.settings.lastSchedulerRunAt).toBe(now)
+    expect(result.settings.subscriptionRuntimeStateById["sub-1"]).toEqual(
+      settings.subscriptionRuntimeStateById["sub-1"]
+    )
+  })
+
   it("treats notification creation failures as non-fatal after settings are saved", async () => {
     const now = "2026-04-14T13:00:00.000Z"
     const savedSettings: { value: Settings | null } = { value: null }
-    const saveSettings = vi.fn(async (settings: Settings) => {
-      savedSettings.value = settings
-      return settings
+    const saveSettings = vi.fn(async (settings: Partial<Settings>) => {
+      savedSettings.value = applySettingsPatch(
+        createSettings({
+          subscriptions: [createSubscription()],
+          subscriptionRuntimeStateById: {
+            "sub-1": createRuntimeState({
+              seenFingerprints: ["https://acg.rip/t/099.torrent"]
+            })
+          }
+        }),
+        settings as unknown as Partial<Settings>
+      )
+      return savedSettings.value
     })
     const createNotification = vi.fn().mockRejectedValue(new Error("notifications unavailable"))
 

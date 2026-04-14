@@ -5,6 +5,7 @@ import type {
   SubscriptionHitRecord,
   SubscriptionNotificationRound
 } from "../shared/types"
+import { resolveSourceEnabled } from "../settings"
 import { createSubscriptionFingerprint } from "./fingerprint"
 import { matchesSubscriptionCandidate } from "./match"
 import {
@@ -66,7 +67,10 @@ export async function scanSubscriptions(
     }
   }
 
-  for (const [sourceId, sourceSubscriptions] of groupSubscriptionsBySource(enabledSubscriptions)) {
+  for (const [sourceId, sourceSubscriptions] of groupSubscriptionsBySource(
+    settings,
+    enabledSubscriptions
+  )) {
     scannedSourceIds.push(sourceId)
 
     try {
@@ -126,12 +130,17 @@ export async function scanSubscriptions(
 }
 
 function groupSubscriptionsBySource(
+  settings: Pick<Settings, "enabledSources">,
   subscriptions: SubscriptionEntry[]
 ): Map<SourceId, SubscriptionEntry[]> {
   const grouped = new Map<SourceId, SubscriptionEntry[]>()
 
   for (const subscription of subscriptions) {
     for (const sourceId of subscription.sourceIds) {
+      if (!resolveSourceEnabled(sourceId, settings)) {
+        continue
+      }
+
       const existing = grouped.get(sourceId)
       if (existing) {
         existing.push(subscription)
