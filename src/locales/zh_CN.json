@@ -222,13 +222,13 @@
       "connectionHelp": {
         "title": "下载器兼容性提示",
         "body1": {
-          "prefix": "当前仅支持通过浏览器扩展上下文访问本机下载器 WebUI。若 qBittorrent 连接测试返回 401，而账号密码确认无误，请先在 qBittorrent 的",
+          "prefix": "首次连接到新的下载器地址时，浏览器会请求该地址访问权限。若 qBittorrent 连接测试返回 401，而账号密码确认无误，请先在 qBittorrent 的",
           "middle": "中关闭",
           "suffix": "。"
         },
         "body2": {
-          "prefix": "如果关闭后仍失败，再关闭",
-          "suffix": "。仅建议在 WebUI 只供本机使用时这样配置，不建议暴露到局域网或公网。"
+          "prefix": "如果浏览器权限已经允许且仍失败，再关闭",
+          "suffix": "。仅建议在确认 WebUI 只面向你信任的环境时这样配置。"
         }
       }
     },
@@ -623,6 +623,13 @@
     "processing": "处理中...",
     "delete": "删除",
     "retry": "重试"
+  },
+  "downloader": {
+    "permissions": {
+      "invalidUrl": "下载器地址无效：$1",
+      "required": "扩展缺少访问 $1（$2）的权限。请先在“下载器与基础设置”里点击“测试连接”授权后再重试。",
+      "denied": "扩展未获得访问 $1（$2）的权限。请在浏览器弹窗中允许该地址访问后重试。"
+    }
   },
   "subscriptions": {
     "notification": {

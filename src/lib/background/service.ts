@@ -1,4 +1,5 @@
 import { getDownloaderAdapter, getDownloaderMeta } from "../downloader"
+import { ensureDownloaderPermission } from "../downloader/permissions"
 import { getSettings, mergeSettings, sanitizeSettings } from "../settings"
 import type { Settings, TestDownloaderConnectionResult } from "../shared/types"
 
@@ -10,6 +11,7 @@ export async function testDownloaderConnection(
   const downloaderId = settings.currentDownloaderId
   const adapter = getDownloaderAdapter(downloaderId)
   const meta = getDownloaderMeta(downloaderId)
+  await ensureDownloaderPermission(settings)
   const result = await adapter.testConnection(settings)
 
   return {

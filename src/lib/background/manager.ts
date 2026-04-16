@@ -87,6 +87,7 @@ export function createBatchDownloadManager(dependencies: BackgroundBatchDependen
       })
 
       try {
+        await dependencies.ensureDownloaderPermission(job.settings)
         const downloader = dependencies.getDownloader(job.settings)
         await downloader.authenticate(job.settings)
         await submitPreparedResults(job, preparedSubmissions)

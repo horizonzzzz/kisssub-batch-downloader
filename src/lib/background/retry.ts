@@ -19,6 +19,7 @@ export type RetryDependencies = {
   getHistoryRecord: (recordId: string) => Promise<TaskHistoryRecord | null>
   updateHistoryRecord: (record: TaskHistoryRecord) => Promise<void>
   getDownloader: (settings: Settings) => DownloaderAdapter
+  ensureDownloaderPermission: (settings: Settings) => Promise<void>
   fetchTorrentForUpload: (torrentUrl: string) => Promise<DownloaderTorrentFile>
 }
 
@@ -130,6 +131,7 @@ export async function retryFailedItems(
 
   if (urlItems.length > 0 || torrentFileItems.length > 0) {
     try {
+      await deps.ensureDownloaderPermission(settings)
       await downloader.authenticate(settings)
     } catch (error) {
       throw new Error(i18n.t("options.history.retryErrors.authFailed", [error instanceof Error ? error.message : String(error)]))

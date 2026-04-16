@@ -132,6 +132,7 @@ function createMockDeps(
       filename: "test.torrent",
       blob: new Blob(["test"], { type: "application/x-bittorrent" })
     })),
+    ensureDownloaderPermission: vi.fn(async () => {}),
     ...overrides
   }
 }
@@ -224,6 +225,15 @@ describe("retryFailedItems", () => {
         expect.anything(),
         ["magnet:?xt=test"],
         undefined
+      )
+      expect((deps as any).ensureDownloaderPermission).toHaveBeenCalledWith(
+        expect.objectContaining({
+          downloaders: expect.objectContaining({
+            qbittorrent: expect.objectContaining({
+              baseUrl: "http://localhost:8080"
+            })
+          })
+        })
       )
       expect(deps.updateHistoryRecord).toHaveBeenCalled()
       const updatedRecord = (deps.updateHistoryRecord as Mock).mock.calls[0][0]

@@ -25,6 +25,7 @@ export default defineConfig({
     minimum_chrome_version: "114",
     permissions: ["storage", "tabs", "scripting", "alarms", "notifications"],
     host_permissions: CONTENT_SCRIPT_MATCH_PATTERNS,
+    optional_host_permissions: ["http://*/*", "https://*/*"],
     icons: {
       16: "/icon.png",
       32: "/icon.png",

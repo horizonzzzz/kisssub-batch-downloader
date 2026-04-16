@@ -64,7 +64,8 @@ function createManager(overrides: Partial<Parameters<typeof createBatchDownloadM
           "content-disposition": 'attachment; filename="episode-01.torrent"'
         }
       })
-    )
+    ),
+    ensureDownloaderPermission: vi.fn().mockResolvedValue(undefined)
   }
   Object.assign(dependencies, overrides)
 
@@ -700,6 +701,42 @@ describe("createBatchDownloadManager", () => {
     await vi.waitFor(() => {
       expect(manager.activeJobs.size).toBe(0)
     })
+  })
+
+  it("ensures downloader host permission before authenticating and submitting", async () => {
+    const { manager, dependencies, downloader } = createManager()
+
+    await expect(
+      manager.startBatchDownload(
+        22,
+        [
+          {
+            sourceId: "kisssub",
+            detailUrl: "https://www.kisssub.org/show-cafebabe.html",
+            title: "Episode 01",
+            magnetUrl: "magnet:?xt=urn:btih:cafebabe"
+          }
+        ],
+        ""
+      )
+    ).resolves.toEqual({
+      ok: true,
+      total: 1
+    })
+
+    await vi.waitFor(() => {
+      expect(downloader.addUrls).toHaveBeenCalledTimes(1)
+    })
+
+    expect((dependencies as any).ensureDownloaderPermission).toHaveBeenCalledWith(
+      expect.objectContaining({
+        downloaders: expect.objectContaining({
+          qbittorrent: expect.objectContaining({
+            baseUrl: "http://127.0.0.1:17474"
+          })
+        })
+      })
+    )
   })
 
   it("rejects batch downloads from disabled sources before starting a job", async () => {

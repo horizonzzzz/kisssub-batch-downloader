@@ -222,13 +222,13 @@
       "connectionHelp": {
         "title": "Downloader compatibility note",
         "body1": {
-          "prefix": "At the moment the extension only supports accessing a local downloader WebUI from the browser extension context. If qBittorrent returns 401 while the credentials are correct, first disable",
+          "prefix": "The browser will request host access the first time you connect to a new downloader address. If qBittorrent returns 401 while the credentials are correct, first disable",
           "middle": "and turn off",
           "suffix": "."
         },
         "body2": {
-          "prefix": "If it still fails, disable",
-          "suffix": ". Only do this when the WebUI is meant for local-only use; do not expose it to your LAN or the public internet."
+          "prefix": "If host access is already allowed and it still fails, disable",
+          "suffix": ". Only do this when the WebUI is meant for an environment you trust."
         }
       }
     },
@@ -623,6 +623,13 @@
     "processing": "Processing...",
     "delete": "Delete",
     "retry": "Retry"
+  },
+  "downloader": {
+    "permissions": {
+      "invalidUrl": "Invalid downloader URL: $1",
+      "required": "The extension is missing permission to access $1 at $2. Open Downloader & Basic Settings, click Test Connection, then try again.",
+      "denied": "The extension was not granted permission to access $1 at $2. Allow that host in the browser prompt and try again."
+    }
   },
   "subscriptions": {
     "notification": {

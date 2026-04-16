@@ -27,6 +27,7 @@ The extension injects selection UI into supported list pages, reuses direct magn
 - Supported popup surface responsibilities:
   - loading extension runtime status for quick checks before opening options
   - probing current-downloader connectivity on the active supported/enabled source page, surfacing active-tab source support/enabled state, and linking to configuration when the connection check fails
+  - popup-triggered downloader connectivity checks reuse the same runtime permission gate as the options page and batch pipeline, so missing downloader host access is requested before the probe runs
   - offering quick links into options routes and one-click enable/disable for the active supported source, with immediate sync to the current tab's injected UI
 - Runtime UI copy is localized with `@wxt-dev/i18n` for Simplified Chinese and English:
   - the extension follows the browser UI language
@@ -41,6 +42,9 @@ The extension injects selection UI into supported list pages, reuses direct magn
   - `options.html#/history`
   - `options.html#/overview`
 - Supported downloader targets: `qBittorrent WebUI` and `Transmission RPC`
+- downloader host access is granted dynamically from the user-configured downloader `baseUrl`:
+  - supported `http` and `https` hosts are requested through browser optional host permissions at connection-test time or before real submissions/retries
+  - saving settings does not force a permission prompt; permission is requested only when the extension actually needs to reach the configured downloader host
 - Optional per-batch save path override is supported
 - Pre-submit filters can keep resources by selected source scope, title field, and subgroup text extracted from the list-page title
 - When the current source has effective filters (rules whose `sourceIds[]` include that source), unmatched resources are blocked; when the current source has no effective filters, resources are allowed by default
@@ -80,7 +84,7 @@ The extension injects selection UI into supported list pages, reuses direct magn
 ## Source Of Truth Files
 
 - `wxt.config.ts`
-  WXT project configuration, including manifest metadata, React module registration, and build output paths.
+  WXT project configuration, including manifest metadata, downloader optional host permissions, React module registration, and build output paths.
 - `src/entrypoints/background/index.ts`
   Boots the background runtime through WXT and delegates orchestration to `src/entrypoints/background/runtime.ts`.
 - `src/entrypoints/options/`
@@ -110,7 +114,7 @@ The extension injects selection UI into supported list pages, reuses direct magn
   Canonical release notes for tagged versions. Each GitHub Release page should reuse the matching version section from this file. New release entries must summarize the changes from the previous version tag up to the new release commit.
 - `src/lib/`
   Domain-organized shared logic:
-  - `src/lib/background/` for batch orchestration, subscription execution/download services, job-state helpers, and background-only services
+  - `src/lib/background/` for batch orchestration, subscription execution/download services, job-state helpers, downloader host-permission checks, and background-only services
   - `src/lib/content/` for source-page matching helpers and content-side selection/filter derivation
   - `src/lib/downloader/` for downloader adapter contracts, supported-downloader registry/meta, and downloader-facing shared types
   - `src/lib/downloader/qb/` for qBittorrent WebUI client helpers and submission APIs

@@ -76,12 +76,11 @@ describe("package metadata", () => {
     expect(existsSync(resolve(process.cwd(), "src", "locales", "en.json"))).toBe(true)
   })
 
-  it("keeps manifest host permissions aligned with the shared source match patterns instead of broad wildcards", () => {
+  it("keeps source host permissions narrow while declaring optional host permissions for downloader access", () => {
     const wxtConfig = readText("wxt.config.ts")
 
     expect(wxtConfig).toContain("host_permissions: CONTENT_SCRIPT_MATCH_PATTERNS")
-    expect(wxtConfig).not.toContain('"http://*/*"')
-    expect(wxtConfig).not.toContain('"https://*/*"')
+    expect(wxtConfig).toContain('optional_host_permissions: ["http://*/*", "https://*/*"]')
   })
 
   it("declares the background runtime permissions required by subscription polling and notifications", () => {

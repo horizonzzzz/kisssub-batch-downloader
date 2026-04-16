@@ -2,6 +2,22 @@
 
 All notable release changes for `Anime BT Batch Downloader` are tracked here. GitHub Release pages should reuse the matching version section from this file.
 
+## 2.1.0
+
+### Features
+
+- Added browser-locale-driven localization for manifest strings, popup, options, and injected batch UI with shared Simplified Chinese and English catalogs. (`d2ead32`)
+
+### Fixes
+
+- Fixed localized follow-through copy and history presentation so runtime guidance, retries, and recorded batch details stay consistent after the i18n rollout. (`8aa2d79`)
+- Fixed downloader connectivity checks and submissions by requesting optional host permissions dynamically from the configured downloader host only when runtime access is needed. (`2dfe6c2`)
+
+### Refactor
+
+- Finalized the source-scoped filter model so rules persist through `sourceIds[]`, `must[]`, and optional `any[]` conditions consistently across sanitization, matching, and the options workbench. (`88b713a`)
+- Refreshed the WXT test and tooling stack by integrating the Vitest plugin, stabilizing the full `test:all` flow and Playwright browser selection, and upgrading core npm dependencies before release. (`080f5aa`, `80ef392`, `cdbdad4`, `d873b44`, `7ed7d79`)
+
 ## 2.0.0
 
 ### Features

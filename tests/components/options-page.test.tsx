@@ -4,6 +4,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import { OptionsPage, type OptionsApi } from "../../src/components/options/OptionsPage"
 
+const permissionsContainsMock = vi.fn()
+const permissionsRequestMock = vi.fn()
+
 const settings = {
   currentDownloaderId: "qbittorrent",
   downloaders: {
@@ -71,7 +74,20 @@ function createOptionsApi(overrides: Partial<OptionsApi> = {}): OptionsApi {
 
 describe("OptionsPage", () => {
   beforeEach(() => {
+    vi.clearAllMocks()
     window.location.hash = ""
+    permissionsContainsMock.mockResolvedValue(true)
+    permissionsRequestMock.mockResolvedValue(true)
+    const runtimeBrowser = (globalThis as typeof globalThis & {
+      browser: {
+        permissions: {
+          contains: typeof permissionsContainsMock
+          request: typeof permissionsRequestMock
+        }
+      }
+    }).browser
+    runtimeBrowser.permissions.contains = permissionsContainsMock
+    runtimeBrowser.permissions.request = permissionsRequestMock
     Object.defineProperty(HTMLElement.prototype, "hasPointerCapture", {
       configurable: true,
       value: () => false
@@ -964,6 +980,54 @@ describe("OptionsPage", () => {
         expect(screen.getByRole("status")).toHaveTextContent("连接成功。")
         expect(screen.getByRole("status")).toHaveTextContent("5.0.0")
       })
+    },
+    10000
+  )
+
+  it(
+    "requests downloader host permission from the options page before testing the connection",
+    async () => {
+      const user = userEvent.setup()
+      const api = createOptionsApi()
+
+      permissionsContainsMock.mockResolvedValueOnce(false)
+
+      render(<OptionsPage api={api} />)
+
+      expect(await screen.findByRole("status")).toHaveTextContent("设置已加载。")
+
+      await user.click(screen.getByRole("button", { name: "测试连接" }))
+
+      expect(permissionsContainsMock).toHaveBeenCalledWith({
+        origins: ["http://127.0.0.1/*"]
+      })
+      expect(permissionsRequestMock).toHaveBeenCalledWith({
+        origins: ["http://127.0.0.1/*"]
+      })
+      expect(api.testConnection).toHaveBeenCalledWith(editableSettings)
+    },
+    10000
+  )
+
+  it(
+    "surfaces a permission error and skips the connection probe when the user denies host access",
+    async () => {
+      const user = userEvent.setup()
+      const api = createOptionsApi()
+
+      permissionsContainsMock.mockResolvedValueOnce(false)
+      permissionsRequestMock.mockResolvedValueOnce(false)
+
+      render(<OptionsPage api={api} />)
+
+      expect(await screen.findByRole("status")).toHaveTextContent("设置已加载。")
+
+      await user.click(screen.getByRole("button", { name: "测试连接" }))
+
+      await waitFor(() => {
+        expect(screen.getByRole("status")).toHaveTextContent("权限")
+      })
+      expect(api.testConnection).not.toHaveBeenCalled()
     },
     10000
   )

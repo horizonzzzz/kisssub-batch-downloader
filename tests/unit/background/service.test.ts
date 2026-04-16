@@ -9,14 +9,18 @@ const {
   sanitizeSettingsMock,
   getDownloaderAdapterMock,
   getDownloaderMetaMock,
-  testConnectionMock
+  testConnectionMock,
+  permissionsContainsMock,
+  permissionsRequestMock
 } = vi.hoisted(() => ({
   getSettingsMock: vi.fn(),
   mergeSettingsMock: vi.fn(),
   sanitizeSettingsMock: vi.fn(),
   getDownloaderAdapterMock: vi.fn(),
   getDownloaderMetaMock: vi.fn(),
-  testConnectionMock: vi.fn()
+  testConnectionMock: vi.fn(),
+  permissionsContainsMock: vi.fn(),
+  permissionsRequestMock: vi.fn()
 }))
 
 vi.mock("../../../src/lib/settings", async () => {
@@ -36,6 +40,22 @@ vi.mock("../../../src/lib/downloader", () => ({
   getDownloaderAdapter: getDownloaderAdapterMock,
   getDownloaderMeta: getDownloaderMetaMock
 }))
+
+vi.mock("../../../src/lib/shared/browser", async () => {
+  const actual = await vi.importActual<typeof import("../../../src/lib/shared/browser")>(
+    "../../../src/lib/shared/browser"
+  )
+
+  return {
+    ...actual,
+    getBrowser: vi.fn(() => ({
+      permissions: {
+        contains: permissionsContainsMock,
+        request: permissionsRequestMock
+      }
+    }))
+  }
+})
 
 import { testDownloaderConnection } from "../../../src/lib/background/service"
 
@@ -80,6 +100,8 @@ describe("testDownloaderConnection", () => {
       baseUrl: "http://127.0.0.1:17474",
       version: "4.6.0"
     })
+    permissionsContainsMock.mockResolvedValue(true)
+    permissionsRequestMock.mockResolvedValue(true)
   })
 
   it("merges stored settings with overrides, sanitizes them, and uses the selected downloader adapter", async () => {
@@ -114,6 +136,10 @@ describe("testDownloaderConnection", () => {
     })
     expect(sanitizeSettingsMock).toHaveBeenCalledWith(sanitizedSettings)
     expect(getDownloaderAdapterMock).toHaveBeenCalledWith("qbittorrent")
+    expect(permissionsContainsMock).toHaveBeenCalledWith({
+      origins: ["http://127.0.0.1/*"]
+    })
+    expect(permissionsRequestMock).not.toHaveBeenCalled()
     expect(testConnectionMock).toHaveBeenCalledWith(sanitizedSettings)
   })
 
@@ -135,5 +161,21 @@ describe("testDownloaderConnection", () => {
     testConnectionMock.mockRejectedValueOnce(new Error("bad login"))
 
     await expect(testDownloaderConnection(null)).rejects.toThrow("bad login")
+  })
+
+  it("fails with a permission-specific error when downloader host access is missing", async () => {
+    permissionsContainsMock.mockResolvedValueOnce(false)
+
+    await expect(testDownloaderConnection(null)).rejects.toThrow("权限")
+    expect(permissionsRequestMock).not.toHaveBeenCalled()
+    expect(testConnectionMock).not.toHaveBeenCalled()
+  })
+
+  it("fails with a permission-specific error when downloader host access is denied", async () => {
+    permissionsContainsMock.mockResolvedValueOnce(false)
+    permissionsRequestMock.mockResolvedValueOnce(false)
+
+    await expect(testDownloaderConnection(null)).rejects.toThrow("权限")
+    expect(testConnectionMock).not.toHaveBeenCalled()
   })
 })

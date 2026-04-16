@@ -1,4 +1,5 @@
 import { i18n } from "../../../lib/i18n"
+import { requestDownloaderPermission } from "../../../lib/downloader/permissions"
 import { useEffect, useState } from "react"
 
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -131,9 +132,9 @@ export function useSettingsForm(api: OptionsApi) {
     })
 
     try {
-      const result = (await api.testConnection(
-        toSettingsPayload(form.getValues())
-      )) as TestDownloaderConnectionResult
+      const payload = toSettingsPayload(form.getValues())
+      await requestDownloaderPermission(payload)
+      const result = (await api.testConnection(payload)) as TestDownloaderConnectionResult
       setConnectionState("success")
       setConnectionMessage(
         i18n.t("options.status.connectedTo", [result.displayName, result.baseUrl || i18n.t("options.status.noAddressReturned")])
