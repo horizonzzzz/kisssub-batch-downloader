@@ -515,6 +515,7 @@
         "notificationsEnabledDescription": "Show browser notifications when a polling round discovers new hits.",
         "notificationDownloadActionTitle": "Notification click downloads hits",
         "notificationDownloadActionDescription": "If enabled, clicking a notification triggers the current downloader flow for that round.",
+        "saveButton": "Save subscription settings",
         "runtimeTitle": "Runtime status",
         "lastSchedulerRunAt": "Last scheduler run",
         "notificationActionStateLabel": "Notification click action",

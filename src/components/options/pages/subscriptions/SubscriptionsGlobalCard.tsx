@@ -1,6 +1,6 @@
 import { i18n } from "../../../../lib/i18n"
 
-import { Badge, Card, Input, Label, Switch } from "../../../ui"
+import { Badge, Button, Card, Input, Label, Switch } from "../../../ui"
 import {
   formatSubscriptionDateTime,
   getNotificationDownloadActionStateLabel
@@ -17,10 +17,13 @@ type SubscriptionsGlobalCardProps = {
   errorCount: number
   recentHitCount: number
   lastSchedulerRunAt: string | null
+  loading?: boolean
+  saving?: boolean
   onSubscriptionsEnabledChange: (enabled: boolean) => void
   onPollingIntervalMinutesChange: (minutes: number) => void
   onNotificationsEnabledChange: (enabled: boolean) => void
   onNotificationDownloadActionEnabledChange: (enabled: boolean) => void
+  onSave?: () => void
 }
 
 export function SubscriptionsGlobalCard({
@@ -34,15 +37,19 @@ export function SubscriptionsGlobalCard({
   errorCount,
   recentHitCount,
   lastSchedulerRunAt,
+  loading = false,
+  saving = false,
   onSubscriptionsEnabledChange,
   onPollingIntervalMinutesChange,
   onNotificationsEnabledChange,
-  onNotificationDownloadActionEnabledChange
+  onNotificationDownloadActionEnabledChange,
+  onSave
 }: SubscriptionsGlobalCardProps) {
   const notificationActionState = getNotificationDownloadActionStateLabel(
     notificationsEnabled,
     notificationDownloadActionEnabled
   )
+  const controlsDisabled = loading || saving
 
   return (
     <Card>
@@ -82,6 +89,7 @@ export function SubscriptionsGlobalCard({
               title={i18n.t("options.subscriptions.global.enabledTitle")}
               description={i18n.t("options.subscriptions.global.enabledDescription")}
               checked={subscriptionsEnabled}
+              disabled={controlsDisabled}
               onCheckedChange={onSubscriptionsEnabledChange}
             />
 
@@ -97,6 +105,7 @@ export function SubscriptionsGlobalCard({
                 max={120}
                 step={5}
                 value={pollingIntervalMinutes}
+                disabled={controlsDisabled}
                 onChange={(event) =>
                   onPollingIntervalMinutesChange(Number.parseInt(event.target.value || "0", 10))
                 }
@@ -110,6 +119,7 @@ export function SubscriptionsGlobalCard({
               title={i18n.t("options.subscriptions.global.notificationsEnabledTitle")}
               description={i18n.t("options.subscriptions.global.notificationsEnabledDescription")}
               checked={notificationsEnabled}
+              disabled={controlsDisabled}
               onCheckedChange={onNotificationsEnabledChange}
             />
 
@@ -117,7 +127,7 @@ export function SubscriptionsGlobalCard({
               title={i18n.t("options.subscriptions.global.notificationDownloadActionTitle")}
               description={i18n.t("options.subscriptions.global.notificationDownloadActionDescription")}
               checked={notificationDownloadActionEnabled}
-              disabled={!notificationsEnabled}
+              disabled={controlsDisabled || !notificationsEnabled}
               onCheckedChange={onNotificationDownloadActionEnabledChange}
             />
           </div>
@@ -143,6 +153,16 @@ export function SubscriptionsGlobalCard({
             </dl>
           </div>
         </div>
+
+        {onSave ? (
+          <div className="flex justify-end border-t border-zinc-100 pt-2">
+            <Button type="button" size="sm" onClick={onSave} disabled={controlsDisabled}>
+              {saving
+                ? i18n.t("common.processing")
+                : i18n.t("options.subscriptions.global.saveButton")}
+            </Button>
+          </div>
+        ) : null}
       </div>
     </Card>
   )

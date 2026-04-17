@@ -86,7 +86,8 @@ describe("subscription workbench helpers", () => {
         id: "hit-2",
         title: "[LoliHouse] Medalist - 02 [1080p]",
         detailUrl: "https://acg.rip/t/101",
-        torrentUrl: "https://acg.rip/t/101.torrent"
+        torrentUrl: "https://acg.rip/t/101.torrent",
+        discoveredAt: "2026-04-14T09:00:00.000Z"
       })
     ])
 

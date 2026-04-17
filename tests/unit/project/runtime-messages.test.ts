@@ -36,14 +36,14 @@ describe("runtime message helpers", () => {
   })
 
   it("delegates a runtime request to chrome.runtime.sendMessage and returns the response", async () => {
-    const response = createRuntimeSuccessResponse("GET_SETTINGS", {
+    const response = createRuntimeSuccessResponse("GET_APP_SETTINGS", {
       settings: DEFAULT_SETTINGS
     })
     runtimeSendMessage.mockResolvedValue(response)
 
-    await expect(sendRuntimeRequest({ type: "GET_SETTINGS" })).resolves.toEqual(response)
+    await expect(sendRuntimeRequest({ type: "GET_APP_SETTINGS" })).resolves.toEqual(response)
     expect(runtimeSendMessage).toHaveBeenCalledWith({
-      type: "GET_SETTINGS"
+      type: "GET_APP_SETTINGS"
     })
   })
 
@@ -82,6 +82,32 @@ describe("runtime message helpers", () => {
     ).toEqual({
       ok: true,
       state: popupState
+    })
+  })
+
+  it("keeps TEST_DOWNLOADER_CONNECTION available for partial app settings probes", async () => {
+    runtimeSendMessage.mockResolvedValue({
+      ok: true,
+      result: {
+        downloaderId: "qbittorrent",
+        displayName: "qBittorrent",
+        baseUrl: "http://127.0.0.1:17474",
+        version: "5.0.0"
+      }
+    })
+
+    await sendRuntimeRequest({
+      type: "TEST_DOWNLOADER_CONNECTION",
+      settings: {
+        currentDownloaderId: "qbittorrent"
+      }
+    })
+
+    expect(runtimeSendMessage).toHaveBeenCalledWith({
+      type: "TEST_DOWNLOADER_CONNECTION",
+      settings: {
+        currentDownloaderId: "qbittorrent"
+      }
     })
   })
 

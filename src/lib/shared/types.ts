@@ -133,7 +133,7 @@ export type TransmissionSettings = {
   password: string
 }
 
-export type Settings = {
+export type AppSettings = {
   currentDownloaderId: DownloaderId
   downloaders: {
     qbittorrent: QbittorrentSettings
@@ -153,10 +153,6 @@ export type Settings = {
   pollingIntervalMinutes: number
   notificationsEnabled: boolean
   notificationDownloadActionEnabled: boolean
-  lastSchedulerRunAt: string | null
-  subscriptions: SubscriptionEntry[]
-  subscriptionRuntimeStateById: Record<string, SubscriptionRuntimeState>
-  subscriptionNotificationRounds: SubscriptionNotificationRound[]
 }
 
 export type TestDownloaderConnectionResult = {

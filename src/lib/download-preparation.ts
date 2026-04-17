@@ -1,9 +1,9 @@
 import { getDeliveryModePriority } from "./sources/delivery"
 import type {
+  AppSettings,
   BatchItem,
   ClassifiedBatchResult,
   ExtractionResult,
-  Settings,
   SourceId
 } from "./shared/types"
 
@@ -15,7 +15,7 @@ export function normalizeTitle(title: unknown): string {
 
 export function classifyPreparedBatchItem(
   item: BatchItem,
-  settings: Pick<Settings, "sourceDeliveryModes">,
+  settings: Pick<AppSettings, "sourceDeliveryModes">,
   seenHashes: Set<string>,
   seenUrls: Set<string>
 ): ClassifiedBatchResult | null {
@@ -51,7 +51,7 @@ export function createPreparedExtractionResult(item: BatchItem): ExtractionResul
 export function classifyExtractionResult(
   sourceId: SourceId,
   result: ExtractionResult,
-  settings: Pick<Settings, "sourceDeliveryModes">,
+  settings: Pick<AppSettings, "sourceDeliveryModes">,
   seenHashes: Set<string>,
   seenUrls: Set<string>
 ): ClassifiedBatchResult {
@@ -89,7 +89,7 @@ export function extractDetailHash(url: string): string {
 function classifyCandidateUrls(
   sourceId: SourceId,
   result: ExtractionResult,
-  settings: Pick<Settings, "sourceDeliveryModes">,
+  settings: Pick<AppSettings, "sourceDeliveryModes">,
   seenHashes: Set<string>,
   seenUrls: Set<string>
 ): ClassifiedBatchResult {

@@ -1,23 +1,21 @@
-import { describe, expect, it, vi } from "vitest"
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
+import type {
+  AppSettings,
+  SubscriptionEntry,
+  SubscriptionHitRecord
+} from "../../../src/lib/shared/types"
 import type { DownloaderAdapter, DownloaderTorrentFile } from "../../../src/lib/downloader"
 import { DEFAULT_SETTINGS } from "../../../src/lib/settings/defaults"
-import type {
-  Settings,
-  SubscriptionEntry,
-  SubscriptionHitRecord,
-  SubscriptionRuntimeState
-} from "../../../src/lib/shared/types"
+import { resetSubscriptionDb, subscriptionDb } from "../../../src/lib/subscriptions/db"
 import { downloadSubscriptionNotificationHits } from "../../../src/lib/subscriptions/download-notification"
+import { listNotificationRounds } from "../../../src/lib/subscriptions/runtime-query"
 
-function createSettings(overrides: Partial<Settings> = {}): Settings {
+function createAppSettings(overrides: Partial<AppSettings> = {}): AppSettings {
   return {
     ...DEFAULT_SETTINGS,
     subscriptionsEnabled: true,
     notificationsEnabled: true,
-    subscriptions: [],
-    subscriptionRuntimeStateById: {},
-    subscriptionNotificationRounds: [],
     ...overrides
   }
 }
@@ -29,7 +27,7 @@ function createSubscription(
     id: "sub-1",
     name: "Medalist",
     enabled: true,
-    sourceIds: ["acgrip"],
+    sourceIds: ["bangumimoe"],
     multiSiteModeEnabled: false,
     titleQuery: "medalist",
     subgroupQuery: "",
@@ -44,33 +42,20 @@ function createSubscription(
   }
 }
 
-function createRuntimeState(
-  overrides: Partial<SubscriptionRuntimeState> = {}
-): SubscriptionRuntimeState {
-  return {
-    lastScanAt: "2026-04-10T00:00:00.000Z",
-    lastMatchedAt: null,
-    lastError: "",
-    seenFingerprints: [],
-    recentHits: [],
-    ...overrides
-  }
-}
-
 function createHit(
   overrides: Partial<SubscriptionHitRecord> = {}
 ): SubscriptionHitRecord {
   return {
-    id: "subscription-hit:sub-1:https%3A%2F%2Facg.rip%2Ft%2F100.torrent",
+    id: "hit-1",
     subscriptionId: "sub-1",
-    sourceId: "acgrip",
+    sourceId: "bangumimoe",
     title: "[LoliHouse] Medalist - 01 [1080p]",
     normalizedTitle: "[lolihouse] medalist - 01 [1080p]",
     subgroup: "",
-    detailUrl: "https://acg.rip/t/100",
-    magnetUrl: "",
-    torrentUrl: "https://acg.rip/t/100.torrent",
-    discoveredAt: "2026-04-14T08:00:00.000Z",
+    detailUrl: "https://bangumi.moe/torrent/100",
+    magnetUrl: "magnet:?xt=urn:btih:AAA111",
+    torrentUrl: "",
+    discoveredAt: "2026-04-14T09:30:00.000Z",
     downloadedAt: null,
     downloadStatus: "idle",
     ...overrides
@@ -78,63 +63,82 @@ function createHit(
 }
 
 describe("downloadSubscriptionNotificationHits", () => {
-  it("updates runtime state and retained round hits for submitted, duplicate, and extracted entries", async () => {
+  beforeEach(async () => {
+    await resetSubscriptionDb()
+  })
+
+  afterEach(async () => {
+    await resetSubscriptionDb()
+  })
+
+  it("prunes disabled subscription hits from rounds without touching app settings", async () => {
     const now = "2026-04-14T09:30:00.000Z"
-    const settings = createSettings({
-      subscriptions: [
-        createSubscription({
-          id: "sub-1",
-          sourceIds: ["bangumimoe"],
-          deliveryMode: "direct-only"
-        }),
-        createSubscription({
-          id: "sub-2",
-          sourceIds: ["acgrip"],
-          deliveryMode: "allow-detail-extraction"
-        })
-      ],
-      subscriptionRuntimeStateById: {
-        "sub-1": createRuntimeState({
-          recentHits: [
-            createHit({
-              id: "hit-direct",
-              subscriptionId: "sub-1",
-              sourceId: "bangumimoe",
-              detailUrl: "https://bangumi.moe/torrent/100",
-              magnetUrl: "magnet:?xt=urn:btih:AAA111",
-              torrentUrl: ""
-            }),
-            createHit({
-              id: "hit-duplicate",
-              subscriptionId: "sub-1",
-              sourceId: "bangumimoe",
-              detailUrl: "https://bangumi.moe/torrent/101",
-              magnetUrl: "magnet:?xt=urn:btih:AAA111",
-              torrentUrl: ""
-            })
-          ]
-        }),
-        "sub-2": createRuntimeState({
-          recentHits: [
-            createHit({
-              id: "hit-extract",
-              subscriptionId: "sub-2",
-              sourceId: "acgrip",
-              detailUrl: "https://acg.rip/t/200",
-              magnetUrl: "",
-              torrentUrl: ""
-            })
-          ]
-        })
-      },
-      subscriptionNotificationRounds: [
-        {
-          id: "subscription-round:20260414093000000",
-          createdAt: now,
-          hitIds: ["hit-direct", "hit-duplicate", "hit-extract"]
-        }
-      ]
+
+    await subscriptionDb.subscriptions.put(
+      createSubscription({
+        id: "sub-disabled",
+        enabled: false
+      })
+    )
+    await subscriptionDb.subscriptionHits.put(
+      createHit({
+        id: "hit-disabled",
+        subscriptionId: "sub-disabled"
+      })
+    )
+    await subscriptionDb.notificationRounds.put({
+      id: "subscription-round:20260414093000000",
+      createdAt: now,
+      hitIds: ["hit-disabled"]
     })
+
+    const downloader: DownloaderAdapter = {
+      id: "qbittorrent",
+      displayName: "qBittorrent",
+      authenticate: vi.fn(async () => undefined),
+      addUrls: vi.fn(async () => ({ entries: [] })),
+      addTorrentFiles: vi.fn(async () => undefined),
+      testConnection: vi.fn(async () => ({
+        baseUrl: "http://localhost:8080",
+        version: "5.0.0"
+      }))
+    }
+
+    const result = await downloadSubscriptionNotificationHits(
+      {
+        appSettings: createAppSettings(),
+        roundId: "subscription-round:20260414093000000"
+      },
+      {
+        downloader,
+        fetchTorrentForUpload: vi.fn(
+          async (): Promise<DownloaderTorrentFile> => ({
+            filename: "unused.torrent",
+            blob: new Blob(["torrent"])
+          })
+        ),
+        extractSingleItem: vi.fn(),
+        now: () => now
+      }
+    )
+
+    expect(result.totalHits).toBe(0)
+    expect(result.attemptedHits).toBe(0)
+    await expect(listNotificationRounds()).resolves.toEqual([])
+    expect(downloader.authenticate).not.toHaveBeenCalled()
+  })
+
+  it("updates hit download status in Dexie after successful submission", async () => {
+    const now = "2026-04-14T09:30:00.000Z"
+
+    await subscriptionDb.subscriptions.put(createSubscription())
+    await subscriptionDb.subscriptionHits.put(createHit())
+    await subscriptionDb.notificationRounds.put({
+      id: "subscription-round:20260414093000000",
+      createdAt: now,
+      hitIds: ["hit-1"]
+    })
+
     const downloader: DownloaderAdapter = {
       id: "qbittorrent",
       displayName: "qBittorrent",
@@ -153,83 +157,31 @@ describe("downloadSubscriptionNotificationHits", () => {
         version: "5.0.0"
       }))
     }
-    const fetchTorrentForUpload = vi.fn(
-      async (): Promise<DownloaderTorrentFile> => ({
-        filename: "medalist-02.torrent",
-        blob: new Blob(["torrent"])
-      })
-    )
-    const extractSingleItem = vi.fn(async () => ({
-      ok: true as const,
-      title: "[LoliHouse] Medalist - 02 [1080p]",
-      detailUrl: "https://acg.rip/t/200",
-      hash: "",
-      magnetUrl: "",
-      torrentUrl: "https://acg.rip/t/200.torrent",
-      failureReason: ""
-    }))
 
     const result = await downloadSubscriptionNotificationHits(
-      settings,
-      { roundId: "subscription-round:20260414093000000" },
+      {
+        appSettings: createAppSettings(),
+        roundId: "subscription-round:20260414093000000"
+      },
       {
         downloader,
-        fetchTorrentForUpload,
-        extractSingleItem,
+        fetchTorrentForUpload: vi.fn(
+          async (): Promise<DownloaderTorrentFile> => ({
+            filename: "unused.torrent",
+            blob: new Blob(["torrent"])
+          })
+        ),
+        extractSingleItem: vi.fn(),
         now: () => now
       }
     )
 
-    expect(result.runtimePatch).toEqual({
-      subscriptionRuntimeStateById: result.settings.subscriptionRuntimeStateById,
-      subscriptionNotificationRounds: result.settings.subscriptionNotificationRounds
-    })
-    expect(result.attemptedHits).toBe(3)
-    expect(result.submittedCount).toBe(2)
-    expect(result.duplicateCount).toBe(1)
-    expect(result.failedCount).toBe(0)
-    expect(downloader.authenticate).toHaveBeenCalledTimes(1)
-    expect(fetchTorrentForUpload).toHaveBeenCalledWith("https://acg.rip/t/200.torrent")
-    expect(result.settings.subscriptionRuntimeStateById["sub-1"]?.recentHits).toEqual([
+    expect(result.submittedCount).toBe(1)
+    expect(await subscriptionDb.subscriptionHits.toArray()).toEqual([
       expect.objectContaining({
-        id: "hit-direct",
+        id: "hit-1",
         downloadStatus: "submitted",
         downloadedAt: now
-      }),
-      expect.objectContaining({
-        id: "hit-duplicate",
-        downloadStatus: "duplicate",
-        downloadedAt: now
-      })
-    ])
-    expect(result.settings.subscriptionRuntimeStateById["sub-2"]?.recentHits).toEqual([
-      expect.objectContaining({
-        id: "hit-extract",
-        downloadStatus: "submitted",
-        downloadedAt: now
-      })
-    ])
-    expect(result.settings.subscriptionNotificationRounds).toEqual([
-      expect.objectContaining({
-        id: "subscription-round:20260414093000000",
-        hitIds: ["hit-direct", "hit-duplicate", "hit-extract"],
-        hits: [
-          expect.objectContaining({
-            id: "hit-direct",
-            downloadStatus: "submitted",
-            downloadedAt: now
-          }),
-          expect.objectContaining({
-            id: "hit-duplicate",
-            downloadStatus: "duplicate",
-            downloadedAt: now
-          }),
-          expect.objectContaining({
-            id: "hit-extract",
-            downloadStatus: "submitted",
-            downloadedAt: now
-          })
-        ]
       })
     ])
   })

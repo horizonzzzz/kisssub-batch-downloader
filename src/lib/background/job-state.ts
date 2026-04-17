@@ -1,10 +1,10 @@
 import type { BatchJob } from "./types"
-import type { BatchStats, BatchSummary, ClassifiedBatchResult, Settings } from "../shared/types"
+import type { AppSettings, BatchStats, BatchSummary, ClassifiedBatchResult } from "../shared/types"
 
 export function createBatchJob(
   sourceTabId: number,
   total: number,
-  settings: Settings,
+  settings: AppSettings,
   savePath: string
 ): BatchJob {
   return {

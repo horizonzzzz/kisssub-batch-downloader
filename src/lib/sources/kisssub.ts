@@ -2,7 +2,7 @@ import { extractDetailHash, normalizeTitle } from "../download-preparation"
 import { getBrowser } from "../shared/browser"
 import { DEFAULT_SOURCE_DELIVERY_MODES, getSupportedDeliveryModes } from "./delivery"
 import { matchesSourceHost } from "./matching"
-import type { BatchItem, ExtractionResult, Settings } from "../shared/types"
+import type { AppSettings, BatchItem, ExtractionResult } from "../shared/types"
 import { reloadDetailTab, withDetailTab } from "./detail-tab"
 import type { SourceAdapter } from "./types"
 
@@ -146,7 +146,11 @@ export function parseKisssubDetailSnapshot(
   }
 }
 
-async function executeExtraction(tabId: number, settings: Settings, mode: "prepare" | "extract") {
+async function executeExtraction(
+  tabId: number,
+  settings: AppSettings,
+  mode: "prepare" | "extract"
+) {
   const execution = await getBrowser().scripting.executeScript({
     target: { tabId },
     world: MAIN_EXECUTION_WORLD,

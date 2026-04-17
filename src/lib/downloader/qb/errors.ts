@@ -1,8 +1,8 @@
-import type { Settings } from "../../shared/types"
+import type { AppSettings } from "../../shared/types"
 
 export function getQbLoginErrorMessage(
   status: number,
-  settings: Pick<Settings, "downloaders">
+  settings: Pick<AppSettings, "downloaders">
 ): string {
   const baseUrl = settings.downloaders.qbittorrent.baseUrl
   if (status === 401) {

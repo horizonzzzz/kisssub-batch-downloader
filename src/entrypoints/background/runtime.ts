@@ -1,5 +1,6 @@
 import {
   buildPopupState,
+  deleteSubscriptionDefinition,
   createBatchDownloadManager,
   downloadSubscriptionHits,
   executeSubscriptionScan,
@@ -8,10 +9,10 @@ import {
   notifyActiveTabOfSourceEnabledChange,
   openOptionsPageForRoute,
   reconcileSubscriptionAlarm,
-  saveSettingsWithSubscriptionReconcile,
   retryFailedItems,
   testDownloaderConnection,
-  setSourceEnabledForPopup
+  setSourceEnabledForPopup,
+  upsertSubscriptionDefinition
 } from "../../lib/background"
 import { getDownloaderAdapter } from "../../lib/downloader"
 import { ensureDownloaderPermission } from "../../lib/downloader/permissions"
@@ -33,7 +34,7 @@ import {
 import { i18n } from "../../lib/i18n"
 import { isOptionsRoutePath } from "../../lib/shared/options-routes"
 import { getBrowser } from "../../lib/shared/browser"
-import type { SourceId } from "../../lib/shared/types"
+import type { AppSettings, SourceId } from "../../lib/shared/types"
 import type { BatchEventPayload } from "../../lib/shared/types"
 import { extractSingleItem } from "../../lib/sources/extraction"
 import { getSourceAdapterForPage } from "../../lib/sources"
@@ -99,7 +100,9 @@ export function registerBackgroundRuntime() {
       return
     }
 
-    void executeSubscriptionScan()
+    void executeSubscriptionScan().catch(() => {
+      // Alarm-triggered scans are best-effort and should not surface unhandled rejections.
+    })
   })
 
   extensionBrowser.notifications.onClicked.addListener((notificationId) => {
@@ -114,6 +117,9 @@ export function registerBackgroundRuntime() {
         return
       }
 
+      await ensureDownloaderPermission(settings, {
+        interactive: true
+      })
       await downloadSubscriptionHits({ roundId })
     })().catch(() => {
       // Notification click downloads are best-effort and should not crash the runtime.
@@ -145,28 +151,25 @@ export function registerBackgroundRuntime() {
     void (async () => {
       try {
         switch (runtimeMessage.type) {
-          case "GET_SETTINGS":
+          case "GET_APP_SETTINGS":
             sendResponse(
-              createRuntimeSuccessResponse("GET_SETTINGS", {
+              createRuntimeSuccessResponse("GET_APP_SETTINGS", {
                 settings: await getSettings()
               })
             )
             return
-          case "SAVE_SETTINGS":
-            const savedSettings = await saveSettingsWithSubscriptionReconcile(
-              runtimeMessage.settings ?? {},
-              {
-                getSettings,
-                saveSettings
-              }
-            )
-            await notifySupportedSourceTabsOfFilterChange()
+          case "SAVE_APP_SETTINGS":
+            const currentSettings = await getSettings()
+            const savedSettings = await saveSettings(runtimeMessage.settings ?? {})
+            if (didContentSyncRelevantSettingsChange(currentSettings, savedSettings)) {
+              await notifySupportedSourceTabsOfFilterChange()
+            }
             await reconcileSubscriptionAlarm({
               getSettings: async () => savedSettings,
               alarms: extensionBrowser.alarms
             })
             sendResponse(
-              createRuntimeSuccessResponse("SAVE_SETTINGS", {
+              createRuntimeSuccessResponse("SAVE_APP_SETTINGS", {
                 settings: savedSettings
               })
             )
@@ -190,25 +193,13 @@ export function registerBackgroundRuntime() {
               })
             )
             return
-          case "GET_SUBSCRIPTION_STATUS":
-            sendResponse(
-              createRuntimeSuccessResponse("GET_SUBSCRIPTION_STATUS", {
-                settings: await getSettings()
-              })
-            )
+          case "UPSERT_SUBSCRIPTION":
+            await upsertSubscriptionDefinition(runtimeMessage.subscription)
+            sendResponse(createRuntimeSuccessResponse("UPSERT_SUBSCRIPTION", {}))
             return
-          case "RUN_SUBSCRIPTION_SCAN_NOW": {
-            const result = await executeSubscriptionScan()
-            sendResponse(
-              createRuntimeSuccessResponse("RUN_SUBSCRIPTION_SCAN_NOW", {
-                roundId: result.notificationRound?.id ?? null
-              })
-            )
-            return
-          }
-          case "DOWNLOAD_SUBSCRIPTION_HITS":
-            await downloadSubscriptionHits({ roundId: runtimeMessage.roundId })
-            sendResponse(createRuntimeSuccessResponse("DOWNLOAD_SUBSCRIPTION_HITS", {}))
+          case "DELETE_SUBSCRIPTION":
+            await deleteSubscriptionDefinition(runtimeMessage.subscriptionId)
+            sendResponse(createRuntimeSuccessResponse("DELETE_SUBSCRIPTION", {}))
             return
           case "SET_SOURCE_ENABLED":
             if (!isValidPopupSourceTogglePayload(message)) {
@@ -359,6 +350,14 @@ async function queryCurrentActiveTabContext(): Promise<{ id: number | null; url:
     id: typeof activeTab?.id === "number" ? activeTab.id : null,
     url: typeof activeTab?.url === "string" ? activeTab.url : null
   }
+}
+
+function didContentSyncRelevantSettingsChange(
+  previousSettings: Pick<AppSettings, "enabledSources" | "filters">,
+  nextSettings: Pick<AppSettings, "enabledSources" | "filters">
+): boolean {
+  return JSON.stringify(previousSettings.enabledSources) !== JSON.stringify(nextSettings.enabledSources) ||
+    JSON.stringify(previousSettings.filters) !== JSON.stringify(nextSettings.filters)
 }
 
 async function hasRunningBatchForSource(sourceId: SourceId): Promise<boolean> {

@@ -3,17 +3,17 @@ import type { OptionsApi } from "../../components/options/OptionsPage"
 import { sendRuntimeRequest } from "../../lib/shared/messages"
 
 export const optionsApi: OptionsApi = {
-  async loadSettings() {
-    const response = await sendRuntimeRequest({ type: "GET_SETTINGS" })
+  async loadAppSettings() {
+    const response = await sendRuntimeRequest({ type: "GET_APP_SETTINGS" })
     if (!response.ok) {
       throw new Error(response.error || i18n.t("options.status.loadFailed"))
     }
 
     return response.settings
   },
-  async saveSettings(settings) {
+  async saveAppSettings(settings) {
     const response = await sendRuntimeRequest({
-      type: "SAVE_SETTINGS",
+      type: "SAVE_APP_SETTINGS",
       settings
     })
 
@@ -22,6 +22,26 @@ export const optionsApi: OptionsApi = {
     }
 
     return response.settings
+  },
+  async upsertSubscription(subscription) {
+    const response = await sendRuntimeRequest({
+      type: "UPSERT_SUBSCRIPTION",
+      subscription
+    })
+
+    if (!response.ok) {
+      throw new Error(response.error || i18n.t("options.status.saveFailed"))
+    }
+  },
+  async deleteSubscription(subscriptionId) {
+    const response = await sendRuntimeRequest({
+      type: "DELETE_SUBSCRIPTION",
+      subscriptionId
+    })
+
+    if (!response.ok) {
+      throw new Error(response.error || i18n.t("options.status.saveFailed"))
+    }
   },
   async testConnection(settings) {
     const response = await sendRuntimeRequest({

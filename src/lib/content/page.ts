@@ -1,7 +1,7 @@
 import { getSourceAdapterForPage } from "../sources"
 import type { SourceAdapter } from "../sources/types"
 import { resolveSourceEnabled } from "../settings"
-import type { BatchItem, Settings } from "../shared/types"
+import type { AppSettings, BatchItem } from "../shared/types"
 
 function toUrl(location: Pick<Location, "href"> | URL): URL {
   return location instanceof URL ? location : new URL(location.href)
@@ -13,7 +13,7 @@ export function getSourceAdapterForLocation(location: Pick<Location, "href"> | U
 
 export function getEnabledSourceAdapterForLocation(
   location: Pick<Location, "href"> | URL,
-  settings: Pick<Settings, "enabledSources">
+  settings: Pick<AppSettings, "enabledSources">
 ): SourceAdapter | null {
   const source = getSourceAdapterForLocation(location)
   if (!source) {

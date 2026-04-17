@@ -515,6 +515,7 @@
         "notificationsEnabledDescription": "后台轮询发现新的命中记录时显示浏览器通知。",
         "notificationDownloadActionTitle": "点击通知后直接处理命中",
         "notificationDownloadActionDescription": "开启后，点击通知会直接触发当前下载器流程来处理该轮命中。",
+        "saveButton": "保存订阅设置",
         "runtimeTitle": "运行状态",
         "lastSchedulerRunAt": "上次调度运行",
         "notificationActionStateLabel": "通知点击行为",

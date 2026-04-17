@@ -1,4 +1,4 @@
-import type { Settings } from "../shared/types"
+import type { AppSettings } from "../shared/types"
 
 function asRecord(value: unknown): Record<string, unknown> {
   return value && typeof value === "object"
@@ -7,7 +7,7 @@ function asRecord(value: unknown): Record<string, unknown> {
 }
 
 export function mergeSettings(
-  base: Settings,
+  base: AppSettings,
   overrides: Record<string, unknown> | null | undefined
 ): Record<string, unknown> {
   const record = asRecord(overrides)

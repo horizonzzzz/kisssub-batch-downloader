@@ -1,15 +1,15 @@
-import type { Settings } from "../../shared/types"
+import type { AppSettings } from "../../shared/types"
 import type { DownloaderUrlSubmissionResult } from "../types"
 import type { QbTorrentFile } from "./types"
 
 type FetchLike = typeof fetch
 
-function getQbSettings(settings: Settings) {
+function getQbSettings(settings: AppSettings) {
   return settings.downloaders.qbittorrent
 }
 
 export async function addUrlsToQb(
-  settings: Settings,
+  settings: AppSettings,
   urls: string[],
   options: {
     savePath?: string
@@ -49,7 +49,7 @@ export async function addUrlsToQb(
 }
 
 export async function addTorrentFilesToQb(
-  settings: Settings,
+  settings: AppSettings,
   torrents: QbTorrentFile[],
   options: {
     savePath?: string

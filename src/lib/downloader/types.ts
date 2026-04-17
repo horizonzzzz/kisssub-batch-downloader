@@ -1,4 +1,4 @@
-import type { DownloaderId, Settings } from "../shared/types"
+import type { AppSettings, DownloaderId } from "../shared/types"
 
 export type DownloaderSubmitOptions = {
   savePath?: string
@@ -16,7 +16,7 @@ export type DownloaderConnectionResult = {
 
 export type DownloaderUrlSubmissionEntry = {
   url: string
-  status: "submitted" | "failed"
+  status: "submitted" | "duplicate" | "failed"
   error?: string
 }
 
@@ -27,16 +27,16 @@ export type DownloaderUrlSubmissionResult = {
 export type DownloaderAdapter = {
   id: DownloaderId
   displayName: string
-  authenticate: (settings: Settings) => Promise<void>
+  authenticate: (settings: AppSettings) => Promise<void>
   addUrls: (
-    settings: Settings,
+    settings: AppSettings,
     urls: string[],
     options?: DownloaderSubmitOptions
   ) => Promise<DownloaderUrlSubmissionResult>
   addTorrentFiles: (
-    settings: Settings,
+    settings: AppSettings,
     torrents: DownloaderTorrentFile[],
     options?: DownloaderSubmitOptions
   ) => Promise<void>
-  testConnection: (settings: Settings) => Promise<DownloaderConnectionResult>
+  testConnection: (settings: AppSettings) => Promise<DownloaderConnectionResult>
 }

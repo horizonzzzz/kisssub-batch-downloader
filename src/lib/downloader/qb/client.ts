@@ -1,13 +1,16 @@
-import type { Settings } from "../../shared/types"
+import type { AppSettings } from "../../shared/types"
 import { getQbLoginErrorMessage } from "./errors"
 
 type FetchLike = typeof fetch
 
-function getQbSettings(settings: Settings) {
+function getQbSettings(settings: AppSettings) {
   return settings.downloaders.qbittorrent
 }
 
-export async function loginQb(settings: Settings, fetchImpl: FetchLike = fetch): Promise<void> {
+export async function loginQb(
+  settings: AppSettings,
+  fetchImpl: FetchLike = fetch
+): Promise<void> {
   const qbSettings = getQbSettings(settings)
   const body = new URLSearchParams()
   body.set("username", qbSettings.username)
@@ -33,7 +36,7 @@ export async function loginQb(settings: Settings, fetchImpl: FetchLike = fetch):
 }
 
 export async function qbFetchText(
-  settings: Settings,
+  settings: AppSettings,
   path: string,
   init?: RequestInit,
   fetchImpl: FetchLike = fetch

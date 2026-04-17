@@ -1,4 +1,4 @@
-import type { Settings } from "../../shared/types"
+import type { AppSettings } from "../../shared/types"
 
 type FetchLike = typeof fetch
 
@@ -7,7 +7,7 @@ type TransmissionRpcSuccess<TArguments = Record<string, unknown>> = {
   arguments?: TArguments
 }
 
-function getTransmissionSettings(settings: Settings) {
+function getTransmissionSettings(settings: AppSettings) {
   return settings.downloaders.transmission
 }
 
@@ -21,7 +21,7 @@ function encodeBase64Utf8(value: string): string {
   return btoa(binary)
 }
 
-function buildAuthHeader(settings: Settings): string | null {
+function buildAuthHeader(settings: AppSettings): string | null {
   const { username, password } = getTransmissionSettings(settings)
   if (!username && !password) {
     return null
@@ -30,7 +30,7 @@ function buildAuthHeader(settings: Settings): string | null {
   return `Basic ${encodeBase64Utf8(`${username}:${password}`)}`
 }
 
-function buildHeaders(settings: Settings, sessionId?: string): Record<string, string> {
+function buildHeaders(settings: AppSettings, sessionId?: string): Record<string, string> {
   const headers: Record<string, string> = {
     "Content-Type": "application/json"
   }
@@ -48,7 +48,7 @@ function buildHeaders(settings: Settings, sessionId?: string): Record<string, st
 }
 
 export async function transmissionRpc<TArguments = Record<string, unknown>>(
-  settings: Settings,
+  settings: AppSettings,
   method: string,
   args: Record<string, unknown> = {},
   fetchImpl: FetchLike = fetch,
@@ -86,7 +86,7 @@ export async function transmissionRpc<TArguments = Record<string, unknown>>(
 }
 
 export async function authenticateTransmission(
-  settings: Settings,
+  settings: AppSettings,
   fetchImpl: FetchLike = fetch
 ): Promise<void> {
   await transmissionRpc(settings, "session-get", {}, fetchImpl)

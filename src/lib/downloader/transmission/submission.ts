@@ -1,4 +1,4 @@
-import type { Settings } from "../../shared/types"
+import type { AppSettings } from "../../shared/types"
 import type { DownloaderUrlSubmissionResult } from "../types"
 import type { TransmissionTorrentFile } from "./types"
 import { transmissionRpc } from "./client"
@@ -22,7 +22,7 @@ function toBase64(blob: Blob): Promise<string> {
 }
 
 export async function addUrlsToTransmission(
-  settings: Settings,
+  settings: AppSettings,
   urls: string[],
   options: { savePath?: string } = {},
   fetchImpl: FetchLike = fetch
@@ -54,7 +54,7 @@ export async function addUrlsToTransmission(
 }
 
 export async function addTorrentFilesToTransmission(
-  settings: Settings,
+  settings: AppSettings,
   torrents: TransmissionTorrentFile[],
   options: { savePath?: string } = {},
   fetchImpl: FetchLike = fetch

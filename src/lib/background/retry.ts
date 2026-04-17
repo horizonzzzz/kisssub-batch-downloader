@@ -1,7 +1,7 @@
 import { i18n } from "../i18n"
 import type { DownloaderAdapter, DownloaderTorrentFile } from "../downloader"
 import type { TaskHistoryItem, TaskHistoryRecord } from "../history/types"
-import type { Settings } from "../shared/types"
+import type { AppSettings } from "../shared/types"
 
 export type RetryRequest = {
   recordId: string
@@ -15,11 +15,11 @@ export type RetryResult = {
 }
 
 export type RetryDependencies = {
-  getSettings: () => Promise<Settings>
+  getSettings: () => Promise<AppSettings>
   getHistoryRecord: (recordId: string) => Promise<TaskHistoryRecord | null>
   updateHistoryRecord: (record: TaskHistoryRecord) => Promise<void>
-  getDownloader: (settings: Settings) => DownloaderAdapter
-  ensureDownloaderPermission: (settings: Settings) => Promise<void>
+  getDownloader: (settings: AppSettings) => DownloaderAdapter
+  ensureDownloaderPermission: (settings: AppSettings) => Promise<void>
   fetchTorrentForUpload: (torrentUrl: string) => Promise<DownloaderTorrentFile>
 }
 

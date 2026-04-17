@@ -1,9 +1,9 @@
 import { getDownloaderMeta } from "./registry"
 import { i18n } from "../i18n"
 import { getBrowser } from "../shared/browser"
-import type { Settings } from "../shared/types"
+import type { AppSettings } from "../shared/types"
 
-type DownloaderPermissionSettings = Pick<Settings, "currentDownloaderId" | "downloaders">
+type DownloaderPermissionSettings = Pick<AppSettings, "currentDownloaderId" | "downloaders">
 
 type PermissionsApi = {
   contains: (permissions: { origins: string[] }) => Promise<boolean>

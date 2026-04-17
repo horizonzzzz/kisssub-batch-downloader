@@ -1,6 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 import { fakeBrowser } from "wxt/testing/fake-browser"
 
+import { DEFAULT_SETTINGS } from "../../../src/lib/settings/defaults"
+import type { AppSettings } from "../../../src/lib/shared/types"
+
 type AlarmListener = Parameters<typeof fakeBrowser.alarms.onAlarm.addListener>[0]
 type RuntimeInstalledListener = Parameters<typeof fakeBrowser.runtime.onInstalled.addListener>[0]
 type RuntimeMessageListener = Parameters<typeof fakeBrowser.runtime.onMessage.addListener>[0]
@@ -12,15 +15,25 @@ type TabsUpdatedListener = Parameters<typeof fakeBrowser.tabs.onUpdated.addListe
 type TabsActivatedListener = Parameters<typeof fakeBrowser.tabs.onActivated.addListener>[0]
 
 const {
+  deleteSubscriptionDefinitionMock,
   downloadSubscriptionHitsMock,
   executeSubscriptionScanMock,
   getSettingsMock,
-  saveSettingsWithSubscriptionReconcileMock
+  notifySupportedSourceTabsOfFilterChangeMock,
+  reconcileSubscriptionAlarmMock,
+  saveSettingsMock,
+  testDownloaderConnectionMock,
+  upsertSubscriptionDefinitionMock
 } = vi.hoisted(() => ({
+  deleteSubscriptionDefinitionMock: vi.fn(),
   downloadSubscriptionHitsMock: vi.fn(),
   executeSubscriptionScanMock: vi.fn(),
   getSettingsMock: vi.fn(),
-  saveSettingsWithSubscriptionReconcileMock: vi.fn()
+  notifySupportedSourceTabsOfFilterChangeMock: vi.fn(),
+  reconcileSubscriptionAlarmMock: vi.fn(),
+  saveSettingsMock: vi.fn(),
+  testDownloaderConnectionMock: vi.fn(),
+  upsertSubscriptionDefinitionMock: vi.fn()
 }))
 
 const onAlarmAddListener = vi.fn()
@@ -41,12 +54,15 @@ vi.mock("../../../src/lib/background", async () => {
       activeJobs: new Map<number, unknown>(),
       startBatchDownload: vi.fn()
     }),
-    executeSubscriptionScan: executeSubscriptionScanMock,
+    deleteSubscriptionDefinition: deleteSubscriptionDefinitionMock,
     downloadSubscriptionHits: downloadSubscriptionHitsMock,
-    saveSettingsWithSubscriptionReconcile: saveSettingsWithSubscriptionReconcileMock,
-    fetchTorrentForUpload: vi.fn(),
+    executeSubscriptionScan: executeSubscriptionScanMock,
+    notifySupportedSourceTabsOfFilterChange: notifySupportedSourceTabsOfFilterChangeMock,
+    reconcileSubscriptionAlarm: reconcileSubscriptionAlarmMock,
     retryFailedItems: vi.fn(),
-    testDownloaderConnection: vi.fn()
+    testDownloaderConnection: testDownloaderConnectionMock,
+    upsertSubscriptionDefinition: upsertSubscriptionDefinitionMock,
+    fetchTorrentForUpload: vi.fn()
   }
 })
 
@@ -56,9 +72,25 @@ vi.mock("../../../src/lib/settings", async () => {
   )
   return {
     ...actual,
-    getSettings: getSettingsMock
+    getSettings: getSettingsMock,
+    saveSettings: saveSettingsMock
   }
 })
+
+function createAppSettings(overrides: Partial<AppSettings> = {}): AppSettings {
+  return {
+    ...DEFAULT_SETTINGS,
+    downloaders: {
+      ...DEFAULT_SETTINGS.downloaders,
+      qbittorrent: {
+        baseUrl: "http://127.0.0.1:17474",
+        username: "admin",
+        password: "secret"
+      }
+    },
+    ...overrides
+  }
+}
 
 function installBrowserSpies() {
   vi.spyOn(fakeBrowser.alarms.onAlarm, "addListener").mockImplementation((listener: AlarmListener) => {
@@ -101,39 +133,47 @@ function installBrowserSpies() {
       onActivatedAddListener(listener)
     }
   )
+  vi.spyOn(fakeBrowser.permissions, "contains").mockImplementation(
+    vi.fn(async () => true) as never
+  )
+  vi.spyOn(fakeBrowser.permissions, "request").mockImplementation(
+    vi.fn(async () => true) as never
+  )
 }
 
-describe("background subscription runtime boundary", () => {
+describe("background runtime subscription boundary", () => {
   beforeEach(async () => {
     vi.resetModules()
     vi.restoreAllMocks()
     vi.clearAllMocks()
-    getSettingsMock.mockResolvedValue({
+    getSettingsMock.mockResolvedValue(createAppSettings({
       notificationDownloadActionEnabled: true
+    }))
+    saveSettingsMock.mockImplementation(async (settings) =>
+      createAppSettings(settings as Partial<AppSettings>)
+    )
+    testDownloaderConnectionMock.mockResolvedValue({
+      downloaderId: "qbittorrent",
+      displayName: "qBittorrent",
+      baseUrl: "http://127.0.0.1:17474",
+      version: "5.0.0"
     })
     installBrowserSpies()
     const { registerBackgroundRuntime } = await import("../../../src/entrypoints/background/runtime")
     registerBackgroundRuntime()
   })
 
-  it("supports RUN_SUBSCRIPTION_SCAN_NOW runtime messages", async () => {
-    executeSubscriptionScanMock.mockResolvedValue({
-      settings: {},
-      notificationRound: {
-        id: "subscription-round:20260414093000000",
-        createdAt: "2026-04-14T09:30:00.000Z",
-        hitIds: ["hit-1"]
-      },
-      newHits: [],
-      scannedSourceIds: [],
-      errors: []
-    })
+  it("supports GET_APP_SETTINGS runtime messages", async () => {
     const listener = onMessageAddListener.mock.calls[0]?.[0]
     const sendResponse = vi.fn()
+    const settings = createAppSettings({
+      subscriptionsEnabled: true
+    })
+    getSettingsMock.mockResolvedValueOnce(settings)
 
     const keepsPortOpen = listener?.(
       {
-        type: "RUN_SUBSCRIPTION_SCAN_NOW"
+        type: "GET_APP_SETTINGS"
       },
       {},
       sendResponse
@@ -143,45 +183,44 @@ describe("background subscription runtime boundary", () => {
     await vi.waitFor(() => {
       expect(sendResponse).toHaveBeenCalledTimes(1)
     })
-    expect(executeSubscriptionScanMock).toHaveBeenCalledTimes(1)
+    expect(getSettingsMock).toHaveBeenCalledTimes(1)
     expect(sendResponse).toHaveBeenCalledWith({
       ok: true,
-      roundId: "subscription-round:20260414093000000"
+      settings
     })
   })
 
-  it("keeps SAVE_SETTINGS runtime messages stable while delegating persistence to the subscription-aware helper", async () => {
-    saveSettingsWithSubscriptionReconcileMock.mockResolvedValue({
-      subscriptions: [
-        {
-          id: "sub-1",
-          name: "ACG Medalist"
-        }
-      ],
-      subscriptionRuntimeStateById: {
-        "sub-1": {
-          lastScanAt: null,
-          lastMatchedAt: null,
-          lastError: "",
-          seenFingerprints: [],
-          recentHits: []
-        }
-      },
-      subscriptionNotificationRounds: []
-    })
+  it("reconciles alarms and notifies supported tabs when SAVE_APP_SETTINGS changes filters", async () => {
     const listener = onMessageAddListener.mock.calls[0]?.[0]
     const sendResponse = vi.fn()
+    const currentSettings = createAppSettings()
+    const savedSettings = createAppSettings({
+      filters: [
+        {
+          id: "filter-1",
+          name: "ACG",
+          enabled: true,
+          sourceIds: ["acgrip"],
+          must: [
+            {
+              id: "condition-1",
+              field: "title",
+              operator: "contains",
+              value: "Medalist"
+            }
+          ],
+          any: []
+        }
+      ]
+    })
+    getSettingsMock.mockResolvedValueOnce(currentSettings)
+    saveSettingsMock.mockResolvedValueOnce(savedSettings)
 
     const keepsPortOpen = listener?.(
       {
-        type: "SAVE_SETTINGS",
+        type: "SAVE_APP_SETTINGS",
         settings: {
-          subscriptions: [
-            {
-              id: "sub-1",
-              name: "ACG Medalist"
-            }
-          ]
+          filters: savedSettings.filters
         }
       },
       {},
@@ -192,52 +231,108 @@ describe("background subscription runtime boundary", () => {
     await vi.waitFor(() => {
       expect(sendResponse).toHaveBeenCalledTimes(1)
     })
-    expect(saveSettingsWithSubscriptionReconcileMock).toHaveBeenCalledWith(
+    expect(saveSettingsMock).toHaveBeenCalledWith({
+      filters: savedSettings.filters
+    })
+    expect(notifySupportedSourceTabsOfFilterChangeMock).toHaveBeenCalledTimes(1)
+    expect(reconcileSubscriptionAlarmMock).toHaveBeenCalledTimes(1)
+    expect(sendResponse).toHaveBeenCalledWith({
+      ok: true,
+      settings: savedSettings
+    })
+  })
+
+  it("skips content-script notification when SAVE_APP_SETTINGS only changes subscription globals", async () => {
+    const listener = onMessageAddListener.mock.calls[0]?.[0]
+    const sendResponse = vi.fn()
+    const currentSettings = createAppSettings({
+      subscriptionsEnabled: false
+    })
+    const savedSettings = createAppSettings({
+      subscriptionsEnabled: true
+    })
+    getSettingsMock.mockResolvedValueOnce(currentSettings)
+    saveSettingsMock.mockResolvedValueOnce(savedSettings)
+
+    const keepsPortOpen = listener?.(
       {
-        subscriptions: [
-          {
-            id: "sub-1",
-            name: "ACG Medalist"
-          }
-        ]
+        type: "SAVE_APP_SETTINGS",
+        settings: {
+          subscriptionsEnabled: true
+        }
       },
-      expect.objectContaining({
-        getSettings: expect.any(Function),
-        saveSettings: expect.any(Function)
-      })
+      {},
+      sendResponse
+    )
+
+    expect(keepsPortOpen).toBe(true)
+    await vi.waitFor(() => {
+      expect(sendResponse).toHaveBeenCalledTimes(1)
+    })
+    expect(notifySupportedSourceTabsOfFilterChangeMock).not.toHaveBeenCalled()
+    expect(reconcileSubscriptionAlarmMock).toHaveBeenCalledTimes(1)
+  })
+
+  it("supports TEST_DOWNLOADER_CONNECTION runtime messages", async () => {
+    const listener = onMessageAddListener.mock.calls[0]?.[0]
+    const sendResponse = vi.fn()
+
+    const keepsPortOpen = listener?.(
+      {
+        type: "TEST_DOWNLOADER_CONNECTION",
+        settings: {
+          currentDownloaderId: "qbittorrent"
+        }
+      },
+      {},
+      sendResponse
+    )
+
+    expect(keepsPortOpen).toBe(true)
+    await vi.waitFor(() => {
+      expect(sendResponse).toHaveBeenCalledTimes(1)
+    })
+    expect(testDownloaderConnectionMock).toHaveBeenCalledWith(
+      {
+        currentDownloaderId: "qbittorrent"
+      }
     )
     expect(sendResponse).toHaveBeenCalledWith({
       ok: true,
-      settings: {
-        subscriptions: [
-          {
-            id: "sub-1",
-            name: "ACG Medalist"
-          }
-        ],
-        subscriptionRuntimeStateById: {
-          "sub-1": {
-            lastScanAt: null,
-            lastMatchedAt: null,
-            lastError: "",
-            seenFingerprints: [],
-            recentHits: []
-          }
-        },
-        subscriptionNotificationRounds: []
+      result: {
+        downloaderId: "qbittorrent",
+        displayName: "qBittorrent",
+        baseUrl: "http://127.0.0.1:17474",
+        version: "5.0.0"
       }
     })
   })
 
-  it("supports DOWNLOAD_SUBSCRIPTION_HITS runtime messages", async () => {
-    downloadSubscriptionHitsMock.mockResolvedValue(undefined)
+  it("supports UPSERT_SUBSCRIPTION runtime messages", async () => {
+    upsertSubscriptionDefinitionMock.mockResolvedValue(undefined)
     const listener = onMessageAddListener.mock.calls[0]?.[0]
     const sendResponse = vi.fn()
+    const subscription = {
+      id: "sub-1",
+      name: "ACG Medalist",
+      enabled: true,
+      sourceIds: ["acgrip"],
+      multiSiteModeEnabled: false,
+      titleQuery: "Medalist",
+      subgroupQuery: "",
+      advanced: {
+        must: [],
+        any: []
+      },
+      deliveryMode: "direct-only",
+      createdAt: "2026-04-14T09:30:00.000Z",
+      baselineCreatedAt: "2026-04-14T09:30:00.000Z"
+    }
 
     const keepsPortOpen = listener?.(
       {
-        type: "DOWNLOAD_SUBSCRIPTION_HITS",
-        roundId: "subscription-round:20260414093000000"
+        type: "UPSERT_SUBSCRIPTION",
+        subscription
       },
       {},
       sendResponse
@@ -247,9 +342,31 @@ describe("background subscription runtime boundary", () => {
     await vi.waitFor(() => {
       expect(sendResponse).toHaveBeenCalledTimes(1)
     })
-    expect(downloadSubscriptionHitsMock).toHaveBeenCalledWith({
-      roundId: "subscription-round:20260414093000000"
+    expect(upsertSubscriptionDefinitionMock).toHaveBeenCalledWith(subscription)
+    expect(sendResponse).toHaveBeenCalledWith({
+      ok: true
     })
+  })
+
+  it("supports DELETE_SUBSCRIPTION runtime messages", async () => {
+    deleteSubscriptionDefinitionMock.mockResolvedValue(undefined)
+    const listener = onMessageAddListener.mock.calls[0]?.[0]
+    const sendResponse = vi.fn()
+
+    const keepsPortOpen = listener?.(
+      {
+        type: "DELETE_SUBSCRIPTION",
+        subscriptionId: "sub-1"
+      },
+      {},
+      sendResponse
+    )
+
+    expect(keepsPortOpen).toBe(true)
+    await vi.waitFor(() => {
+      expect(sendResponse).toHaveBeenCalledTimes(1)
+    })
+    expect(deleteSubscriptionDefinitionMock).toHaveBeenCalledWith("sub-1")
     expect(sendResponse).toHaveBeenCalledWith({
       ok: true
     })
@@ -273,9 +390,11 @@ describe("background subscription runtime boundary", () => {
   })
 
   it("does not download hits from notification clicks when the click action toggle is disabled", async () => {
-    getSettingsMock.mockResolvedValue({
-      notificationDownloadActionEnabled: false
-    })
+    getSettingsMock.mockResolvedValue(
+      createAppSettings({
+        notificationDownloadActionEnabled: false
+      })
+    )
     downloadSubscriptionHitsMock.mockResolvedValue(undefined)
     const listener = onClickedAddListener.mock.calls[0]?.[0]
 

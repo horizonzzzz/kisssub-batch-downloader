@@ -17,18 +17,18 @@ import {
   type PopupDownloaderConnectionStatus,
   type PopupStateViewModel
 } from "../shared/popup"
-import type { Settings, SourceId } from "../shared/types"
+import type { AppSettings, SourceId } from "../shared/types"
 
 type BuildPopupStateDependencies = {
-  getSettings: () => Promise<Settings>
+  getSettings: () => Promise<AppSettings>
   getActiveTabContext: () => Promise<{ id: number | null; url: string | null }>
   getExtensionVersion: () => string
   isBatchRunningInTab: (tabId: number) => boolean
 }
 
 type SetSourceEnabledDependencies = {
-  getSettings: () => Promise<Settings>
-  saveSettings: (partialSettings: Partial<Settings>) => Promise<Settings>
+  getSettings: () => Promise<AppSettings>
+  saveSettings: (partialSettings: Partial<AppSettings>) => Promise<AppSettings>
 }
 
 type OptionsTabTarget = {
@@ -163,7 +163,7 @@ export async function setSourceEnabledForPopup(
   sourceId: SourceId,
   enabled: boolean,
   dependencies: SetSourceEnabledDependencies = DEFAULT_SET_SOURCE_ENABLED_DEPENDENCIES
-): Promise<Settings> {
+): Promise<AppSettings> {
   const settings = await dependencies.getSettings()
   return dependencies.saveSettings({
     enabledSources: {

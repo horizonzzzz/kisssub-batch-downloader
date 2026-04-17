@@ -2,7 +2,7 @@ import { extractMagnetHash, normalizeTitle } from "../download-preparation"
 import { getBrowser } from "../shared/browser"
 import { DEFAULT_SOURCE_DELIVERY_MODES, getSupportedDeliveryModes } from "./delivery"
 import { matchesSourceHost } from "./matching"
-import type { BatchItem, ExtractionResult, Settings } from "../shared/types"
+import type { AppSettings, BatchItem, ExtractionResult } from "../shared/types"
 import { withDetailTab } from "./detail-tab"
 import type { SourceAdapter } from "./types"
 

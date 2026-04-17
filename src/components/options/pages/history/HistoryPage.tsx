@@ -17,7 +17,7 @@ export function HistoryPage() {
     try {
       const [historyResponse, settingsResponse] = await Promise.all([
         sendRuntimeRequest({ type: "GET_HISTORY" }),
-        sendRuntimeRequest({ type: "GET_SETTINGS" })
+        sendRuntimeRequest({ type: "GET_APP_SETTINGS" })
       ])
 
       if (!historyResponse.ok) {

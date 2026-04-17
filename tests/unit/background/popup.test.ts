@@ -9,9 +9,9 @@ import {
   setSourceEnabledForPopup
 } from "../../../src/lib/background/popup"
 import { SOURCE_IDS } from "../../../src/lib/sources/catalog"
-import type { Settings } from "../../../src/lib/shared/types"
+import type { AppSettings } from "../../../src/lib/shared/types"
 
-function createSettings(overrides: Partial<Settings> = {}): Settings {
+function createSettings(overrides: Partial<AppSettings> = {}): AppSettings {
   return {
     ...DEFAULT_SETTINGS,
     sourceDeliveryModes: {
@@ -189,7 +189,7 @@ describe("popup background helpers", () => {
         bangumimoe: false
       }
     })
-    const saveSettings = vi.fn(async (partial: Partial<Settings>) => ({
+    const saveSettings = vi.fn(async (partial: Partial<AppSettings>) => ({
       ...settings,
       ...partial,
       enabledSources: {

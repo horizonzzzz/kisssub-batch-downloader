@@ -1,23 +1,27 @@
 import type {
-  Settings,
+  AppSettings,
   SourceId,
   SubscriptionEntry,
-  SubscriptionHitRecord,
-  SubscriptionNotificationRound
+  SubscriptionHitRecord
 } from "../shared/types"
 import { resolveSourceEnabled } from "../settings"
+import { subscriptionDb } from "./db"
 import { createSubscriptionFingerprint } from "./fingerprint"
 import { matchesSubscriptionCandidate } from "./match"
 import {
   createSubscriptionNotificationRound,
   retainSubscriptionNotificationRounds
 } from "./notifications"
-import { pushRecentHit, pushSeenFingerprint } from "./retention"
+import { pushSeenFingerprint } from "./retention"
+import { createEmptySubscriptionRuntimeRow } from "./runtime-state"
 import { scanSubscriptionCandidatesFromSource } from "./source-scan"
-import { readSubscriptionRuntimeState, updateSubscriptionRuntimeState } from "./storage"
+import type { NotificationRoundRow, SubscriptionRuntimeRow } from "./store-types"
 import type { SubscriptionCandidate, SubscriptionQuery } from "./types"
+import { LAST_SCHEDULER_RUN_AT_META_KEY } from "./runtime-query"
 
 export type ScanSubscriptionsDependencies = {
+  appSettings: AppSettings
+  subscriptions: SubscriptionEntry[]
   now?: () => string
   scanCandidatesFromSource?: (
     sourceId: SourceId
@@ -30,40 +34,31 @@ export type SubscriptionScanError = {
 }
 
 export type ScanSubscriptionsResult = {
-  settings: Settings
-  notificationRound: SubscriptionNotificationRound | null
+  lastSchedulerRunAt: string
+  notificationRound: NotificationRoundRow | null
   newHits: SubscriptionHitRecord[]
   scannedSourceIds: SourceId[]
   errors: SubscriptionScanError[]
 }
 
-export type ScanSubscriptionsRuntimePatch = Pick<
-  Settings,
-  "lastSchedulerRunAt" | "subscriptionRuntimeStateById" | "subscriptionNotificationRounds"
->
-
 export async function scanSubscriptions(
-  settings: Settings,
-  dependencies: ScanSubscriptionsDependencies = {}
+  input: ScanSubscriptionsDependencies
 ): Promise<ScanSubscriptionsResult> {
-  const now = dependencies.now?.() ?? new Date().toISOString()
+  const now = input.now?.() ?? new Date().toISOString()
   const scanCandidatesFromSource =
-    dependencies.scanCandidatesFromSource ?? scanSubscriptionCandidatesFromSource
-  const enabledSubscriptions = settings.subscriptions.filter(
+    input.scanCandidatesFromSource ?? scanSubscriptionCandidatesFromSource
+  const enabledSubscriptions = input.subscriptions.filter(
     (subscription) => subscription.enabled && subscription.sourceIds.length > 0
   )
-
-  let nextSettings: Settings = {
-    ...settings,
-    lastSchedulerRunAt: now
-  }
+  const runtimeBySubscriptionId = await loadRuntimeRows(enabledSubscriptions)
   const newHits: SubscriptionHitRecord[] = []
   const scannedSourceIds: SourceId[] = []
   const errors: SubscriptionScanError[] = []
 
-  if (!settings.subscriptionsEnabled || enabledSubscriptions.length === 0) {
+  if (!input.appSettings.subscriptionsEnabled || enabledSubscriptions.length === 0) {
+    await persistScanState(now, runtimeBySubscriptionId, newHits, null)
     return {
-      settings: nextSettings,
+      lastSchedulerRunAt: now,
       notificationRound: null,
       newHits,
       scannedSourceIds,
@@ -72,7 +67,7 @@ export async function scanSubscriptions(
   }
 
   for (const [sourceId, sourceSubscriptions] of groupSubscriptionsBySource(
-    settings,
+    input.appSettings,
     enabledSubscriptions
   )) {
     scannedSourceIds.push(sourceId)
@@ -81,26 +76,28 @@ export async function scanSubscriptions(
       const candidates = await scanCandidatesFromSource(sourceId)
 
       for (const subscription of sourceSubscriptions) {
-        nextSettings = applySubscriptionScanResult(
-          nextSettings,
+        const updatedRuntime = applySubscriptionScanResult(
+          runtimeBySubscriptionId.get(subscription.id) ??
+            createEmptySubscriptionRuntimeRow(subscription.id),
           subscription,
           candidates,
           now,
           newHits
         )
+        runtimeBySubscriptionId.set(subscription.id, updatedRuntime)
       }
     } catch (error) {
       const normalizedError = normalizeErrorMessage(error)
       errors.push({ sourceId, error: normalizedError })
 
       for (const subscription of sourceSubscriptions) {
-        const state = readSubscriptionRuntimeState(nextSettings, subscription.id)
-        nextSettings = updateSubscriptionRuntimeState(nextSettings, subscription.id, {
+        const current = runtimeBySubscriptionId.get(subscription.id) ??
+          createEmptySubscriptionRuntimeRow(subscription.id)
+
+        runtimeBySubscriptionId.set(subscription.id, {
+          ...current,
           lastScanAt: now,
-          lastMatchedAt: state.lastMatchedAt,
-          lastError: normalizedError,
-          seenFingerprints: state.seenFingerprints,
-          recentHits: state.recentHits
+          lastError: normalizedError
         })
       }
     }
@@ -114,18 +111,10 @@ export async function scanSubscriptions(
         })
       : null
 
-  if (notificationRound) {
-    nextSettings = {
-      ...nextSettings,
-      subscriptionNotificationRounds: retainSubscriptionNotificationRounds([
-        ...nextSettings.subscriptionNotificationRounds,
-        notificationRound
-      ])
-    }
-  }
+  await persistScanState(now, runtimeBySubscriptionId, newHits, notificationRound)
 
   return {
-    settings: nextSettings,
+    lastSchedulerRunAt: now,
     notificationRound,
     newHits,
     scannedSourceIds,
@@ -133,25 +122,72 @@ export async function scanSubscriptions(
   }
 }
 
-export function buildScanSubscriptionsRuntimePatch(
-  settings: Settings
-): ScanSubscriptionsRuntimePatch {
-  return {
-    lastSchedulerRunAt: settings.lastSchedulerRunAt,
-    subscriptionRuntimeStateById: settings.subscriptionRuntimeStateById,
-    subscriptionNotificationRounds: settings.subscriptionNotificationRounds
-  }
+async function loadRuntimeRows(
+  subscriptions: SubscriptionEntry[]
+): Promise<Map<string, SubscriptionRuntimeRow>> {
+  const subscriptionIds = subscriptions.map((subscription) => subscription.id)
+  const rows = await subscriptionDb.subscriptionRuntime.bulkGet(subscriptionIds)
+
+  return new Map(
+    subscriptionIds.map((subscriptionId, index) => [
+      subscriptionId,
+      rows[index] ?? createEmptySubscriptionRuntimeRow(subscriptionId)
+    ] as const)
+  )
+}
+
+async function persistScanState(
+  lastSchedulerRunAt: string,
+  runtimeBySubscriptionId: Map<string, SubscriptionRuntimeRow>,
+  newHits: SubscriptionHitRecord[],
+  notificationRound: NotificationRoundRow | null
+): Promise<void> {
+  await subscriptionDb.transaction(
+    "rw",
+    subscriptionDb.subscriptionRuntime,
+    subscriptionDb.subscriptionHits,
+    subscriptionDb.notificationRounds,
+    subscriptionDb.subscriptionMeta,
+    async () => {
+      const runtimeRows = [...runtimeBySubscriptionId.values()]
+      if (runtimeRows.length > 0) {
+        await subscriptionDb.subscriptionRuntime.bulkPut(runtimeRows)
+      }
+
+      if (newHits.length > 0) {
+        await subscriptionDb.subscriptionHits.bulkPut(newHits)
+      }
+
+      await subscriptionDb.subscriptionMeta.put({
+        key: LAST_SCHEDULER_RUN_AT_META_KEY,
+        value: lastSchedulerRunAt
+      })
+
+      if (!notificationRound) {
+        return
+      }
+
+      const existingRounds = await subscriptionDb.notificationRounds.toArray()
+      const nextRounds = retainSubscriptionNotificationRounds([
+        ...existingRounds,
+        notificationRound
+      ])
+
+      await subscriptionDb.notificationRounds.clear()
+      await subscriptionDb.notificationRounds.bulkPut(nextRounds)
+    }
+  )
 }
 
 function groupSubscriptionsBySource(
-  settings: Pick<Settings, "enabledSources">,
+  appSettings: Pick<AppSettings, "enabledSources">,
   subscriptions: SubscriptionEntry[]
 ): Map<SourceId, SubscriptionEntry[]> {
   const grouped = new Map<SourceId, SubscriptionEntry[]>()
 
   for (const subscription of subscriptions) {
     for (const sourceId of subscription.sourceIds) {
-      if (!resolveSourceEnabled(sourceId, settings)) {
+      if (!resolveSourceEnabled(sourceId, appSettings)) {
         continue
       }
 
@@ -169,17 +205,15 @@ function groupSubscriptionsBySource(
 }
 
 function applySubscriptionScanResult(
-  settings: Settings,
+  runtime: SubscriptionRuntimeRow,
   subscription: SubscriptionEntry,
   candidates: SubscriptionCandidate[],
   scannedAt: string,
   collectedHits: SubscriptionHitRecord[]
-): Settings {
-  const state = readSubscriptionRuntimeState(settings, subscription.id)
-  const isFirstObservationScan = state.lastScanAt == null
-  let seenFingerprints = state.seenFingerprints
-  let recentHits = state.recentHits
-  let lastMatchedAt = state.lastMatchedAt
+): SubscriptionRuntimeRow {
+  const isFirstObservationScan = runtime.lastScanAt == null
+  let seenFingerprints = runtime.seenFingerprints
+  let lastMatchedAt = runtime.lastMatchedAt
 
   for (const candidate of candidates) {
     const matchResult = matchesSubscriptionCandidate({
@@ -199,24 +233,24 @@ function applySubscriptionScanResult(
       continue
     }
 
-    const hit = createSubscriptionHitRecord(
-      subscription,
-      candidate,
-      fingerprint,
-      matchResult.subgroup,
-      scannedAt
+    collectedHits.push(
+      createSubscriptionHitRecord(
+        subscription,
+        candidate,
+        fingerprint,
+        matchResult.subgroup,
+        scannedAt
+      )
     )
-    recentHits = pushRecentHit(recentHits, hit)
-    collectedHits.push(hit)
   }
 
-  return updateSubscriptionRuntimeState(settings, subscription.id, {
+  return {
+    subscriptionId: subscription.id,
     lastScanAt: scannedAt,
     lastMatchedAt,
     lastError: "",
-    seenFingerprints,
-    recentHits
-  })
+    seenFingerprints
+  }
 }
 
 function createSubscriptionQuery(subscription: SubscriptionEntry): SubscriptionQuery {

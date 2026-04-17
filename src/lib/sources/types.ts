@@ -1,4 +1,10 @@
-import type { BatchItem, DeliveryMode, ExtractionResult, Settings, SourceId } from "../shared/types"
+import type {
+  AppSettings,
+  BatchItem,
+  DeliveryMode,
+  ExtractionResult,
+  SourceId
+} from "../shared/types"
 
 export type SourceSubscriptionScanCandidate = {
   sourceId: SourceId
@@ -23,6 +29,6 @@ export type SourceAdapter = {
   matchesDetailUrl: (url: URL) => boolean
   getDetailAnchors: (root: ParentNode, pageUrl: URL) => HTMLAnchorElement[]
   getBatchItemFromAnchor: (anchor: HTMLAnchorElement, pageUrl: URL) => BatchItem | null
-  extractSingleItem: (item: BatchItem, settings: Settings) => Promise<ExtractionResult>
+  extractSingleItem: (item: BatchItem, settings: AppSettings) => Promise<ExtractionResult>
   subscriptionListScan?: SourceSubscriptionListScanSupport
 }

@@ -62,10 +62,12 @@ function createMockItem(id: string, overrides?: Partial<TaskHistoryItem>): TaskH
 
 function mockChromeRuntime() {
   const listeners: Array<(message: unknown) => Promise<unknown>> = []
+  const sentMessages: unknown[] = []
 
   const extensionApi = {
     runtime: {
       sendMessage: vi.fn(async (message: unknown) => {
+        sentMessages.push(message)
         for (const listener of listeners) {
           return listener(message)
         }
@@ -83,7 +85,8 @@ function mockChromeRuntime() {
   return {
     addListener: (fn: (message: unknown) => Promise<unknown>) => {
       listeners.push(fn)
-    }
+    },
+    getSentMessages: () => sentMessages
   }
 }
 
@@ -408,9 +411,11 @@ describe("HistoryDetailView", () => {
 })
 
 describe("HistoryPage", () => {
+  let runtimeMock: ReturnType<typeof mockChromeRuntime>
+
   beforeEach(() => {
     vi.clearAllMocks()
-    const runtimeMock = mockChromeRuntime()
+    runtimeMock = mockChromeRuntime()
     
     const records = [
       createMockRecord("batch-1", { status: "completed" }),
@@ -425,6 +430,15 @@ describe("HistoryPage", () => {
         return {
           ok: true,
           records: records.filter(r => !deletedIds.has(r.id))
+        }
+      }
+
+      if (msg.type === "GET_APP_SETTINGS") {
+        return {
+          ok: true,
+          settings: {
+            currentDownloaderId: "qbittorrent"
+          }
         }
       }
       
@@ -462,6 +476,16 @@ describe("HistoryPage", () => {
     
     expect(screen.getByText("Test Batch batch-1")).toBeInTheDocument()
     expect(screen.getByText("Test Batch batch-2")).toBeInTheDocument()
+    expect(
+      runtimeMock
+        .getSentMessages()
+        .some((message) => (message as { type?: string })?.type === "GET_APP_SETTINGS")
+    ).toBe(true)
+    expect(
+      runtimeMock
+        .getSentMessages()
+        .some((message) => (message as { type?: string })?.type === "GET_SETTINGS")
+    ).toBe(false)
   })
 
   it("navigates to detail view when clicking detail button", async () => {

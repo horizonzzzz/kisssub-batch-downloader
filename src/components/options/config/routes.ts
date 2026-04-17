@@ -55,7 +55,7 @@ export const OPTIONS_ROUTES = [
   {
     id: "subscriptions",
     path: SUBSCRIPTIONS_ROUTE,
-    mode: "form"
+    mode: "view"
   },
   {
     id: "history",

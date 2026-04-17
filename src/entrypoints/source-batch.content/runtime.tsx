@@ -29,7 +29,7 @@ import { buildSelectableBatchItem, type SelectableBatchItem } from "../../lib/co
 import { getBrowser, getExtensionUrl } from "../../lib/shared/browser"
 import { getLocalizedSiteConfigMeta } from "../../lib/sources/site-meta"
 import type { SourceAdapter } from "../../lib/sources/types"
-import type { BatchEventPayload, BatchItem, FilterEntry, Settings } from "../../lib/shared/types"
+import type { AppSettings, BatchEventPayload, BatchItem, FilterEntry } from "../../lib/shared/types"
 import { FILTERS_ROUTE } from "../../lib/shared/options-routes"
 
 type CheckboxMount = {
@@ -169,9 +169,9 @@ export async function startSourceBatchContentScript(ctx: ContentScriptContext) {
     runtimeListenerRegistered = true
   }
 
-  async function loadSettingsForContentScript(): Promise<Settings> {
+  async function loadSettingsForContentScript(): Promise<AppSettings> {
     const response = await sendRuntimeRequest({
-      type: "GET_SETTINGS"
+      type: "GET_APP_SETTINGS"
     })
 
     if (!response.ok) {
@@ -535,7 +535,7 @@ export async function startSourceBatchContentScript(ctx: ContentScriptContext) {
     renderAll()
   }
 
-  function hydrateSavePath(settings: Pick<Settings, "lastSavePath">) {
+  function hydrateSavePath(settings: Pick<AppSettings, "lastSavePath">) {
     const loadedPath = String(settings.lastSavePath ?? "").trim()
     if (!loadedPath) {
       return

@@ -266,7 +266,7 @@ describe("content script runtime", () => {
     await startSourceBatchContentScript(createTestContext() as never)
 
     expect(runtimeSendMessage).toHaveBeenCalledWith({
-      type: "GET_SETTINGS"
+      type: "GET_APP_SETTINGS"
     })
     expect(getEnabledSourceAdapterForLocation).toHaveBeenCalledTimes(1)
     expect(createRoot).not.toHaveBeenCalled()
@@ -442,8 +442,8 @@ describe("content script runtime", () => {
     getAnchorMountTarget.mockReturnValue(anchorCell)
 
     runtimeSendMessage.mockImplementation(({ type }) => {
-      if (type === "GET_SETTINGS") {
-        const callCount = runtimeSendMessage.mock.calls.filter((call) => call[0]?.type === "GET_SETTINGS").length
+      if (type === "GET_APP_SETTINGS") {
+        const callCount = runtimeSendMessage.mock.calls.filter((call) => call[0]?.type === "GET_APP_SETTINGS").length
 
         if (callCount <= 1) {
           return Promise.resolve({
@@ -505,7 +505,7 @@ describe("content script runtime", () => {
     })
 
     await vi.waitFor(() => {
-      expect(runtimeSendMessage.mock.calls.filter((call) => call[0]?.type === "GET_SETTINGS")).toHaveLength(2)
+      expect(runtimeSendMessage.mock.calls.filter((call) => call[0]?.type === "GET_APP_SETTINGS")).toHaveLength(2)
       expect(getLatestCheckboxProps()).toMatchObject({
         disabled: false
       })
@@ -754,7 +754,7 @@ describe("content script runtime", () => {
     getBatchItemFromAnchor.mockReturnValueOnce(item)
     getAnchorMountTarget.mockReturnValueOnce(anchorCell)
     runtimeSendMessage.mockImplementation(({ type }) => {
-      if (type === "GET_SETTINGS") {
+      if (type === "GET_APP_SETTINGS") {
         return Promise.resolve({
           ok: true,
           settings: {

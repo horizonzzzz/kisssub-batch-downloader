@@ -48,7 +48,8 @@ type SubscriptionEditorDialogProps = {
   open: boolean
   initialSubscription?: SubscriptionWorkbenchDraft
   onClose: () => void
-  onSave: (subscription: SubscriptionWorkbenchDraft) => void
+  onSave: (subscription: SubscriptionWorkbenchDraft) => Promise<void>
+  saving?: boolean
 }
 
 type ConditionGroupKey = "must" | "any"
@@ -57,7 +58,8 @@ export function SubscriptionEditorDialog({
   open,
   initialSubscription,
   onClose,
-  onSave
+  onSave,
+  saving = false
 }: SubscriptionEditorDialogProps) {
   const [draft, setDraft] = useState<SubscriptionWorkbenchDraft>(() => createSubscriptionDraft())
   const [error, setError] = useState("")
@@ -113,22 +115,26 @@ export function SubscriptionEditorDialog({
     }))
   }
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const validationError = getSubscriptionValidationError(draft)
     if (validationError) {
       setError(validationError)
       return
     }
 
-    onSave(normalizeSubscriptionDraft(draft))
-    onClose()
+    try {
+      await onSave(normalizeSubscriptionDraft(draft))
+      onClose()
+    } catch (error: unknown) {
+      setError(error instanceof Error ? error.message : i18n.t("options.status.saveFailed"))
+    }
   }
 
   return (
     <Sheet
       open={open}
       onOpenChange={(nextOpen) => {
-        if (!nextOpen) {
+        if (!nextOpen && !saving) {
           onClose()
         }
       }}>
@@ -144,14 +150,18 @@ export function SubscriptionEditorDialog({
               {i18n.t("options.subscriptions.dialog.description")}
             </SheetDescription>
           </SheetHeader>
-          <SheetClose asChild>
-            <button
-              type="button"
-              aria-label={i18n.t("options.subscriptions.dialog.close")}
-              className="rounded-full p-2 text-zinc-400 transition hover:bg-zinc-100 hover:text-zinc-600">
-              <HiOutlineXMark className="h-5 w-5" />
-            </button>
-          </SheetClose>
+          <button
+            type="button"
+            aria-label={i18n.t("options.subscriptions.dialog.close")}
+            disabled={saving}
+            onClick={() => {
+              if (!saving) {
+                onClose()
+              }
+            }}
+            className="rounded-full p-2 text-zinc-400 transition hover:bg-zinc-100 hover:text-zinc-600 disabled:cursor-not-allowed disabled:opacity-50">
+            <HiOutlineXMark className="h-5 w-5" />
+          </button>
         </div>
 
         <div className="flex-1 space-y-6 overflow-y-auto p-6">
@@ -304,6 +314,7 @@ export function SubscriptionEditorDialog({
               onCheckedChange={(checked) =>
                 setDraft((current) => ({ ...current, enabled: checked }))
               }
+              disabled={saving}
             />
           </label>
 
@@ -316,11 +327,11 @@ export function SubscriptionEditorDialog({
         </div>
 
         <div className="flex gap-3 border-t border-zinc-100 bg-zinc-50 p-4">
-          <Button type="button" variant="outline" className="flex-1" onClick={onClose}>
+          <Button type="button" variant="outline" className="flex-1" onClick={onClose} disabled={saving}>
             {i18n.t("common.cancel")}
           </Button>
-          <Button type="button" className="flex-1" onClick={handleSave}>
-            {i18n.t("options.subscriptions.dialog.save")}
+          <Button type="button" className="flex-1" onClick={() => void handleSave()} disabled={saving}>
+            {saving ? i18n.t("common.processing") : i18n.t("options.subscriptions.dialog.save")}
           </Button>
         </div>
       </SheetContent>

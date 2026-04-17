@@ -14,53 +14,20 @@ describe("settings storage helpers", () => {
     setSpy = vi.spyOn(fakeBrowser.storage.local, "set")
   })
 
-  it("writes default settings when storage is empty", async () => {
+  it("writes default app settings when storage is empty", async () => {
     await ensureSettings()
 
     expect(setSpy).toHaveBeenCalledWith({
-      settings_v2: DEFAULT_SETTINGS
+      app_settings_v1: DEFAULT_SETTINGS
     })
-    await expect(fakeBrowser.storage.local.get("settings_v2")).resolves.toEqual({
-      settings_v2: DEFAULT_SETTINGS
-    })
-  })
-
-  it("does not overwrite existing settings during ensureSettings", async () => {
-    await fakeBrowser.storage.local.set({
-      settings_v2: {
-        currentDownloaderId: "qbittorrent"
-      }
-    })
-
-    await ensureSettings()
-
-    expect(setSpy).toHaveBeenCalledTimes(1)
-  })
-
-  it("initializes the new storage key even when the legacy key still exists", async () => {
-    await fakeBrowser.storage.local.set({
-      settings: {
-        currentDownloaderId: "qbittorrent"
-      }
-    })
-
-    await ensureSettings()
-
-    expect(setSpy).toHaveBeenCalledTimes(2)
-    expect(setSpy).toHaveBeenLastCalledWith({
-      settings_v2: DEFAULT_SETTINGS
-    })
-    await expect(fakeBrowser.storage.local.get(["settings", "settings_v2"])).resolves.toEqual({
-      settings: {
-        currentDownloaderId: "qbittorrent"
-      },
-      settings_v2: DEFAULT_SETTINGS
+    await expect(fakeBrowser.storage.local.get("app_settings_v1")).resolves.toEqual({
+      app_settings_v1: DEFAULT_SETTINGS
     })
   })
 
-  it("hydrates missing defaults and sanitizes stored values when reading settings", async () => {
+  it("hydrates missing defaults and sanitizes stored values when reading app settings", async () => {
     await fakeBrowser.storage.local.set({
-      settings_v2: {
+      app_settings_v1: {
         currentDownloaderId: "qbittorrent",
         downloaders: {
           qbittorrent: {
@@ -98,18 +65,15 @@ describe("settings storage helpers", () => {
     expect(setSpy).toHaveBeenCalledTimes(1)
   })
 
-  it("ignores the legacy storage key when reading settings", async () => {
+  it("ignores legacy storage keys when reading app settings", async () => {
     await fakeBrowser.storage.local.set({
       settings: {
-        currentDownloaderId: "qbittorrent",
-        downloaders: {
-          qbittorrent: {
-            baseUrl: "http://legacy-host:9090",
-            username: "legacy-user"
-          }
-        }
+        currentDownloaderId: "transmission"
       },
       settings_v2: {
+        currentDownloaderId: "transmission"
+      },
+      app_settings_v1: {
         currentDownloaderId: "qbittorrent",
         downloaders: {
           qbittorrent: {
@@ -133,171 +97,31 @@ describe("settings storage helpers", () => {
     })
   })
 
-  it("hydrates transmission defaults when reading older qb-only settings", async () => {
-    await fakeBrowser.storage.local.set({
-      settings_v2: {
-        currentDownloaderId: "qbittorrent",
-        downloaders: {
-          qbittorrent: {
-            baseUrl: " http://127.0.0.1:17474/// ",
-            username: " admin "
-          }
-        }
-      }
-    })
-
-    await expect(getSettings()).resolves.toEqual({
-      ...DEFAULT_SETTINGS,
-      downloaders: {
-        qbittorrent: {
-          baseUrl: "http://127.0.0.1:17474",
-          username: "admin",
-          password: ""
-        },
-        transmission: DEFAULT_SETTINGS.downloaders.transmission
-      }
-    })
-  })
-
-  it("merges partial updates into the sanitized stored settings before persisting", async () => {
-    await fakeBrowser.storage.local.set({
-      settings_v2: {
-        currentDownloaderId: "qbittorrent",
-        downloaders: {
-          qbittorrent: {
-            baseUrl: " http://127.0.0.1:7474/// ",
-            username: " admin "
-          }
-        },
-        enabledSources: {
-          kisssub: false
-        }
-      }
-    })
-
-    await expect(
-      saveSettings({
-        downloaders: {
-          qbittorrent: {
-            baseUrl: " http://127.0.0.1:17474/// "
-          }
-        },
-        lastSavePath: "  D:\\Downloads\\Anime  ",
-        enabledSources: {
-          acgrip: false
-        },
-        filters: [
-          {
-            id: " filter-1 ",
-            name: " Bangumi 1080 ",
-            enabled: true,
-            sourceIds: ["bangumimoe"],
-            must: [
-              {
-                id: " condition-1 ",
-                field: "title",
-                operator: "contains",
-                value: " 1080 "
-              }
-            ],
-            any: [
-              {
-                id: " condition-2 ",
-                field: "title",
-                operator: "contains",
-                value: " 1080p "
-              }
-            ]
-          }
-        ]
-      })
-    ).resolves.toEqual({
-      ...DEFAULT_SETTINGS,
-      downloaders: {
-        ...DEFAULT_SETTINGS.downloaders,
-        qbittorrent: {
-          baseUrl: "http://127.0.0.1:17474",
-          username: "admin",
-          password: ""
-        }
+  it("persists only the app-settings document", async () => {
+    await saveSettings({
+      currentDownloaderId: "transmission",
+      subscriptionsEnabled: true,
+      subscriptions: [{ id: "sub-1" }],
+      lastSchedulerRunAt: "2026-04-13T01:23:45.000Z",
+      subscriptionRuntimeStateById: {
+        "sub-1": { lastScanAt: "x" }
       },
-      lastSavePath: "D:\\Downloads\\Anime",
-      filters: [
-        {
-          id: "filter-1",
-          name: "Bangumi 1080",
-          enabled: true,
-          sourceIds: ["bangumimoe"],
-          must: [
-            {
-              id: "condition-1",
-              field: "title",
-              operator: "contains",
-              value: "1080"
-            }
-          ],
-          any: [
-            {
-              id: "condition-2",
-              field: "title",
-              operator: "contains",
-              value: "1080p"
-            }
-          ]
-        }
-      ],
-      enabledSources: {
-        kisssub: false,
-        dongmanhuayuan: true,
-        acgrip: false,
-        bangumimoe: true
-      }
-    })
+      subscriptionNotificationRounds: [{ id: "round-1", createdAt: "x", hitIds: [] }]
+    } as never)
 
     expect(setSpy).toHaveBeenLastCalledWith({
-      settings_v2: {
-        ...DEFAULT_SETTINGS,
-        downloaders: {
-          ...DEFAULT_SETTINGS.downloaders,
-          qbittorrent: {
-            baseUrl: "http://127.0.0.1:17474",
-            username: "admin",
-            password: ""
-          }
-        },
-        lastSavePath: "D:\\Downloads\\Anime",
-        filters: [
-          {
-            id: "filter-1",
-            name: "Bangumi 1080",
-            enabled: true,
-            sourceIds: ["bangumimoe"],
-            must: [
-              {
-                id: "condition-1",
-                field: "title",
-                operator: "contains",
-                value: "1080"
-              }
-            ],
-            any: [
-              {
-                id: "condition-2",
-                field: "title",
-                operator: "contains",
-                value: "1080p"
-              }
-            ]
-          }
-        ],
-        enabledSources: {
-          kisssub: false,
-          dongmanhuayuan: true,
-          acgrip: false,
-          bangumimoe: true
-        }
-      }
+      app_settings_v1: expect.objectContaining({
+        currentDownloaderId: "transmission",
+        subscriptionsEnabled: true
+      })
     })
+
+    const persisted = setSpy.mock.calls.at(-1)?.[0]?.app_settings_v1 as Record<string, unknown>
+
+    expect(persisted).not.toHaveProperty("subscriptions")
+    expect(persisted).not.toHaveProperty("lastSchedulerRunAt")
+    expect(persisted).not.toHaveProperty("subscriptionRuntimeStateById")
+    expect(persisted).not.toHaveProperty("subscriptionNotificationRounds")
   })
 
   it("initializes defaults before saving when storage was previously empty", async () => {
@@ -322,7 +146,7 @@ describe("settings storage helpers", () => {
 
     expect(setSpy).toHaveBeenCalledTimes(2)
     expect(setSpy.mock.calls[0]?.[0]).toEqual({
-      settings_v2: DEFAULT_SETTINGS
+      app_settings_v1: DEFAULT_SETTINGS
     })
     expect(getSpy).toHaveBeenCalled()
   })

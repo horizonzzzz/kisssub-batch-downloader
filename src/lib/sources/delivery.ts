@@ -1,7 +1,7 @@
 import { i18n } from "../i18n"
 
 import { SOURCE_IDS } from "./catalog"
-import type { DeliveryMode, Settings, SourceId } from "../shared/types"
+import type { AppSettings, DeliveryMode, SourceId } from "../shared/types"
 
 const SUPPORTED_DELIVERY_MODES: Record<SourceId, readonly DeliveryMode[]> = {
   kisssub: ["magnet", "torrent-url", "torrent-file"],
@@ -25,9 +25,9 @@ export function isSupportedDeliveryMode(sourceId: SourceId, mode: unknown): mode
   return typeof mode === "string" && SUPPORTED_DELIVERY_MODES[sourceId].includes(mode as DeliveryMode)
 }
 
-export function normalizeSourceDeliveryModes(raw: unknown): Settings["sourceDeliveryModes"] {
+export function normalizeSourceDeliveryModes(raw: unknown): AppSettings["sourceDeliveryModes"] {
   const record = typeof raw === "object" && raw ? (raw as Record<string, unknown>) : {}
-  const normalized: Settings["sourceDeliveryModes"] = {}
+  const normalized: AppSettings["sourceDeliveryModes"] = {}
 
   for (const sourceId of SOURCE_IDS) {
     normalized[sourceId] = isSupportedDeliveryMode(sourceId, record[sourceId])
@@ -40,7 +40,7 @@ export function normalizeSourceDeliveryModes(raw: unknown): Settings["sourceDeli
 
 export function resolveSourceDeliveryMode(
   sourceId: SourceId,
-  settings: Pick<Settings, "sourceDeliveryModes">
+  settings: Pick<AppSettings, "sourceDeliveryModes">
 ): DeliveryMode {
   const configured = settings.sourceDeliveryModes?.[sourceId]
   return isSupportedDeliveryMode(sourceId, configured)
@@ -50,7 +50,7 @@ export function resolveSourceDeliveryMode(
 
 export function getDeliveryModePriority(
   sourceId: SourceId,
-  settings: Pick<Settings, "sourceDeliveryModes">
+  settings: Pick<AppSettings, "sourceDeliveryModes">
 ): DeliveryMode[] {
   const preferred = resolveSourceDeliveryMode(sourceId, settings)
   return [preferred, ...SUPPORTED_DELIVERY_MODES[sourceId].filter((mode) => mode !== preferred)]

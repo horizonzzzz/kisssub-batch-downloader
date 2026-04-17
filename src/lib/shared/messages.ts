@@ -1,8 +1,9 @@
 import type {
+  AppSettings,
   BatchEventPayload,
   BatchItem,
-  Settings,
   SourceId,
+  SubscriptionEntry,
   TestDownloaderConnectionResult
 } from "./types"
 import type { TaskHistoryRecord } from "../history/types"
@@ -37,16 +38,15 @@ export type RuntimeRequest =
   | { type: "CLEAR_HISTORY" }
   | { type: "DELETE_HISTORY_RECORD"; recordId: string }
   | { type: "RETRY_FAILED_ITEMS"; recordId: string; itemIds?: string[] }
-  | { type: "GET_SETTINGS" }
-  | { type: "SAVE_SETTINGS"; settings?: Partial<Settings> }
-  | { type: "TEST_DOWNLOADER_CONNECTION"; settings?: Partial<Settings> | null }
+  | { type: "GET_APP_SETTINGS" }
+  | { type: "SAVE_APP_SETTINGS"; settings?: Partial<AppSettings> }
+  | { type: "TEST_DOWNLOADER_CONNECTION"; settings?: Partial<AppSettings> | null }
   | { type: "GET_POPUP_STATE" }
   | { type: "SET_SOURCE_ENABLED"; sourceId: SourceId; enabled: boolean }
   | { type: "OPEN_OPTIONS_PAGE"; route?: PopupOptionsRoute }
   | { type: "START_BATCH_DOWNLOAD"; items?: BatchItem[]; savePath?: string }
-  | { type: "GET_SUBSCRIPTION_STATUS" }
-  | { type: "RUN_SUBSCRIPTION_SCAN_NOW" }
-  | { type: "DOWNLOAD_SUBSCRIPTION_HITS"; roundId: string }
+  | { type: "UPSERT_SUBSCRIPTION"; subscription: SubscriptionEntry }
+  | { type: "DELETE_SUBSCRIPTION"; subscriptionId: string }
 
 export type RuntimeRequestType = RuntimeRequest["type"]
 
@@ -55,14 +55,14 @@ export type RuntimeErrorResponse = {
   error: string
 }
 
-export type GetSettingsSuccessResponse = {
+export type GetAppSettingsSuccessResponse = {
   ok: true
-  settings: Settings
+  settings: AppSettings
 }
 
-export type SaveSettingsSuccessResponse = {
+export type SaveAppSettingsSuccessResponse = {
   ok: true
-  settings: Settings
+  settings: AppSettings
 }
 
 export type TestDownloaderConnectionSuccessResponse = {
@@ -81,7 +81,7 @@ export type GetPopupStateSuccessResponse = {
 
 export type SetSourceEnabledSuccessResponse = {
   ok: true
-  settings: Settings
+  settings: AppSettings
 }
 
 export type StartBatchDownloadSuccessResponse = {
@@ -108,17 +108,11 @@ export type RetryFailedItemsSuccessResponse = {
   failedCount: number
 }
 
-export type GetSubscriptionStatusSuccessResponse = {
+export type UpsertSubscriptionSuccessResponse = {
   ok: true
-  settings: Settings
 }
 
-export type RunSubscriptionScanNowSuccessResponse = {
-  ok: true
-  roundId: string | null
-}
-
-export type DownloadSubscriptionHitsSuccessResponse = {
+export type DeleteSubscriptionSuccessResponse = {
   ok: true
 }
 
@@ -127,16 +121,15 @@ export type RuntimeSuccessResponseMap = {
   CLEAR_HISTORY: ClearHistorySuccessResponse
   DELETE_HISTORY_RECORD: DeleteHistoryRecordSuccessResponse
   RETRY_FAILED_ITEMS: RetryFailedItemsSuccessResponse
-  GET_SETTINGS: GetSettingsSuccessResponse
-  SAVE_SETTINGS: SaveSettingsSuccessResponse
+  GET_APP_SETTINGS: GetAppSettingsSuccessResponse
+  SAVE_APP_SETTINGS: SaveAppSettingsSuccessResponse
   TEST_DOWNLOADER_CONNECTION: TestDownloaderConnectionSuccessResponse
   GET_POPUP_STATE: GetPopupStateSuccessResponse
   SET_SOURCE_ENABLED: SetSourceEnabledSuccessResponse
   OPEN_OPTIONS_PAGE: OpenOptionsPageSuccessResponse
   START_BATCH_DOWNLOAD: StartBatchDownloadSuccessResponse
-  GET_SUBSCRIPTION_STATUS: GetSubscriptionStatusSuccessResponse
-  RUN_SUBSCRIPTION_SCAN_NOW: RunSubscriptionScanNowSuccessResponse
-  DOWNLOAD_SUBSCRIPTION_HITS: DownloadSubscriptionHitsSuccessResponse
+  UPSERT_SUBSCRIPTION: UpsertSubscriptionSuccessResponse
+  DELETE_SUBSCRIPTION: DeleteSubscriptionSuccessResponse
 }
 
 export type RuntimeSuccessResponseFor<TType extends RuntimeRequestType> =
@@ -150,16 +143,15 @@ export type GetHistoryResponse = RuntimeResponseFor<"GET_HISTORY">
 export type ClearHistoryResponse = RuntimeResponseFor<"CLEAR_HISTORY">
 export type DeleteHistoryRecordResponse = RuntimeResponseFor<"DELETE_HISTORY_RECORD">
 export type RetryFailedItemsResponse = RuntimeResponseFor<"RETRY_FAILED_ITEMS">
-export type GetSettingsResponse = RuntimeResponseFor<"GET_SETTINGS">
-export type SaveSettingsResponse = RuntimeResponseFor<"SAVE_SETTINGS">
+export type GetAppSettingsResponse = RuntimeResponseFor<"GET_APP_SETTINGS">
+export type SaveAppSettingsResponse = RuntimeResponseFor<"SAVE_APP_SETTINGS">
 export type TestDownloaderConnectionResponse = RuntimeResponseFor<"TEST_DOWNLOADER_CONNECTION">
 export type GetPopupStateResponse = RuntimeResponseFor<"GET_POPUP_STATE">
 export type SetSourceEnabledResponse = RuntimeResponseFor<"SET_SOURCE_ENABLED">
 export type OpenOptionsPageResponse = RuntimeResponseFor<"OPEN_OPTIONS_PAGE">
 export type StartBatchDownloadResponse = RuntimeResponseFor<"START_BATCH_DOWNLOAD">
-export type GetSubscriptionStatusResponse = RuntimeResponseFor<"GET_SUBSCRIPTION_STATUS">
-export type RunSubscriptionScanNowResponse = RuntimeResponseFor<"RUN_SUBSCRIPTION_SCAN_NOW">
-export type DownloadSubscriptionHitsResponse = RuntimeResponseFor<"DOWNLOAD_SUBSCRIPTION_HITS">
+export type UpsertSubscriptionResponse = RuntimeResponseFor<"UPSERT_SUBSCRIPTION">
+export type DeleteSubscriptionResponse = RuntimeResponseFor<"DELETE_SUBSCRIPTION">
 export type RuntimeResponse = RuntimeResponseFor<RuntimeRequestType>
 
 export function createRuntimeSuccessResponse<TType extends RuntimeRequestType>(

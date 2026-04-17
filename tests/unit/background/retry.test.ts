@@ -3,7 +3,7 @@ import { retryFailedItems, type RetryDependencies, type RetryRequest } from "../
 import type { DownloaderAdapter, DownloaderTorrentFile } from "../../../src/lib/downloader"
 import type { TaskHistoryItem, TaskHistoryRecord } from "../../../src/lib/history/types"
 import { DEFAULT_SETTINGS } from "../../../src/lib/settings/defaults"
-import type { Settings } from "../../../src/lib/shared/types"
+import type { AppSettings } from "../../../src/lib/shared/types"
 
 type RetryTestDeps = RetryDependencies & {
   downloader: DownloaderAdapter
@@ -272,7 +272,7 @@ describe("retryFailedItems", () => {
       )
       const record = createMockRecord("batch-1", [failedItem])
       deps.getHistoryRecord = vi.fn(async () => record)
-      const filteredSettings: Settings = {
+      const filteredSettings: AppSettings = {
         ...DEFAULT_SETTINGS,
         downloaders: {
           ...DEFAULT_SETTINGS.downloaders,
@@ -326,7 +326,7 @@ describe("retryFailedItems", () => {
       )
       const record = createMockRecord("batch-1", [failedItem])
       deps.getHistoryRecord = vi.fn(async () => record)
-      const includeSettings: Settings = {
+      const includeSettings: AppSettings = {
         ...DEFAULT_SETTINGS,
         downloaders: {
           ...DEFAULT_SETTINGS.downloaders,

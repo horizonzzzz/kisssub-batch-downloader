@@ -5,9 +5,7 @@ import { DEFAULT_SETTINGS, sanitizeSettings } from "../../../lib/settings"
 import type {
   DeliveryMode,
   DownloaderId,
-  Settings,
-  SourceId,
-  SubscriptionDeliveryMode
+  SourceId
 } from "../../../lib/shared/types"
 
 const deliveryModeSchema = z.enum([
@@ -56,28 +54,6 @@ const filterSchema = z.object({
   any: z.array(textConditionSchema)
 })
 
-const subscriptionDeliveryModeSchema = z.enum([
-  "direct-only",
-  "allow-detail-extraction"
-] satisfies SubscriptionDeliveryMode[])
-
-const subscriptionSchema = z.object({
-  id: z.string().trim().min(1, i18n.t("options.validation.subscriptionIdRequired")),
-  name: z.string().trim().min(1, i18n.t("options.validation.subscriptionNameRequired")),
-  enabled: z.boolean(),
-  sourceIds: z.array(sourceIdSchema).min(1, i18n.t("options.validation.subscriptionSourceRequired")),
-  multiSiteModeEnabled: z.boolean(),
-  titleQuery: z.string().trim(),
-  subgroupQuery: z.string().trim(),
-  advanced: z.object({
-    must: z.array(textConditionSchema),
-    any: z.array(textConditionSchema)
-  }),
-  deliveryMode: subscriptionDeliveryModeSchema,
-  createdAt: z.string().trim().min(1, i18n.t("options.validation.subscriptionCreatedAtRequired")),
-  baselineCreatedAt: z.string().trim().min(1, i18n.t("options.validation.subscriptionBaselineCreatedAtRequired"))
-})
-
 export const settingsFormSchema = z.object({
   currentDownloaderId: downloaderIdSchema,
   downloaders: z.object({
@@ -111,12 +87,7 @@ export const settingsFormSchema = z.object({
     acgrip: z.boolean().optional(),
     bangumimoe: z.boolean().optional()
   }),
-  filters: z.array(filterSchema),
-  subscriptionsEnabled: z.boolean(),
-  pollingIntervalMinutes: z.coerce.number().int().min(5, i18n.t("options.validation.minValue", ["5"])).max(120, i18n.t("options.validation.maxValue", ["120"])),
-  notificationsEnabled: z.boolean(),
-  notificationDownloadActionEnabled: z.boolean(),
-  subscriptions: z.array(subscriptionSchema)
+  filters: z.array(filterSchema)
 }).superRefine((values, context) => {
   if (!values.downloaders.qbittorrent.baseUrl && values.currentDownloaderId === "qbittorrent") {
     context.addIssue({
@@ -133,29 +104,11 @@ export const settingsFormSchema = z.object({
       path: ["downloaders", "transmission", "baseUrl"]
     })
   }
-
-  const seenSubscriptionIds = new Set<string>()
-  values.subscriptions.forEach((subscription, index) => {
-    const normalizedId = subscription.id.trim()
-    if (seenSubscriptionIds.has(normalizedId)) {
-      context.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: i18n.t("options.validation.subscriptionIdUnique"),
-        path: ["subscriptions", index, "id"]
-      })
-      return
-    }
-
-    seenSubscriptionIds.add(normalizedId)
-  })
 })
 
 export type SettingsFormInput = z.input<typeof settingsFormSchema>
 export type SettingsFormValues = z.output<typeof settingsFormSchema>
-export type EditableSettingsPayload = Omit<
-  Settings,
-  "lastSchedulerRunAt" | "subscriptionRuntimeStateById" | "subscriptionNotificationRounds"
->
+export type EditableSettingsPayload = SettingsFormValues
 
 export function createSettingsFormDefaults(
   settings: Record<string, unknown> = {}

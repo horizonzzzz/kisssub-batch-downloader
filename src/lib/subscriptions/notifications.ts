@@ -1,8 +1,7 @@
 import type {
-  SubscriptionHitRecord,
-  SubscriptionNotificationHit,
-  SubscriptionNotificationRound
+  SubscriptionHitRecord
 } from "../shared/types"
+import type { NotificationRoundRow } from "./store-types"
 
 export const SUBSCRIPTION_NOTIFICATION_ROUND_ID_PREFIX = "subscription-round:"
 export const SUBSCRIPTION_NOTIFICATION_ROUND_RETENTION_CAP = 10
@@ -31,20 +30,19 @@ export function parseSubscriptionNotificationRoundId(id: string): string | null 
 export function createSubscriptionNotificationRound(input: {
   createdAt: string
   hits: SubscriptionHitRecord[]
-}): SubscriptionNotificationRound {
-  const normalizedHits = normalizeNotificationRoundHits(input.hits)
+}): NotificationRoundRow {
+  const hitIds = collectNotificationRoundHitIds(input.hits)
 
   return {
     id: createSubscriptionNotificationRoundId(input.createdAt),
     createdAt: String(input.createdAt ?? "").trim(),
-    hitIds: normalizeHitIds(normalizedHits.map((hit) => hit.id)),
-    hits: normalizedHits
+    hitIds
   }
 }
 
 export function retainSubscriptionNotificationRounds(
-  rounds: SubscriptionNotificationRound[]
-): SubscriptionNotificationRound[] {
+  rounds: NotificationRoundRow[]
+): NotificationRoundRow[] {
   const normalizedRounds = Array.isArray(rounds)
     ? rounds.filter(
         (round) =>
@@ -55,11 +53,13 @@ export function retainSubscriptionNotificationRounds(
       )
     : []
 
-  return normalizedRounds.slice(-SUBSCRIPTION_NOTIFICATION_ROUND_RETENTION_CAP)
+  return normalizedRounds
+    .sort((left, right) => left.createdAt.localeCompare(right.createdAt))
+    .slice(-SUBSCRIPTION_NOTIFICATION_ROUND_RETENTION_CAP)
 }
 
 export function buildSubscriptionRoundNotification(
-  round: Pick<SubscriptionNotificationRound, "id" | "hitIds">,
+  round: Pick<NotificationRoundRow, "id" | "hitIds">,
   copy: {
     title: string
     message: string
@@ -83,22 +83,6 @@ export function collectNotificationRoundHitIds(
   hits: SubscriptionHitRecord[]
 ): string[] {
   return normalizeHitIds(hits.map((hit) => hit.id))
-}
-
-export function normalizeNotificationRoundHits(
-  hits: SubscriptionNotificationHit[]
-): SubscriptionNotificationHit[] {
-  if (!Array.isArray(hits)) {
-    return []
-  }
-
-  return Array.from(
-    new Map(
-      hits
-        .filter((hit) => hit && typeof hit === "object" && String(hit.id ?? "").trim().length > 0)
-        .map((hit) => [String(hit.id).trim(), { ...hit }])
-    ).values()
-  )
 }
 
 function normalizeHitIds(hitIds: string[]): string[] {

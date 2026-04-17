@@ -233,7 +233,7 @@ async function getInjectedStyleSignature(page: import("@playwright/test").Page) 
 async function openOptionsPage(
   extension: Awaited<ReturnType<typeof launchExtensionContext>>,
   options?: {
-    route?: "/general" | "/sites" | "/filters" | "/history" | "/overview"
+    route?: "/general" | "/sites" | "/filters" | "/subscriptions" | "/history" | "/overview"
     heading?: string
   }
 ) {
@@ -442,6 +442,49 @@ test("filter builder prioritizes width for the condition value input", async () 
     )
 
     expect(valueWidth).toBeGreaterThan(fieldWidth)
+
+    await page.close()
+  } finally {
+    await extension.close()
+  }
+})
+
+test("subscriptions page refreshes from background Dexie mutations without reloading", async () => {
+  const extension = await launchExtensionContext()
+
+  try {
+    const page = await openOptionsPage(extension, {
+      route: "/subscriptions",
+      heading: "订阅"
+    })
+
+    await page.getByRole("button", { name: "新增订阅" }).first().click()
+    await expect(page.getByRole("dialog", { name: "新增订阅" })).toBeVisible()
+    await page.getByLabel("订阅名称").fill("Medalist")
+    await page.getByLabel("标题关键词").fill("Medalist")
+    await page.getByRole("button", { name: "保存订阅" }).click()
+
+    const createdCard = page.getByTestId(/subscription-card-/).filter({
+      has: page.getByRole("heading", { name: "Medalist", exact: true })
+    })
+    await expect(createdCard).toHaveCount(1)
+
+    await createdCard.getByRole("button", { name: "编辑" }).click()
+    await expect(page.getByRole("dialog", { name: "编辑订阅" })).toBeVisible()
+    await page.getByLabel("订阅名称").fill("Medalist S2")
+    await page.getByRole("button", { name: "保存订阅" }).click()
+
+    const updatedCard = page.getByTestId(/subscription-card-/).filter({
+      has: page.getByRole("heading", { name: "Medalist S2", exact: true })
+    })
+    await expect(updatedCard).toHaveCount(1)
+
+    await updatedCard.getByRole("button", { name: "删除" }).click()
+    await expect(page.getByText("确定删除订阅“Medalist S2”吗？")).toBeVisible()
+    await page.getByRole("button", { name: "删除" }).last().click()
+
+    await expect(page.getByRole("heading", { name: "Medalist S2", exact: true })).toHaveCount(0)
+    await expect(page.getByText("还没有订阅规则")).toBeVisible()
 
     await page.close()
   } finally {

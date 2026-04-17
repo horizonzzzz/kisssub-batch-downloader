@@ -1,129 +1,79 @@
-import type {
-  SubscriptionEntry,
-  Settings
-} from "../shared/types"
-import type { SubscriptionRuntimeSnapshot } from "./contracts"
+import type { AppSettings, SubscriptionEntry } from "../shared/types"
+
+import {
+  deleteSubscription,
+  listSubscriptions,
+  replaceSubscriptionCatalog,
+  upsertSubscription
+} from "./catalog-repository"
 import {
   downloadSubscriptionNotificationHits,
   type DownloadSubscriptionHitsRequest,
   type DownloadSubscriptionHitsResult,
-  type SubscriptionDownloadNotificationPatch,
   type SubscriptionNotificationDownloadDependencies
 } from "./download-notification"
-import { reconcileSubscriptionRuntimeSnapshot } from "./runtime-snapshot"
 import {
-  applySubscriptionRuntimeSnapshot,
-  createSubscriptionRuntimeSnapshot
-} from "./runtime-repository"
-import { scanSubscriptions } from "./scan"
-import type {
-  ScanSubscriptionsDependencies,
-  ScanSubscriptionsResult
+  scanSubscriptions,
+  type ScanSubscriptionsDependencies,
+  type ScanSubscriptionsResult
 } from "./scan"
 
-export type { SubscriptionRuntimeSettingsPatch } from "./runtime-repository"
-export type SubscriptionEditRuntimeSettingsPatch = Pick<
-  Settings,
-  "subscriptionRuntimeStateById" | "subscriptionNotificationRounds"
->
 export type SubscriptionManagerDownloadDependencies =
   SubscriptionNotificationDownloadDependencies
-export type SubscriptionManagerDownloadResult = DownloadSubscriptionHitsResult & {
-  runtimeSnapshot: SubscriptionRuntimeSnapshot | null
-}
-export type SubscriptionManagerScanResult = ScanSubscriptionsResult & {
-  runtimeSnapshot: SubscriptionRuntimeSnapshot
-}
+export type SubscriptionManagerDownloadResult = DownloadSubscriptionHitsResult
+export type SubscriptionManagerScanResult = ScanSubscriptionsResult
 
 export class SubscriptionManager {
-  private readonly settingsWithRuntime: Settings
-
   constructor(
-    settings: Settings,
-    private readonly runtimeSnapshot: SubscriptionRuntimeSnapshot = createSubscriptionRuntimeSnapshot(
-      settings
-    )
-  ) {
-    this.settingsWithRuntime = applySubscriptionRuntimeSnapshot(
-      settings,
-      this.runtimeSnapshot
-    )
-  }
-
-  getRuntimeSnapshot(): SubscriptionRuntimeSnapshot {
-    return this.runtimeSnapshot
-  }
-
-  reconcileAfterEdit(
-    previousSubscriptions: SubscriptionEntry[],
-    nextSubscriptions: SubscriptionEntry[]
-  ): Settings {
-    const runtimePatch = this.reconcileAfterEditPatch(previousSubscriptions, nextSubscriptions)
-
-    if (!runtimePatch) {
-      return this.settingsWithRuntime
+    private readonly input: {
+      appSettings: AppSettings
+      now?: () => string
     }
-
-    return {
-      ...this.settingsWithRuntime,
-      ...runtimePatch
-    }
-  }
-
-  reconcileAfterEditPatch(
-    previousSubscriptions: SubscriptionEntry[],
-    nextSubscriptions: SubscriptionEntry[]
-  ): SubscriptionEditRuntimeSettingsPatch | null {
-    const snapshot = this.getRuntimeSnapshot()
-    const reconciledSnapshot = reconcileSubscriptionRuntimeSnapshot(
-      snapshot,
-      previousSubscriptions,
-      nextSubscriptions
-    )
-
-    if (reconciledSnapshot === snapshot) {
-      return null
-    }
-
-    return {
-      subscriptionRuntimeStateById: reconciledSnapshot.subscriptionRuntimeStateById,
-      subscriptionNotificationRounds: reconciledSnapshot.subscriptionNotificationRounds
-    }
-  }
+  ) {}
 
   async scan(
-    dependencies: ScanSubscriptionsDependencies = {}
+    dependencies: Omit<
+      ScanSubscriptionsDependencies,
+      "appSettings" | "subscriptions" | "now"
+    > = {}
   ): Promise<SubscriptionManagerScanResult> {
-    const result = await scanSubscriptions(this.settingsWithRuntime, dependencies)
+    const subscriptions = await listSubscriptions()
 
-    return {
-      ...result,
-      runtimeSnapshot: createSubscriptionRuntimeSnapshot(result.settings)
-    }
+    return scanSubscriptions({
+      appSettings: this.input.appSettings,
+      subscriptions,
+      now: this.input.now,
+      ...dependencies
+    })
   }
 
   async downloadFromNotification(
     request: DownloadSubscriptionHitsRequest,
     dependencies: SubscriptionManagerDownloadDependencies
   ): Promise<SubscriptionManagerDownloadResult> {
-    const result = await downloadSubscriptionNotificationHits(
-      this.settingsWithRuntime,
-      request,
-      dependencies
+    return downloadSubscriptionNotificationHits(
+      {
+        appSettings: this.input.appSettings,
+        roundId: request.roundId
+      },
+      {
+        ...dependencies,
+        now: dependencies.now ?? this.input.now
+      }
     )
-    const { runtimePatch, ...downloadResult } = result
+  }
 
-    return {
-      ...downloadResult,
-      runtimeSnapshot: runtimePatch
-        ? createSubscriptionRuntimeSnapshot(result.settings)
-        : null
-    }
+  async replaceCatalog(nextSubscriptions: SubscriptionEntry[]): Promise<void> {
+    await replaceSubscriptionCatalog(nextSubscriptions)
+  }
+
+  async upsertSubscription(subscription: SubscriptionEntry): Promise<void> {
+    await upsertSubscription(subscription)
+  }
+
+  async deleteSubscription(subscriptionId: string): Promise<void> {
+    await deleteSubscription(subscriptionId)
   }
 }
 
-export type {
-  DownloadSubscriptionHitsRequest,
-  DownloadSubscriptionHitsResult,
-  SubscriptionDownloadNotificationPatch
-}
+export type { DownloadSubscriptionHitsRequest, DownloadSubscriptionHitsResult }

@@ -6,7 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm, useWatch } from "react-hook-form"
 
 import type { TestDownloaderConnectionResult } from "../../../lib/shared/types"
-import type { OptionsApi } from "../OptionsPage"
+import type { SettingsFormApi } from "../OptionsPage"
 import {
   createSettingsFormDefaults,
   settingsFormSchema,
@@ -22,7 +22,7 @@ function buildValidationMessage() {
   return i18n.t("options.status.validationError")
 }
 
-export function useSettingsForm(api: OptionsApi) {
+export function useSettingsForm(api: SettingsFormApi) {
   const form = useForm<SettingsFormInput, unknown, SettingsFormValues>({
     resolver: zodResolver(settingsFormSchema),
     defaultValues: createSettingsFormDefaults(),
@@ -45,7 +45,7 @@ export function useSettingsForm(api: OptionsApi) {
     let active = true
 
     void api
-      .loadSettings()
+      .loadAppSettings()
       .then((loaded) => {
         if (!active) {
           return
@@ -87,7 +87,7 @@ export function useSettingsForm(api: OptionsApi) {
       })
 
       try {
-        const saved = await api.saveSettings(toSettingsPayload(values))
+        const saved = await api.saveAppSettings(toSettingsPayload(values))
         form.reset(createSettingsFormDefaults(saved))
         setStatus({
           tone: "success",

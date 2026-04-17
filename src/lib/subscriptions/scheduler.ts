@@ -1,5 +1,5 @@
 import { getBrowser } from "../shared/browser"
-import type { Settings } from "../shared/types"
+import type { AppSettings } from "../shared/types"
 
 export const SUBSCRIPTION_ALARM_NAME = "subscription-poll"
 
@@ -15,7 +15,7 @@ export type SubscriptionAlarmApi = {
 }
 
 export async function ensureSubscriptionAlarm(
-  settings: Pick<Settings, "subscriptionsEnabled" | "pollingIntervalMinutes">,
+  settings: Pick<AppSettings, "subscriptionsEnabled" | "pollingIntervalMinutes">,
   alarms: SubscriptionAlarmApi = getBrowser().alarms
 ): Promise<void> {
   const existingAlarm = await alarms.get(SUBSCRIPTION_ALARM_NAME)

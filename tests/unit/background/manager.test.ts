@@ -12,13 +12,13 @@ import { createBatchDownloadManager } from "../../../src/lib/background/manager"
 import type { DownloaderAdapter } from "../../../src/lib/downloader"
 import { DEFAULT_SETTINGS } from "../../../src/lib/settings/defaults"
 import type {
+  AppSettings,
   BatchEventPayload,
   BatchItem,
-  ExtractionResult,
-  Settings
+  ExtractionResult
 } from "../../../src/lib/shared/types"
 
-function createSettings(overrides: Partial<Settings> = {}): Settings {
+function createSettings(overrides: Partial<AppSettings> = {}): AppSettings {
   return {
     ...DEFAULT_SETTINGS,
     downloaders: {

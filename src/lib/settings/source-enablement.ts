@@ -1,5 +1,5 @@
 import { SOURCE_IDS } from "../sources/catalog"
-import type { Settings, SourceId } from "../shared/types"
+import type { AppSettings, SourceId } from "../shared/types"
 
 export const DEFAULT_ENABLED_SOURCES: Record<SourceId, boolean> = Object.freeze({
   kisssub: true,
@@ -8,9 +8,9 @@ export const DEFAULT_ENABLED_SOURCES: Record<SourceId, boolean> = Object.freeze(
   bangumimoe: true
 })
 
-export function normalizeEnabledSources(raw: unknown): Settings["enabledSources"] {
+export function normalizeEnabledSources(raw: unknown): AppSettings["enabledSources"] {
   const record = typeof raw === "object" && raw ? (raw as Record<string, unknown>) : {}
-  const normalized: Settings["enabledSources"] = {}
+  const normalized: AppSettings["enabledSources"] = {}
 
   for (const sourceId of SOURCE_IDS) {
     normalized[sourceId] =
@@ -24,7 +24,7 @@ export function normalizeEnabledSources(raw: unknown): Settings["enabledSources"
 
 export function resolveSourceEnabled(
   sourceId: SourceId,
-  settings: Pick<Settings, "enabledSources">
+  settings: Pick<AppSettings, "enabledSources">
 ): boolean {
   return typeof settings.enabledSources?.[sourceId] === "boolean"
     ? Boolean(settings.enabledSources[sourceId])
@@ -33,7 +33,7 @@ export function resolveSourceEnabled(
 
 export function getDisabledSources(
   sourceIds: SourceId[],
-  settings: Pick<Settings, "enabledSources">
+  settings: Pick<AppSettings, "enabledSources">
 ): SourceId[] {
   return sourceIds.filter((sourceId) => !resolveSourceEnabled(sourceId, settings))
 }

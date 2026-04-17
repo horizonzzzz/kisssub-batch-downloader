@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import { DEFAULT_SETTINGS } from "../../../src/lib/settings/defaults"
-import type { Settings } from "../../../src/lib/shared/types"
+import type { AppSettings } from "../../../src/lib/shared/types"
 
 const {
   getSettingsMock,
@@ -60,7 +60,7 @@ vi.mock("../../../src/lib/shared/browser", async () => {
 import { testDownloaderConnection } from "../../../src/lib/background/service"
 
 describe("testDownloaderConnection", () => {
-  const storedSettings: Settings = {
+  const storedSettings: AppSettings = {
     ...DEFAULT_SETTINGS,
     downloaders: {
       ...DEFAULT_SETTINGS.downloaders,
@@ -72,7 +72,7 @@ describe("testDownloaderConnection", () => {
     }
   }
 
-  const sanitizedSettings: Settings = {
+  const sanitizedSettings: AppSettings = {
     ...storedSettings,
     downloaders: {
       ...DEFAULT_SETTINGS.downloaders,
@@ -165,9 +165,12 @@ describe("testDownloaderConnection", () => {
 
   it("fails with a permission-specific error when downloader host access is missing", async () => {
     permissionsContainsMock.mockResolvedValueOnce(false)
+    permissionsRequestMock.mockResolvedValueOnce(false)
 
     await expect(testDownloaderConnection(null)).rejects.toThrow("权限")
-    expect(permissionsRequestMock).not.toHaveBeenCalled()
+    expect(permissionsRequestMock).toHaveBeenCalledWith({
+      origins: ["http://127.0.0.1/*"]
+    })
     expect(testConnectionMock).not.toHaveBeenCalled()
   })
 
@@ -177,5 +180,22 @@ describe("testDownloaderConnection", () => {
 
     await expect(testDownloaderConnection(null)).rejects.toThrow("权限")
     expect(testConnectionMock).not.toHaveBeenCalled()
+  })
+
+  it("requests downloader host access interactively for popup-style probes without overrides", async () => {
+    permissionsContainsMock.mockResolvedValueOnce(false)
+    permissionsRequestMock.mockResolvedValueOnce(true)
+
+    await expect(testDownloaderConnection(null)).resolves.toEqual({
+      downloaderId: "qbittorrent",
+      displayName: "qBittorrent",
+      baseUrl: "http://127.0.0.1:17474",
+      version: "4.6.0"
+    })
+
+    expect(permissionsRequestMock).toHaveBeenCalledWith({
+      origins: ["http://127.0.0.1/*"]
+    })
+    expect(testConnectionMock).toHaveBeenCalledWith(sanitizedSettings)
   })
 })

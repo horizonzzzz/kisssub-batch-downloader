@@ -100,9 +100,28 @@ describe("options settings form helpers", () => {
     })
   })
 
-  it("omits runtime-owned subscription state from the save payload", () => {
+  it("omits subscription workspace fields from the shared app-settings save payload", () => {
     const payload = toSettingsPayload({
       ...createSettingsFormDefaults({
+        subscriptionsEnabled: true,
+        pollingIntervalMinutes: 30,
+        notificationsEnabled: true,
+        notificationDownloadActionEnabled: true,
+        subscriptions: [
+          {
+            id: "sub-1",
+            name: "Bangumi.moe Medalist",
+            enabled: true,
+            sourceIds: ["bangumimoe"],
+            multiSiteModeEnabled: false,
+            titleQuery: "Medalist",
+            subgroupQuery: "爱恋字幕社",
+            advanced: { must: [], any: [] },
+            deliveryMode: "direct-only",
+            createdAt: "2026-04-13T00:00:00.000Z",
+            baselineCreatedAt: "2026-04-13T00:00:00.000Z"
+          }
+        ],
         lastSchedulerRunAt: "2026-04-13T04:00:00.000Z",
         subscriptionRuntimeStateById: {
           "sub-1": {
@@ -124,6 +143,11 @@ describe("options settings form helpers", () => {
     })
 
     expect(payload).not.toHaveProperty("subscriptionsRuntimeStateById")
+    expect(payload).not.toHaveProperty("subscriptions")
+    expect(payload).not.toHaveProperty("subscriptionsEnabled")
+    expect(payload).not.toHaveProperty("pollingIntervalMinutes")
+    expect(payload).not.toHaveProperty("notificationsEnabled")
+    expect(payload).not.toHaveProperty("notificationDownloadActionEnabled")
     expect(payload).not.toHaveProperty("lastSchedulerRunAt")
     expect(payload).not.toHaveProperty("subscriptionRuntimeStateById")
     expect(payload).not.toHaveProperty("subscriptionNotificationRounds")
@@ -387,7 +411,7 @@ describe("options settings form helpers", () => {
     expect(result.success).toBe(false)
   })
 
-  it("parses subscriptions settings with runtime state", () => {
+  it("does not include subscription workspace fields in settings form defaults", () => {
     const values = createSettingsFormDefaults({
       subscriptionsEnabled: true,
       pollingIntervalMinutes: 30,
@@ -419,45 +443,21 @@ describe("options settings form helpers", () => {
       }
     })
 
-    expect(values.subscriptions).toHaveLength(1)
+    expect(values).not.toHaveProperty("subscriptions")
+    expect(values).not.toHaveProperty("subscriptionsEnabled")
+    expect(values).not.toHaveProperty("pollingIntervalMinutes")
+    expect(values).not.toHaveProperty("notificationsEnabled")
+    expect(values).not.toHaveProperty("notificationDownloadActionEnabled")
     expect(values).not.toHaveProperty("lastSchedulerRunAt")
     expect(values).not.toHaveProperty("subscriptionRuntimeStateById")
     expect(values).not.toHaveProperty("subscriptionNotificationRounds")
   })
 
-  it("rejects duplicate subscription ids after trimming", () => {
+  it("accepts settings payloads without subscription workspace fields", () => {
     const result = settingsFormSchema.safeParse({
-      ...createSettingsFormDefaults(),
-      subscriptions: [
-        {
-          id: " sub-1 ",
-          name: "First",
-          enabled: true,
-          sourceIds: ["bangumimoe"],
-          multiSiteModeEnabled: false,
-          titleQuery: "Medalist",
-          subgroupQuery: "",
-          advanced: { must: [], any: [] },
-          deliveryMode: "direct-only",
-          createdAt: "2026-04-13T00:00:00.000Z",
-          baselineCreatedAt: "2026-04-13T00:00:00.000Z"
-        },
-        {
-          id: "sub-1",
-          name: "Second",
-          enabled: true,
-          sourceIds: ["kisssub"],
-          multiSiteModeEnabled: false,
-          titleQuery: "Frieren",
-          subgroupQuery: "",
-          advanced: { must: [], any: [] },
-          deliveryMode: "direct-only",
-          createdAt: "2026-04-13T00:00:00.000Z",
-          baselineCreatedAt: "2026-04-13T00:00:00.000Z"
-        }
-      ]
+      ...createSettingsFormDefaults()
     })
 
-    expect(result.success).toBe(false)
+    expect(result.success).toBe(true)
   })
 })

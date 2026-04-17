@@ -1,8 +1,8 @@
 import { DEFAULT_SOURCE_DELIVERY_MODES } from "../sources/delivery"
-import type { Settings } from "../shared/types"
+import type { AppSettings } from "../shared/types"
 import { DEFAULT_ENABLED_SOURCES } from "./source-enablement"
 
-export const DEFAULT_SETTINGS: Settings = Object.freeze({
+export const DEFAULT_SETTINGS: AppSettings = Object.freeze({
   currentDownloaderId: "qbittorrent",
   downloaders: {
     qbittorrent: {
@@ -29,10 +29,6 @@ export const DEFAULT_SETTINGS: Settings = Object.freeze({
   subscriptionsEnabled: false,
   pollingIntervalMinutes: 30,
   notificationsEnabled: true,
-  notificationDownloadActionEnabled: true,
-  lastSchedulerRunAt: null,
-  subscriptions: [],
-  subscriptionRuntimeStateById: {},
-  subscriptionNotificationRounds: []
+  notificationDownloadActionEnabled: true
 })
 

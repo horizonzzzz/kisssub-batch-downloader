@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react"
+import { useMemo } from "react"
 
 import { FormProvider, useWatch } from "react-hook-form"
 import {
@@ -11,7 +11,11 @@ import {
 } from "react-router-dom"
 
 import { getDownloaderMeta } from "../../lib/downloader"
-import type { Settings, TestDownloaderConnectionResult } from "../../lib/shared/types"
+import type {
+  AppSettings,
+  SubscriptionEntry,
+  TestDownloaderConnectionResult
+} from "../../lib/shared/types"
 import {
   DEFAULT_OPTIONS_ROUTE,
   getOptionsRoutes,
@@ -26,32 +30,21 @@ import { FiltersPage } from "./pages/filters/FiltersPage"
 import { HistoryPage } from "./pages/history/HistoryPage"
 import { OverviewPage } from "./pages/overview/OverviewPage"
 import { SitesPage } from "./pages/sites/SitesPage"
-import {
-  SubscriptionsPage,
-  type SubscriptionsRuntimeSnapshot
-} from "./pages/subscriptions/SubscriptionsPage"
+import { SubscriptionsPage } from "./pages/subscriptions/SubscriptionsPage"
 
-export type OptionsApi = {
-  loadSettings: () => Promise<Settings>
-  saveSettings: (settings: Partial<Settings>) => Promise<Settings>
+export type SettingsFormApi = {
+  loadAppSettings: () => Promise<AppSettings>
+  saveAppSettings: (settings: Partial<AppSettings>) => Promise<AppSettings>
   testConnection: (settings: EditableSettingsPayload) => Promise<TestDownloaderConnectionResult>
+}
+
+export type OptionsApi = SettingsFormApi & {
+  upsertSubscription: (subscription: SubscriptionEntry) => Promise<void>
+  deleteSubscription: (subscriptionId: string) => Promise<void>
 }
 
 type OptionsPageProps = {
   api: OptionsApi
-}
-
-function toSubscriptionsRuntimeSnapshot(
-  settings: Pick<
-    Settings,
-    "lastSchedulerRunAt" | "subscriptionRuntimeStateById" | "subscriptionNotificationRounds"
-  >
-): SubscriptionsRuntimeSnapshot {
-  return {
-    lastSchedulerRunAt: settings.lastSchedulerRunAt ?? null,
-    subscriptionRuntimeStateById: settings.subscriptionRuntimeStateById ?? {},
-    subscriptionNotificationRounds: settings.subscriptionNotificationRounds ?? []
-  }
 }
 
 type FormShellProps = {
@@ -59,7 +52,6 @@ type FormShellProps = {
   form: ReturnType<typeof useSettingsForm>["form"]
   status: ReturnType<typeof useSettingsForm>["status"]
   saving: ReturnType<typeof useSettingsForm>["saving"]
-  subscriptionsRuntimeSnapshot: SubscriptionsRuntimeSnapshot | null
   connectionState: ReturnType<typeof useSettingsForm>["connectionState"]
   connectionMessage: ReturnType<typeof useSettingsForm>["connectionMessage"]
   testing: ReturnType<typeof useSettingsForm>["testing"]
@@ -72,7 +64,6 @@ function FormShell({
   form,
   status,
   saving,
-  subscriptionsRuntimeSnapshot,
   connectionState,
   connectionMessage,
   testing,
@@ -97,10 +88,6 @@ function FormShell({
           />
           <Route path="/sites" element={<SitesPage />} />
           <Route path="/filters" element={<FiltersPage />} />
-          <Route
-            path="/subscriptions"
-            element={<SubscriptionsPage runtimeSnapshot={subscriptionsRuntimeSnapshot} />}
-          />
           <Route path="*" element={<Navigate to={DEFAULT_OPTIONS_ROUTE} replace />} />
         </Routes>
       </PageShell>
@@ -108,10 +95,17 @@ function FormShell({
   )
 }
 
-function ViewShell({ activeMeta }: { activeMeta: ReturnType<typeof getOptionsRouteMeta> }) {
+function ViewShell({
+  activeMeta,
+  api
+}: {
+  activeMeta: ReturnType<typeof getOptionsRouteMeta>
+  api: OptionsApi
+}) {
   return (
     <PageShell activeMeta={activeMeta}>
       <Routes>
+        <Route path="/subscriptions" element={<SubscriptionsPage api={api} />} />
         <Route path="/history" element={<HistoryPage />} />
         <Route path="/overview" element={<OverviewPage />} />
         <Route path="*" element={<Navigate to={DEFAULT_OPTIONS_ROUTE} replace />} />
@@ -123,27 +117,15 @@ function ViewShell({ activeMeta }: { activeMeta: ReturnType<typeof getOptionsRou
 function OptionsWorkspace({ api }: OptionsPageProps) {
   const location = useLocation()
   const navigate = useNavigate()
-  const [subscriptionsRuntimeSnapshot, setSubscriptionsRuntimeSnapshot] =
-    useState<SubscriptionsRuntimeSnapshot | null>(null)
   const activeMeta = useMemo(
     () => getOptionsRouteMeta(location.pathname),
     [location.pathname]
   )
   const localizedRoutes = useMemo(() => getOptionsRoutes(), [])
-  const trackedApi = useMemo<OptionsApi>(
+  const formApi = useMemo<SettingsFormApi>(
     () => ({
-      loadSettings: async () => {
-        const loaded = await api.loadSettings()
-        setSubscriptionsRuntimeSnapshot(toSubscriptionsRuntimeSnapshot(loaded))
-
-        return loaded
-      },
-      saveSettings: async (settings) => {
-        const saved = await api.saveSettings(settings)
-        setSubscriptionsRuntimeSnapshot(toSubscriptionsRuntimeSnapshot(saved))
-
-        return saved
-      },
+      loadAppSettings: api.loadAppSettings,
+      saveAppSettings: api.saveAppSettings,
       testConnection: api.testConnection
     }),
     [api]
@@ -158,7 +140,7 @@ function OptionsWorkspace({ api }: OptionsPageProps) {
     testing,
     handleSave,
     handleTestConnection
-  } = useSettingsForm(trackedApi)
+  } = useSettingsForm(formApi)
   const currentDownloaderId = useWatch({
     control: form.control,
     name: "currentDownloaderId"
@@ -172,7 +154,6 @@ function OptionsWorkspace({ api }: OptionsPageProps) {
         form={form}
         status={status}
         saving={saving}
-        subscriptionsRuntimeSnapshot={subscriptionsRuntimeSnapshot}
         connectionState={connectionState}
         connectionMessage={connectionMessage}
         testing={testing}
@@ -180,7 +161,7 @@ function OptionsWorkspace({ api }: OptionsPageProps) {
         handleTestConnection={handleTestConnection}
       />
     ) : (
-      <ViewShell activeMeta={activeMeta} />
+      <ViewShell activeMeta={activeMeta} api={api} />
     )
 
   return (

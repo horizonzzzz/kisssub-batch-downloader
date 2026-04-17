@@ -1,11 +1,9 @@
 import { i18n } from "../../../../lib/i18n"
 import { useMemo, useState } from "react"
 
-import { useFormContext, useWatch } from "react-hook-form"
 import { HiOutlinePlus } from "react-icons/hi2"
 
-import { duplicateSubscription } from "../../../../lib/subscriptions/storage"
-import type { Settings, SubscriptionEntry } from "../../../../lib/shared/types"
+import type { SubscriptionEntry } from "../../../../lib/shared/types"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -15,166 +13,125 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  Alert,
   Button,
   Card
 } from "../../../ui"
-import {
-  type SettingsFormInput,
-  type SettingsFormValues
-} from "../../schema/settings-form"
+import type { OptionsApi } from "../../OptionsPage"
 import { SubscriptionCard } from "./SubscriptionCard"
 import { SubscriptionEditorDialog } from "./SubscriptionEditorDialog"
 import { SubscriptionsGlobalCard } from "./SubscriptionsGlobalCard"
 import {
-  countRecentHits,
-  countSubscriptionsWithRecentErrors,
-  countSubscriptionsWithScans,
   createSubscriptionDraft,
+  duplicateSubscriptionDraft,
   type SubscriptionWorkbenchDraft
 } from "./subscription-workbench"
-
-export type SubscriptionsRuntimeSnapshot = Pick<
-  Settings,
-  "lastSchedulerRunAt" | "subscriptionRuntimeStateById" | "subscriptionNotificationRounds"
->
+import {
+  toSubscriptionRuntimeState,
+  useSubscriptionsWorkbench
+} from "./use-subscriptions-workbench"
 
 type SubscriptionsPageProps = {
-  runtimeSnapshot?: SubscriptionsRuntimeSnapshot | null
+  api: OptionsApi
 }
 
-export function SubscriptionsPage({ runtimeSnapshot = null }: SubscriptionsPageProps) {
-  const form = useFormContext<SettingsFormInput, unknown, SettingsFormValues>()
-  const subscriptions =
-    useWatch({
-      control: form.control,
-      name: "subscriptions"
-    }) ?? []
-  const subscriptionsEnabled =
-    useWatch({
-      control: form.control,
-      name: "subscriptionsEnabled"
-    }) ?? false
-  const pollingIntervalMinutes = Number(
-    useWatch({
-      control: form.control,
-      name: "pollingIntervalMinutes"
-    }) ?? 30
-  )
-  const notificationsEnabled =
-    useWatch({
-      control: form.control,
-      name: "notificationsEnabled"
-    }) ?? true
-  const notificationDownloadActionEnabled =
-    useWatch({
-      control: form.control,
-      name: "notificationDownloadActionEnabled"
-    }) ?? true
-
-  const [editingIndex, setEditingIndex] = useState<number | null>(null)
+export function SubscriptionsPage({ api }: SubscriptionsPageProps) {
+  const {
+    settings,
+    setSettings,
+    status,
+    loadingSettings,
+    settingsReady,
+    savingSettings,
+    mutatingSubscription,
+    runtimeStatus,
+    subscriptionRows,
+    saveGlobalSettings,
+    upsertSubscription,
+    deleteSubscription,
+    summary
+  } = useSubscriptionsWorkbench(api)
+  const [editingSubscriptionId, setEditingSubscriptionId] = useState<string | null>(null)
   const [creatingSubscription, setCreatingSubscription] = useState(false)
-  const [pendingDeleteIndex, setPendingDeleteIndex] = useState<number | null>(null)
-
-  const runtimeStateById = runtimeSnapshot?.subscriptionRuntimeStateById ?? {}
-  const configuredCount = subscriptions.length
-  const enabledCount = subscriptions.filter((subscription) => subscription.enabled).length
-  const subscriptionIds = subscriptions.map((subscription) => subscription.id)
-  const scannedCount = countSubscriptionsWithScans(runtimeStateById, subscriptionIds)
-  const errorCount = countSubscriptionsWithRecentErrors(runtimeStateById, subscriptionIds)
-  const recentHitCount = countRecentHits(runtimeStateById, subscriptionIds)
-  const pendingDeleteSubscription =
-    pendingDeleteIndex !== null ? subscriptions[pendingDeleteIndex] : null
+  const [pendingDeleteSubscriptionId, setPendingDeleteSubscriptionId] = useState<string | null>(null)
+  const pendingDeleteSubscription = subscriptionRows.find(
+    (row) => row.subscription.id === pendingDeleteSubscriptionId
+  )?.subscription
 
   const initialSubscription = useMemo(() => {
-    if (editingIndex === null) {
+    if (!editingSubscriptionId) {
       return undefined
     }
 
-    return createSubscriptionDraft(subscriptions[editingIndex])
-  }, [editingIndex, subscriptions])
+    const editingRow = subscriptionRows.find((row) => row.subscription.id === editingSubscriptionId)
+    return editingRow ? createSubscriptionDraft(editingRow.subscription) : undefined
+  }, [editingSubscriptionId, subscriptionRows])
 
-  const setSubscriptions = (nextSubscriptions: SubscriptionEntry[]) => {
-    form.setValue("subscriptions", nextSubscriptions, {
-      shouldDirty: true,
-      shouldTouch: true
-    })
-  }
-
-  const handleSaveSubscription = (nextSubscription: SubscriptionWorkbenchDraft) => {
-    const currentSubscriptions = form.getValues("subscriptions") ?? []
-
-    if (editingIndex === null) {
-      setSubscriptions([...currentSubscriptions, nextSubscription])
-    } else {
-      setSubscriptions(
-        currentSubscriptions.map((subscription, index) =>
-          index === editingIndex ? nextSubscription : subscription
-        )
-      )
-    }
-
+  const handleSaveSubscription = async (nextSubscription: SubscriptionWorkbenchDraft) => {
+    await upsertSubscription(nextSubscription)
     setCreatingSubscription(false)
-    setEditingIndex(null)
+    setEditingSubscriptionId(null)
   }
 
-  const handleDuplicateSubscription = (subscription: SubscriptionEntry) => {
-    const currentSubscriptions = form.getValues("subscriptions") ?? []
-    const duplicated = duplicateSubscription(subscription, {
-      now: new Date().toISOString()
+  const handleDuplicateSubscription = async (subscription: SubscriptionEntry) => {
+    await upsertSubscription(duplicateSubscriptionDraft(subscription))
+  }
+
+  const handleDeleteSubscription = async (subscriptionId: string) => {
+    await deleteSubscription(subscriptionId)
+  }
+
+  const handleToggleEnabled = async (subscription: SubscriptionEntry, enabled: boolean) => {
+    await upsertSubscription({
+      ...subscription,
+      enabled
     })
-
-    setSubscriptions([...currentSubscriptions, duplicated])
-  }
-
-  const handleDeleteSubscription = (targetIndex: number) => {
-    setSubscriptions(subscriptions.filter((_, index) => index !== targetIndex))
-  }
-
-  const handleToggleEnabled = (targetIndex: number, enabled: boolean) => {
-    setSubscriptions(
-      subscriptions.map((subscription, index) =>
-        index === targetIndex ? { ...subscription, enabled } : subscription
-      )
-    )
   }
 
   return (
     <div className="space-y-8" data-testid="subscriptions-workbench">
+      <div role="status" aria-live="polite">
+        <Alert tone={status.tone} title={status.message} />
+      </div>
+
       <SubscriptionsGlobalCard
-        subscriptionsEnabled={subscriptionsEnabled}
-        pollingIntervalMinutes={pollingIntervalMinutes}
-        notificationsEnabled={notificationsEnabled}
-        notificationDownloadActionEnabled={notificationDownloadActionEnabled}
-        configuredCount={configuredCount}
-        enabledCount={enabledCount}
-        scannedCount={scannedCount}
-        errorCount={errorCount}
-        recentHitCount={recentHitCount}
-        lastSchedulerRunAt={runtimeSnapshot?.lastSchedulerRunAt ?? null}
+        subscriptionsEnabled={settings.subscriptionsEnabled}
+        pollingIntervalMinutes={settings.pollingIntervalMinutes}
+        notificationsEnabled={settings.notificationsEnabled}
+        notificationDownloadActionEnabled={settings.notificationDownloadActionEnabled}
+        configuredCount={summary.configuredCount}
+        enabledCount={summary.enabledCount}
+        scannedCount={summary.scannedCount}
+        errorCount={summary.errorCount}
+        recentHitCount={summary.recentHitCount}
+        lastSchedulerRunAt={runtimeStatus.lastSchedulerRunAt}
+        loading={loadingSettings || !settingsReady}
+        saving={savingSettings}
         onSubscriptionsEnabledChange={(enabled) =>
-          form.setValue("subscriptionsEnabled", enabled, {
-            shouldDirty: true,
-            shouldTouch: true
-          })
+          setSettings((current) => ({
+            ...current,
+            subscriptionsEnabled: enabled
+          }))
         }
         onPollingIntervalMinutesChange={(minutes) =>
-          form.setValue("pollingIntervalMinutes", Number.isFinite(minutes) ? minutes : 0, {
-            shouldDirty: true,
-            shouldTouch: true
-          })
+          setSettings((current) => ({
+            ...current,
+            pollingIntervalMinutes: Number.isFinite(minutes) ? minutes : 0
+          }))
         }
         onNotificationsEnabledChange={(enabled) =>
-          form.setValue("notificationsEnabled", enabled, {
-            shouldDirty: true,
-            shouldTouch: true
-          })
+          setSettings((current) => ({
+            ...current,
+            notificationsEnabled: enabled
+          }))
         }
         onNotificationDownloadActionEnabledChange={(enabled) =>
-          form.setValue("notificationDownloadActionEnabled", enabled, {
-            shouldDirty: true,
-            shouldTouch: true
-          })
+          setSettings((current) => ({
+            ...current,
+            notificationDownloadActionEnabled: enabled
+          }))
         }
+        onSave={() => void saveGlobalSettings()}
       />
 
       <section className="space-y-4" data-testid="subscriptions-list">
@@ -190,8 +147,9 @@ export function SubscriptionsPage({ runtimeSnapshot = null }: SubscriptionsPageP
 
           <Button
             type="button"
+            disabled={loadingSettings || mutatingSubscription}
             onClick={() => {
-              setEditingIndex(null)
+              setEditingSubscriptionId(null)
               setCreatingSubscription(true)
             }}>
             <HiOutlinePlus className="h-4 w-4" />
@@ -199,20 +157,20 @@ export function SubscriptionsPage({ runtimeSnapshot = null }: SubscriptionsPageP
           </Button>
         </div>
 
-        {subscriptions.length ? (
+        {subscriptionRows.length ? (
           <div className="grid gap-4">
-            {subscriptions.map((subscription, index) => (
+            {subscriptionRows.map((row) => (
               <SubscriptionCard
-                key={`${subscription.id}-${index}`}
-                subscription={subscription}
-                runtimeState={runtimeStateById[subscription.id]}
+                key={row.subscription.id}
+                subscription={row.subscription}
+                runtimeState={toSubscriptionRuntimeState(row)}
                 onEdit={() => {
                   setCreatingSubscription(false)
-                  setEditingIndex(index)
+                  setEditingSubscriptionId(row.subscription.id)
                 }}
-                onDuplicate={() => handleDuplicateSubscription(subscription)}
-                onDelete={() => setPendingDeleteIndex(index)}
-                onToggleEnabled={(enabled) => handleToggleEnabled(index, enabled)}
+                onDuplicate={() => void handleDuplicateSubscription(row.subscription)}
+                onDelete={() => setPendingDeleteSubscriptionId(row.subscription.id)}
+                onToggleEnabled={(enabled) => void handleToggleEnabled(row.subscription, enabled)}
               />
             ))}
           </div>
@@ -228,8 +186,9 @@ export function SubscriptionsPage({ runtimeSnapshot = null }: SubscriptionsPageP
               <div className="flex justify-center">
                 <Button
                   type="button"
+                  disabled={loadingSettings || mutatingSubscription}
                   onClick={() => {
-                    setEditingIndex(null)
+                    setEditingSubscriptionId(null)
                     setCreatingSubscription(true)
                   }}>
                   <HiOutlinePlus className="h-4 w-4" />
@@ -242,20 +201,21 @@ export function SubscriptionsPage({ runtimeSnapshot = null }: SubscriptionsPageP
       </section>
 
       <SubscriptionEditorDialog
-        open={creatingSubscription || editingIndex !== null}
+        open={creatingSubscription || editingSubscriptionId !== null}
         initialSubscription={initialSubscription}
         onClose={() => {
           setCreatingSubscription(false)
-          setEditingIndex(null)
+          setEditingSubscriptionId(null)
         }}
         onSave={handleSaveSubscription}
+        saving={mutatingSubscription}
       />
 
       <AlertDialog
-        open={pendingDeleteIndex !== null}
+        open={pendingDeleteSubscriptionId !== null}
         onOpenChange={(open) => {
-          if (!open) {
-            setPendingDeleteIndex(null)
+          if (!open && !mutatingSubscription) {
+            setPendingDeleteSubscriptionId(null)
           }
         }}>
         <AlertDialogContent>
@@ -270,18 +230,25 @@ export function SubscriptionsPage({ runtimeSnapshot = null }: SubscriptionsPageP
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>{i18n.t("common.cancel")}</AlertDialogCancel>
+            <AlertDialogCancel disabled={mutatingSubscription}>
+              {i18n.t("common.cancel")}
+            </AlertDialogCancel>
             <AlertDialogAction
-              onClick={(event) => {
+              disabled={mutatingSubscription}
+              onClick={async (event) => {
                 event.preventDefault()
-                if (pendingDeleteIndex === null) {
+                if (!pendingDeleteSubscriptionId) {
                   return
                 }
 
-                handleDeleteSubscription(pendingDeleteIndex)
-                setPendingDeleteIndex(null)
+                try {
+                  await handleDeleteSubscription(pendingDeleteSubscriptionId)
+                  setPendingDeleteSubscriptionId(null)
+                } catch {
+                  // Keep the dialog open so the user can retry after the shared status reports the error.
+                }
               }}>
-              {i18n.t("common.delete")}
+              {mutatingSubscription ? i18n.t("common.processing") : i18n.t("common.delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

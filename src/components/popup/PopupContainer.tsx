@@ -7,7 +7,7 @@ import type {
   PopupDownloaderConnectionStatus,
   PopupStateViewModel
 } from "../../lib/shared/popup"
-import type { Settings, SourceId } from "../../lib/shared/types"
+import type { AppSettings, SourceId } from "../../lib/shared/types"
 import { Alert, Button } from "../ui"
 import { PopupPage } from "./PopupPage"
 
@@ -139,7 +139,10 @@ export function PopupContainer() {
     }
   }
 
-  function applySettingsToPopupState(current: PopupStateViewModel, settings: Settings): PopupStateViewModel {
+  function applySettingsToPopupState(
+    current: PopupStateViewModel,
+    settings: AppSettings
+  ): PopupStateViewModel {
     const resolveEnabled = (sourceId: SourceId, fallbackEnabled: boolean) => {
       const savedEnabled = settings.enabledSources[sourceId]
       return typeof savedEnabled === "boolean" ? savedEnabled : fallbackEnabled

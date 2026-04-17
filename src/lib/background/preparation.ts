@@ -4,8 +4,7 @@ import {
   normalizeTitle
 } from "../download-preparation"
 import type {
-  BatchItem,
-  Settings
+  BatchItem
 } from "../shared/types"
 
 export function normalizeBatchItems(items: unknown): BatchItem[] {

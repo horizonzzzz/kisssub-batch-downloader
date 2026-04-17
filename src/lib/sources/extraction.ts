@@ -1,7 +1,10 @@
 import { getSourceAdapterById } from "."
-import type { BatchItem, ExtractionResult, Settings } from "../shared/types"
+import type { AppSettings, BatchItem, ExtractionResult } from "../shared/types"
 
-export async function extractSingleItem(item: BatchItem, settings: Settings): Promise<ExtractionResult> {
+export async function extractSingleItem(
+  item: BatchItem,
+  settings: AppSettings
+): Promise<ExtractionResult> {
   const adapter = getSourceAdapterById(item.sourceId)
   if (!adapter) {
     return {

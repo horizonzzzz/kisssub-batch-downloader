@@ -1,5 +1,13 @@
 export { createSubscriptionFingerprint } from "./fingerprint"
 export { matchesSubscriptionCandidate, deriveSubscriptionCandidateSubgroup } from "./match"
+export { subscriptionDb, resetSubscriptionDb } from "./db"
+export {
+  deleteSubscription,
+  listSubscriptions,
+  listSubscriptionsByIds,
+  replaceSubscriptionCatalog,
+  upsertSubscription
+} from "./catalog-repository"
 export {
   buildSubscriptionRoundNotification,
   collectNotificationRoundHitIds,
@@ -11,6 +19,16 @@ export {
   SUBSCRIPTION_NOTIFICATION_ROUND_RETENTION_CAP
 } from "./notifications"
 export {
+  buildSubscriptionDashboardRows,
+  buildSubscriptionRuntimeStatusRow,
+  getLastSchedulerRunAt,
+  getNotificationRound,
+  listHitsForRound,
+  listNotificationRounds,
+  listSubscriptionRuntimeRows,
+  setLastSchedulerRunAt
+} from "./runtime-query"
+export {
   RECENT_HIT_RETENTION_CAP,
   SEEN_FINGERPRINT_RETENTION_CAP,
   pushRecentHit,
@@ -18,27 +36,18 @@ export {
   retainRecentHits,
   retainSeenFingerprints
 } from "./retention"
-export {
-  duplicateSubscription,
-  readSubscriptionRuntimeState,
-  updateSubscriptionRuntimeState
-} from "./storage"
 export { SubscriptionManager } from "./manager"
 export { scanSubscriptions } from "./scan"
 export { scanSubscriptionCandidatesFromSource } from "./source-scan"
 export { ensureSubscriptionAlarm, SUBSCRIPTION_ALARM_NAME } from "./scheduler"
-export { createEmptySubscriptionRuntimeState } from "./runtime-state"
+export { createEmptySubscriptionRuntimeRow } from "./runtime-state"
 export type {
   DownloadSubscriptionHitsRequest,
   DownloadSubscriptionHitsResult,
-  SubscriptionEditRuntimeSettingsPatch,
-  SubscriptionDownloadNotificationPatch,
   SubscriptionManagerDownloadDependencies,
   SubscriptionManagerDownloadResult,
-  SubscriptionManagerScanResult,
-  SubscriptionRuntimeSettingsPatch
+  SubscriptionManagerScanResult
 } from "./manager"
-export type { DuplicateSubscriptionOptions, SubscriptionRuntimeStatePatch } from "./storage"
 export type {
   ScanSubscriptionsDependencies,
   ScanSubscriptionsResult,
@@ -49,6 +58,15 @@ export type {
   SubscriptionAlarmApi
 } from "./scheduler"
 export type { SubscriptionRoundNotificationPayload } from "./notifications"
+export type {
+  NotificationRoundRow,
+  SubscriptionDashboardRow,
+  SubscriptionHitRow,
+  SubscriptionMetaRow,
+  SubscriptionRuntimeRow,
+  SubscriptionRuntimeStatusEntry,
+  SubscriptionRuntimeStatusRow
+} from "./store-types"
 export type {
   SubscriptionCandidate,
   SubscriptionFingerprintCandidate,

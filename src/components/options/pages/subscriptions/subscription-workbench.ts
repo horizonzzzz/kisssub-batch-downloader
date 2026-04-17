@@ -11,7 +11,6 @@ import {
   getDefaultSubscriptionDeliveryMode,
   resolveSubscriptionDeliveryMode
 } from "../../../../lib/subscriptions/delivery-mode"
-import { duplicateSubscription } from "../../../../lib/subscriptions/storage"
 
 export type SubscriptionWorkbenchDraft = SubscriptionEntry
 export type SubscriptionWorkbenchCondition = FilterCondition
@@ -147,7 +146,17 @@ export function duplicateSubscriptionDraft(
   subscription: SubscriptionEntry,
   now = new Date().toISOString()
 ) {
-  return duplicateSubscription(subscription, { now })
+  return {
+    ...subscription,
+    sourceIds: [...subscription.sourceIds],
+    advanced: {
+      must: subscription.advanced.must.map((condition) => ({ ...condition })),
+      any: subscription.advanced.any.map((condition) => ({ ...condition }))
+    },
+    id: createDuplicateId(subscription.id, now),
+    createdAt: now,
+    baselineCreatedAt: now
+  }
 }
 
 export function toggleSubscriptionSourceSelection(
@@ -278,7 +287,9 @@ export function summarizeSubscriptionRecentHits(recentHits: SubscriptionHitRecor
     return i18n.t("options.subscriptions.runtime.noRecentHits")
   }
 
-  const latestHit = recentHits[recentHits.length - 1]
+  const latestHit = [...recentHits].sort((left, right) =>
+    right.discoveredAt.localeCompare(left.discoveredAt)
+  )[0]
   if (!latestHit) {
     return i18n.t("options.subscriptions.runtime.noRecentHits")
   }
@@ -357,6 +368,12 @@ function normalizeKnownSourceIds(sourceIds: SourceId[]) {
       )
     )
   )
+}
+
+function createDuplicateId(originalId: string, now: string): string {
+  const normalizedId = String(originalId ?? "").trim() || "subscription"
+  const suffix = now.replace(/[^0-9]/g, "") || "copy"
+  return `${normalizedId}-copy-${suffix}`
 }
 
 function normalizeEditableSourceIds(sourceIds: SourceId[]) {

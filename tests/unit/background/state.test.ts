@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import type { ClassifiedBatchResult, Settings } from "../../../src/lib/shared/types"
+import type { AppSettings, ClassifiedBatchResult } from "../../../src/lib/shared/types"
 import {
   createBatchJob,
   recordBatchResult,
@@ -8,7 +8,7 @@ import {
 } from "../../../src/lib/background/job-state"
 import { DEFAULT_SETTINGS } from "../../../src/lib/settings"
 
-function createSettings(overrides: Partial<Settings> = {}): Settings {
+function createSettings(overrides: Partial<AppSettings> = {}): AppSettings {
   return {
     ...DEFAULT_SETTINGS,
     sourceDeliveryModes: {
