@@ -1,5 +1,6 @@
 import {
   buildPopupState,
+  clearPendingSubscriptionNotifications,
   deleteSubscriptionDefinition,
   createBatchDownloadManager,
   downloadSubscriptionHits,
@@ -39,6 +40,7 @@ import type { BatchEventPayload } from "../../lib/shared/types"
 import { extractSingleItem } from "../../lib/sources/extraction"
 import { getSourceAdapterForPage } from "../../lib/sources"
 import {
+  canDownloadSubscriptionNotifications,
   parseSubscriptionNotificationRoundId,
   SUBSCRIPTION_ALARM_NAME
 } from "../../lib/subscriptions"
@@ -113,7 +115,7 @@ export function registerBackgroundRuntime() {
 
     void (async () => {
       const settings = await getSettings()
-      if (!settings.notificationDownloadActionEnabled) {
+      if (!canDownloadSubscriptionNotifications(settings)) {
         return
       }
 
@@ -168,6 +170,12 @@ export function registerBackgroundRuntime() {
               getSettings: async () => savedSettings,
               alarms: extensionBrowser.alarms
             })
+            if (didDisableSubscriptionNotificationEntryPoints(currentSettings, savedSettings)) {
+              await clearPendingSubscriptionNotifications({
+                clearBrowserNotification: (notificationId) =>
+                  extensionBrowser.notifications.clear(notificationId)
+              })
+            }
             sendResponse(
               createRuntimeSuccessResponse("SAVE_APP_SETTINGS", {
                 settings: savedSettings
@@ -358,6 +366,14 @@ function didContentSyncRelevantSettingsChange(
 ): boolean {
   return JSON.stringify(previousSettings.enabledSources) !== JSON.stringify(nextSettings.enabledSources) ||
     JSON.stringify(previousSettings.filters) !== JSON.stringify(nextSettings.filters)
+}
+
+function didDisableSubscriptionNotificationEntryPoints(
+  previousSettings: Pick<AppSettings, "subscriptionsEnabled" | "notificationsEnabled">,
+  nextSettings: Pick<AppSettings, "subscriptionsEnabled" | "notificationsEnabled">
+): boolean {
+  return (previousSettings.subscriptionsEnabled && !nextSettings.subscriptionsEnabled) ||
+    (previousSettings.notificationsEnabled && !nextSettings.notificationsEnabled)
 }
 
 async function hasRunningBatchForSource(sourceId: SourceId): Promise<boolean> {

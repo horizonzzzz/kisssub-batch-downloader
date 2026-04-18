@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import type { AppSettings, SubscriptionEntry } from "../../../src/lib/shared/types"
 import { DEFAULT_SETTINGS } from "../../../src/lib/settings/defaults"
 import {
+  clearPendingSubscriptionNotifications,
   executeSubscriptionScan,
   upsertSubscriptionDefinition
 } from "../../../src/lib/background/subscriptions"
@@ -105,5 +106,31 @@ describe("background subscriptions bridge", () => {
 
     expect(result.newHits).toHaveLength(1)
     expect(createNotification).toHaveBeenCalledTimes(1)
+  })
+
+  it("clears persisted notification rounds and browser notifications together", async () => {
+    const clearBrowserNotification = vi.fn(async () => true)
+
+    await subscriptionDb.notificationRounds.bulkPut([
+      {
+        id: "subscription-round:20260414080000000",
+        createdAt: "2026-04-14T08:00:00.000Z",
+        hits: []
+      },
+      {
+        id: "subscription-round:20260414090000000",
+        createdAt: "2026-04-14T09:00:00.000Z",
+        hits: []
+      }
+    ])
+
+    await clearPendingSubscriptionNotifications({
+      clearBrowserNotification
+    })
+
+    await expect(subscriptionDb.notificationRounds.toArray()).resolves.toEqual([])
+    expect(clearBrowserNotification).toHaveBeenCalledTimes(2)
+    expect(clearBrowserNotification).toHaveBeenCalledWith("subscription-round:20260414080000000")
+    expect(clearBrowserNotification).toHaveBeenCalledWith("subscription-round:20260414090000000")
   })
 })

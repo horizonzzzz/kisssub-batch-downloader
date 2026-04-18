@@ -11,6 +11,7 @@ export {
 export { retryFailedItems } from "./retry"
 export { testDownloaderConnection } from "./service"
 export {
+  clearPendingSubscriptionNotifications,
   deleteSubscriptionDefinition,
   downloadSubscriptionHits,
   executeSubscriptionScan,

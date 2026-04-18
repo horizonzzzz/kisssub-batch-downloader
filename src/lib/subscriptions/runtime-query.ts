@@ -1,12 +1,17 @@
 import { subscriptionDb } from "./db"
+import {
+  getNotificationRound as getNotificationRoundFromRepository,
+  listNotificationRounds as listNotificationRoundsFromRepository
+} from "./notification-round-repository"
 import type {
-  NotificationRoundRow,
   SubscriptionDashboardRow,
   SubscriptionRuntimeRow
 } from "./store-types"
 import { listSubscriptions } from "./catalog-repository"
 
 export const LAST_SCHEDULER_RUN_AT_META_KEY = "lastSchedulerRunAt"
+export const getNotificationRound = getNotificationRoundFromRepository
+export const listNotificationRounds = listNotificationRoundsFromRepository
 
 export async function buildSubscriptionDashboardRows(): Promise<SubscriptionDashboardRow[]> {
   const [subscriptions, runtimeRows] = await Promise.all([listSubscriptions(), listSubscriptionRuntimeRows()])
@@ -49,19 +54,6 @@ export async function buildSubscriptionRuntimeStatusRow() {
 
 export async function listSubscriptionRuntimeRows(): Promise<SubscriptionRuntimeRow[]> {
   return subscriptionDb.subscriptionRuntime.toArray()
-}
-
-export async function listNotificationRounds(): Promise<NotificationRoundRow[]> {
-  return subscriptionDb.notificationRounds.orderBy("createdAt").reverse().toArray()
-}
-
-export async function getNotificationRound(roundId: string): Promise<NotificationRoundRow | null> {
-  const normalizedId = String(roundId ?? "").trim()
-  if (!normalizedId) {
-    return null
-  }
-
-  return (await subscriptionDb.notificationRounds.get(normalizedId)) ?? null
 }
 
 async function buildSubscriptionRuntimeRows() {

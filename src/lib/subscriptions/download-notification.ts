@@ -18,8 +18,9 @@ import type {
 import { resolveSourceEnabled } from "../settings"
 import { listSubscriptionsByIds } from "./catalog-repository"
 import { subscriptionDb } from "./db"
+import { getNotificationRound } from "./notification-round-repository"
 import { parseSubscriptionNotificationRoundId } from "./notifications"
-import { getNotificationRound } from "./runtime-query"
+import { canDownloadSubscriptionNotifications } from "./policy"
 
 export type DownloadSubscriptionHitsRequest = {
   roundId: string
@@ -70,6 +71,11 @@ export async function downloadSubscriptionNotificationHits(
   const notificationRound = await getNotificationRound(normalizedRoundId)
   if (!notificationRound) {
     throw new Error(`Subscription notification round not found: ${normalizedRoundId}`)
+  }
+
+  if (!canDownloadSubscriptionNotifications(input.appSettings)) {
+    await persistDownloadState(notificationRound.id, [])
+    return createEmptyDownloadSubscriptionHitsResult()
   }
 
   const hits = notificationRound.hits.map((hit) => ({ ...hit }))
@@ -188,6 +194,16 @@ export async function downloadSubscriptionNotificationHits(
     submittedCount: Object.values(statuses).filter((status) => status.downloadStatus === "submitted").length,
     duplicateCount,
     failedCount
+  }
+}
+
+function createEmptyDownloadSubscriptionHitsResult(): DownloadSubscriptionHitsResult {
+  return {
+    totalHits: 0,
+    attemptedHits: 0,
+    submittedCount: 0,
+    duplicateCount: 0,
+    failedCount: 0
   }
 }
 

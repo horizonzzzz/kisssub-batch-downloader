@@ -15,6 +15,7 @@ type TabsUpdatedListener = Parameters<typeof fakeBrowser.tabs.onUpdated.addListe
 type TabsActivatedListener = Parameters<typeof fakeBrowser.tabs.onActivated.addListener>[0]
 
 const {
+  clearPendingSubscriptionNotificationsMock,
   deleteSubscriptionDefinitionMock,
   downloadSubscriptionHitsMock,
   executeSubscriptionScanMock,
@@ -25,6 +26,7 @@ const {
   testDownloaderConnectionMock,
   upsertSubscriptionDefinitionMock
 } = vi.hoisted(() => ({
+  clearPendingSubscriptionNotificationsMock: vi.fn(),
   deleteSubscriptionDefinitionMock: vi.fn(),
   downloadSubscriptionHitsMock: vi.fn(),
   executeSubscriptionScanMock: vi.fn(),
@@ -54,6 +56,7 @@ vi.mock("../../../src/lib/background", async () => {
       activeJobs: new Map<number, unknown>(),
       startBatchDownload: vi.fn()
     }),
+    clearPendingSubscriptionNotifications: clearPendingSubscriptionNotificationsMock,
     deleteSubscriptionDefinition: deleteSubscriptionDefinitionMock,
     downloadSubscriptionHits: downloadSubscriptionHitsMock,
     executeSubscriptionScan: executeSubscriptionScanMock,
@@ -147,6 +150,8 @@ describe("background runtime subscription boundary", () => {
     vi.restoreAllMocks()
     vi.clearAllMocks()
     getSettingsMock.mockResolvedValue(createAppSettings({
+      subscriptionsEnabled: true,
+      notificationsEnabled: true,
       notificationDownloadActionEnabled: true
     }))
     saveSettingsMock.mockImplementation(async (settings) =>
@@ -271,6 +276,36 @@ describe("background runtime subscription boundary", () => {
     })
     expect(notifySupportedSourceTabsOfFilterChangeMock).not.toHaveBeenCalled()
     expect(reconcileSubscriptionAlarmMock).toHaveBeenCalledTimes(1)
+  })
+
+  it("clears pending subscription notifications when SAVE_APP_SETTINGS disables notifications", async () => {
+    const listener = onMessageAddListener.mock.calls[0]?.[0]
+    const sendResponse = vi.fn()
+    const currentSettings = createAppSettings({
+      notificationsEnabled: true
+    })
+    const savedSettings = createAppSettings({
+      notificationsEnabled: false
+    })
+    getSettingsMock.mockResolvedValueOnce(currentSettings)
+    saveSettingsMock.mockResolvedValueOnce(savedSettings)
+
+    const keepsPortOpen = listener?.(
+      {
+        type: "SAVE_APP_SETTINGS",
+        settings: {
+          notificationsEnabled: false
+        }
+      },
+      {},
+      sendResponse
+    )
+
+    expect(keepsPortOpen).toBe(true)
+    await vi.waitFor(() => {
+      expect(sendResponse).toHaveBeenCalledTimes(1)
+    })
+    expect(clearPendingSubscriptionNotificationsMock).toHaveBeenCalledTimes(1)
   })
 
   it("supports TEST_DOWNLOADER_CONNECTION runtime messages", async () => {
@@ -403,6 +438,40 @@ describe("background runtime subscription boundary", () => {
 
     expect(getSettingsMock).toHaveBeenCalledTimes(1)
     expect(downloadSubscriptionHitsMock).not.toHaveBeenCalled()
+  })
+
+  it("does not download hits from notification clicks when subscriptions are globally disabled", async () => {
+    getSettingsMock.mockResolvedValue(
+      createAppSettings({
+        subscriptionsEnabled: false
+      })
+    )
+    downloadSubscriptionHitsMock.mockResolvedValue(undefined)
+    const listener = onClickedAddListener.mock.calls[0]?.[0]
+
+    listener?.("subscription-round:20260414093000000")
+    await Promise.resolve()
+
+    expect(getSettingsMock).toHaveBeenCalledTimes(1)
+    expect(downloadSubscriptionHitsMock).not.toHaveBeenCalled()
+    expect(fakeBrowser.permissions.request).not.toHaveBeenCalled()
+  })
+
+  it("does not download hits from notification clicks when notifications are globally disabled", async () => {
+    getSettingsMock.mockResolvedValue(
+      createAppSettings({
+        notificationsEnabled: false
+      })
+    )
+    downloadSubscriptionHitsMock.mockResolvedValue(undefined)
+    const listener = onClickedAddListener.mock.calls[0]?.[0]
+
+    listener?.("subscription-round:20260414093000000")
+    await Promise.resolve()
+
+    expect(getSettingsMock).toHaveBeenCalledTimes(1)
+    expect(downloadSubscriptionHitsMock).not.toHaveBeenCalled()
+    expect(fakeBrowser.permissions.request).not.toHaveBeenCalled()
   })
 
   it("swallows subscription notification click download errors", async () => {

@@ -127,6 +127,54 @@ describe("downloadSubscriptionNotificationHits", () => {
     expect(downloader.authenticate).not.toHaveBeenCalled()
   })
 
+  it("prunes pending rounds when subscription notification downloads are globally disabled", async () => {
+    const now = "2026-04-14T09:30:00.000Z"
+
+    await subscriptionDb.subscriptions.put(createSubscription())
+    await subscriptionDb.notificationRounds.put({
+      id: "subscription-round:20260414093000000",
+      createdAt: now,
+      hits: [createHit()]
+    })
+
+    const downloader: DownloaderAdapter = {
+      id: "qbittorrent",
+      displayName: "qBittorrent",
+      authenticate: vi.fn(async () => undefined),
+      addUrls: vi.fn(async () => ({ entries: [] })),
+      addTorrentFiles: vi.fn(async () => undefined),
+      testConnection: vi.fn(async () => ({
+        baseUrl: "http://localhost:8080",
+        version: "5.0.0"
+      }))
+    }
+
+    const result = await downloadSubscriptionNotificationHits(
+      {
+        appSettings: createAppSettings({
+          notificationsEnabled: false
+        }),
+        roundId: "subscription-round:20260414093000000"
+      },
+      {
+        downloader,
+        fetchTorrentForUpload: vi.fn(
+          async (): Promise<DownloaderTorrentFile> => ({
+            filename: "unused.torrent",
+            blob: new Blob(["torrent"])
+          })
+        ),
+        extractSingleItem: vi.fn(),
+        now: () => now
+      }
+    )
+
+    expect(result.totalHits).toBe(0)
+    expect(result.attemptedHits).toBe(0)
+    await expect(listNotificationRounds()).resolves.toEqual([])
+    expect(downloader.authenticate).not.toHaveBeenCalled()
+  })
+
   it("updates hit download status in Dexie after successful submission", async () => {
     const now = "2026-04-14T09:30:00.000Z"
 

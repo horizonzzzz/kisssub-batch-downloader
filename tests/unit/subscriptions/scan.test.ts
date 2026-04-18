@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 import type { AppSettings, SubscriptionEntry } from "../../../src/lib/shared/types"
 import { DEFAULT_SETTINGS } from "../../../src/lib/settings/defaults"
+import { upsertSubscription } from "../../../src/lib/subscriptions/catalog-repository"
 import { resetSubscriptionDb, subscriptionDb } from "../../../src/lib/subscriptions/db"
 import { RECENT_HIT_RETENTION_CAP } from "../../../src/lib/subscriptions/retention"
 import { scanSubscriptions } from "../../../src/lib/subscriptions/scan"
@@ -175,5 +176,51 @@ describe("scanSubscriptions", () => {
     const runtimeRow = await subscriptionDb.subscriptionRuntime.get("sub-1")
     expect(runtimeRow?.recentHits).toHaveLength(RECENT_HIT_RETENTION_CAP)
     expect(runtimeRow?.recentHits.some((hit) => hit.id === "hit-1")).toBe(false)
+  })
+
+  it("rebuilds the observation baseline after a subscription is re-enabled", async () => {
+    const initialNow = "2026-04-14T08:00:00.000Z"
+    const resumedNow = "2026-04-14T09:00:00.000Z"
+    const enabledSubscription = createSubscription({ enabled: true })
+
+    await upsertSubscription(enabledSubscription)
+    await scanSubscriptions({
+      appSettings: createAppSettings(),
+      subscriptions: [enabledSubscription],
+      now: () => initialNow,
+      scanCandidatesFromSource: vi.fn(async () => [createCandidate()])
+    })
+
+    await upsertSubscription({
+      ...enabledSubscription,
+      enabled: false
+    })
+    await upsertSubscription(enabledSubscription)
+
+    const resumedResult = await scanSubscriptions({
+      appSettings: createAppSettings(),
+      subscriptions: [enabledSubscription],
+      now: () => resumedNow,
+      scanCandidatesFromSource: vi.fn(async () => [
+        createCandidate(),
+        createCandidate({
+          title: "[LoliHouse] Medalist - 02 [1080p]",
+          normalizedTitle: "[lolihouse] medalist - 02 [1080p]",
+          detailUrl: "https://acg.rip/t/101",
+          torrentUrl: "https://acg.rip/t/101.torrent"
+        })
+      ])
+    })
+
+    expect(resumedResult.newHits).toEqual([])
+    expect(resumedResult.notificationRound).toBeNull()
+    await expect(subscriptionDb.subscriptionRuntime.get("sub-1")).resolves.toEqual(
+      expect.objectContaining({
+        subscriptionId: "sub-1",
+        lastScanAt: resumedNow,
+        lastMatchedAt: resumedNow,
+        seenFingerprints: expect.arrayContaining([expect.any(String), expect.any(String)])
+      })
+    )
   })
 })

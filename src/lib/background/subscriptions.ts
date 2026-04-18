@@ -11,8 +11,11 @@ import { getSettings } from "../settings"
 import { extractSingleItem } from "../sources/extraction"
 import {
   buildSubscriptionRoundNotification,
+  canCreateSubscriptionNotifications,
+  clearNotificationRounds,
   deleteSubscription,
   ensureSubscriptionAlarm,
+  listNotificationRounds,
   replaceSubscriptionCatalog,
   SubscriptionManager,
   upsertSubscription,
@@ -57,6 +60,10 @@ export type DownloadSubscriptionHitsDependencies = {
   now?: () => string
 }
 
+export type ClearPendingSubscriptionNotificationsDependencies = {
+  clearBrowserNotification?: (notificationId: string) => Promise<unknown>
+}
+
 export async function executeSubscriptionScan(
   dependencies: ExecuteSubscriptionScanDependencies = {}
 ): Promise<ScanSubscriptionsResult> {
@@ -70,7 +77,7 @@ export async function executeSubscriptionScan(
       scanCandidatesFromSource: dependencies.scanCandidatesFromSource
     })
 
-    if (result.notificationRound && appSettings.notificationsEnabled) {
+    if (result.notificationRound && canCreateSubscriptionNotifications(appSettings)) {
       const hitCount = result.notificationRound.hits.length
       const notification = buildSubscriptionRoundNotification(
         result.notificationRound,
@@ -97,6 +104,30 @@ export async function executeSubscriptionScan(
     }
 
     return result
+  })
+}
+
+export async function clearPendingSubscriptionNotifications(
+  dependencies: ClearPendingSubscriptionNotificationsDependencies = {}
+): Promise<void> {
+  return enqueueSubscriptionMutation(async () => {
+    const rounds = await listNotificationRounds()
+    if (rounds.length === 0) {
+      return
+    }
+
+    await clearNotificationRounds()
+
+    const clearBrowserNotification =
+      dependencies.clearBrowserNotification ?? defaultClearBrowserNotification
+
+    for (const round of rounds) {
+      try {
+        await clearBrowserNotification(round.id)
+      } catch {
+        // Best effort cleanup after persistence.
+      }
+    }
   })
 }
 
@@ -181,6 +212,10 @@ async function defaultExtractSingleItem(
   settings: AppSettings
 ): Promise<ExtractionResult> {
   return extractSingleItem(item, settings)
+}
+
+async function defaultClearBrowserNotification(notificationId: string): Promise<unknown> {
+  return getBrowser().notifications.clear(notificationId)
 }
 
 function enqueueSubscriptionMutation<T>(run: () => Promise<T>): Promise<T> {

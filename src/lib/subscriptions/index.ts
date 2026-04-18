@@ -18,11 +18,14 @@ export {
   SUBSCRIPTION_NOTIFICATION_ROUND_RETENTION_CAP
 } from "./notifications"
 export {
+  clearNotificationRounds,
+  getNotificationRound,
+  listNotificationRounds
+} from "./notification-round-repository"
+export {
   buildSubscriptionDashboardRows,
   buildSubscriptionRuntimeStatusRow,
   getLastSchedulerRunAt,
-  getNotificationRound,
-  listNotificationRounds,
   listSubscriptionRuntimeRows,
   setLastSchedulerRunAt
 } from "./runtime-query"
@@ -39,6 +42,10 @@ export { scanSubscriptions } from "./scan"
 export { scanSubscriptionCandidatesFromSource } from "./source-scan"
 export { ensureSubscriptionAlarm, SUBSCRIPTION_ALARM_NAME } from "./scheduler"
 export { createEmptySubscriptionRuntimeRow } from "./runtime-state"
+export {
+  canCreateSubscriptionNotifications,
+  canDownloadSubscriptionNotifications
+} from "./policy"
 export type {
   DownloadSubscriptionHitsRequest,
   DownloadSubscriptionHitsResult,

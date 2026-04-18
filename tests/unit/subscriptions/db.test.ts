@@ -139,7 +139,7 @@ describe("replaceSubscriptionCatalog", () => {
     ])
   })
 
-  it("preserves runtime-owned rows when only the enabled flag changes", async () => {
+  it("prunes runtime-owned rows when a subscription is disabled", async () => {
     await replaceSubscriptionCatalog([createSubscription({ enabled: true })])
     await subscriptionDb.subscriptionRuntime.put({
       subscriptionId: "sub-1",
@@ -157,18 +157,7 @@ describe("replaceSubscriptionCatalog", () => {
 
     await upsertSubscription(createSubscription({ enabled: false }))
 
-    expect(await subscriptionDb.subscriptionRuntime.get("sub-1")).toEqual(
-      expect.objectContaining({
-        subscriptionId: "sub-1",
-        seenFingerprints: ["fp-1"],
-        recentHits: [expect.objectContaining({ id: "hit-1" })]
-      })
-    )
-    expect(await subscriptionDb.notificationRounds.toArray()).toEqual([
-      expect.objectContaining({
-        id: "subscription-round:20260417100000000",
-        hits: [expect.objectContaining({ id: "hit-1" })]
-      })
-    ])
+    await expect(subscriptionDb.subscriptionRuntime.get("sub-1")).resolves.toBeUndefined()
+    await expect(subscriptionDb.notificationRounds.toArray()).resolves.toEqual([])
   })
 })

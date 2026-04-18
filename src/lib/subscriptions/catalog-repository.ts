@@ -48,7 +48,9 @@ export async function replaceSubscriptionCatalog(
       const changedIds = nextSubscriptions
         .filter((subscription) => {
           const previous = previousById.get(subscription.id)
-          return previous ? hasSubscriptionTrackingDefinitionChanged(previous, subscription) : false
+          return previous
+            ? shouldInvalidateSubscriptionObservation(previous, subscription)
+            : false
         })
         .map((subscription) => subscription.id)
 
@@ -57,7 +59,7 @@ export async function replaceSubscriptionCatalog(
         await subscriptionDb.subscriptions.bulkPut(nextSubscriptions)
       }
 
-      await pruneSubscriptionArtifacts([...removedIds, ...changedIds])
+      await invalidateSubscriptionObservationState([...removedIds, ...changedIds])
     }
   )
 }
@@ -73,8 +75,8 @@ export async function upsertSubscription(subscription: SubscriptionEntry): Promi
 
       await subscriptionDb.subscriptions.put(subscription)
 
-      if (previous && hasSubscriptionTrackingDefinitionChanged(previous, subscription)) {
-        await pruneSubscriptionArtifacts([subscription.id])
+      if (previous && shouldInvalidateSubscriptionObservation(previous, subscription)) {
+        await invalidateSubscriptionObservationState([subscription.id])
       }
     }
   )
@@ -93,12 +95,12 @@ export async function deleteSubscription(subscriptionId: string): Promise<void> 
     subscriptionDb.notificationRounds,
     async () => {
       await subscriptionDb.subscriptions.delete(normalizedId)
-      await pruneSubscriptionArtifacts([normalizedId])
+      await invalidateSubscriptionObservationState([normalizedId])
     }
   )
 }
 
-async function pruneSubscriptionArtifacts(subscriptionIds: string[]): Promise<void> {
+async function invalidateSubscriptionObservationState(subscriptionIds: string[]): Promise<void> {
   const normalizedIds = normalizeIds(subscriptionIds)
   if (normalizedIds.length === 0) {
     return
@@ -143,6 +145,21 @@ function hasSubscriptionTrackingDefinitionChanged(
 ): boolean {
   return JSON.stringify(toTrackingDefinition(previousSubscription)) !==
     JSON.stringify(toTrackingDefinition(nextSubscription))
+}
+
+function shouldInvalidateSubscriptionObservation(
+  previousSubscription: SubscriptionEntry,
+  nextSubscription: SubscriptionEntry
+): boolean {
+  return isSubscriptionBeingDisabled(previousSubscription, nextSubscription) ||
+    hasSubscriptionTrackingDefinitionChanged(previousSubscription, nextSubscription)
+}
+
+function isSubscriptionBeingDisabled(
+  previousSubscription: SubscriptionEntry,
+  nextSubscription: SubscriptionEntry
+): boolean {
+  return previousSubscription.enabled && !nextSubscription.enabled
 }
 
 function toTrackingDefinition(subscription: SubscriptionEntry): SubscriptionTrackingDefinition {
