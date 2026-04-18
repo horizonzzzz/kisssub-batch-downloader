@@ -2,6 +2,21 @@
 
 All notable release changes for `Anime BT Batch Downloader` are tracked here. GitHub Release pages should reuse the matching version section from this file.
 
+## 2.2.0-beta.1
+
+### Features
+
+- Added first-class subscriptions with grouped multi-source scans, Dexie-backed scheduler/runtime retention, and notification-driven download follow-through across the options workspace and background runtime. (`680a8c1`, `c4ac6fe`)
+
+### Fixes
+
+- Fixed subscription polling and notification reliability by adding missing runtime permissions, honoring disabled sources, resetting edited and stale observation state, and hardening content/background scan RPC handshakes. (`416cda5`, `0f0711f`, `202ca5e`, `d09b354`, `df3fcf0`, `be1d2f5`, `533f1d0`)
+- Fixed tagged beta and alpha release automation so prerelease tags validate against Chrome manifest `version_name`, extract the matching changelog section, and publish GitHub prereleases with correctly suffixed assets. (`88ff901`)
+
+### Refactor
+
+- Refactored subscription storage and preparation boundaries by merging the phased implementation, splitting settings/runtime persistence, simplifying recent-hit retention, and removing unpublished compatibility baggage. (`c5cbe8e`, `4f99351`, `cd6b1b8`, `ecc5ec7`)
+
 ## 2.1.0
 
 ### Features
