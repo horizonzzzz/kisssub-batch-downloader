@@ -147,7 +147,11 @@ export async function startSourceBatchContentScript(ctx: ContentScriptContext) {
 
     const extensionBrowser = getBrowser()
 
-    const listener = (message: ContentRuntimeMessage | ScanSubscriptionListMessage) => {
+    const listener = (
+      message: ContentRuntimeMessage | ScanSubscriptionListMessage,
+      _sender: unknown,
+      sendResponse: (response: ScanSubscriptionListResultMessage) => void
+    ) => {
       if (!message) {
         return
       }
@@ -168,7 +172,18 @@ export async function startSourceBatchContentScript(ctx: ContentScriptContext) {
       }
 
       if (message.type === SCAN_SUBSCRIPTION_LIST_REQUEST) {
-        return handleScanSubscriptionList(message)
+        void handleScanSubscriptionList(message)
+          .then((response) => {
+            sendResponse(response)
+          })
+          .catch((error) => {
+            sendResponse({
+              ok: false,
+              error: error instanceof Error ? error.message : String(error)
+            })
+          })
+
+        return true
       }
     }
 

@@ -254,12 +254,13 @@ describe("content script runtime", () => {
     expect(module.config).toBeUndefined()
   }, 10000)
 
-  it("defines the subscription scan protocol message types for background-to-content communication", () => {
+  it("defines the subscription scan protocol message types for background-to-content communication", async () => {
+    const { CONTENT_SCRIPT_READY_EVENT } = await import("../../../src/lib/shared/messages")
     // Protocol type contract: background runtime can request subscription list scans
     // and content script can report readiness
     // Verify that RuntimeRequest accepts these message shapes
     expectTypeOf<{ type: "SCAN_SUBSCRIPTION_LIST"; sourceId: SourceId }>().toMatchTypeOf<RuntimeRequest>()
-    expectTypeOf<{ type: "CONTENT_SCRIPT_READY"; sourceId: SourceId }>().toMatchTypeOf<RuntimeRequest>()
+    expectTypeOf<{ type: typeof CONTENT_SCRIPT_READY_EVENT; sourceId: SourceId }>().toMatchTypeOf<RuntimeRequest>()
   })
 
   it("registers the runtime listener before sending the ready signal", async () => {
@@ -864,7 +865,7 @@ describe("content script runtime", () => {
     expect(getLatestPanelProps().statusText).toBe(statusBeforeDisable)
   })
 
-  it("responds to SCAN_SUBSCRIPTION_LIST for a supported enabled source", async () => {
+  it("responds to SCAN_SUBSCRIPTION_LIST with sendResponse", async () => {
     const anchorCell = document.createElement("td")
     const anchor = document.createElement("a")
     anchor.href = "https://acg.rip/t/1"
@@ -915,16 +916,23 @@ describe("content script runtime", () => {
     })
 
     const listener = runtimeAddListener.mock.calls[0]?.[0]
-    expect(listener).toBeTypeOf("function")
+    const sendResponse = vi.fn()
 
-    const response = await listener?.({
-      type: "ANIME_BT_SCAN_SUBSCRIPTION_LIST",
-      sourceId: "acgrip"
-    })
+    const keepsPortOpen = listener?.(
+      {
+        type: "ANIME_BT_SCAN_SUBSCRIPTION_LIST",
+        sourceId: "acgrip"
+      },
+      {},
+      sendResponse
+    )
 
-    expect(response).toEqual({
-      ok: true,
-      candidates: [expect.objectContaining({ sourceId: "acgrip" })]
+    expect(keepsPortOpen).toBe(true)
+    await vi.waitFor(() => {
+      expect(sendResponse).toHaveBeenCalledWith({
+        ok: true,
+        candidates: [expect.objectContaining({ sourceId: "acgrip" })]
+      })
     })
   })
 
@@ -969,16 +977,23 @@ describe("content script runtime", () => {
     expect(createRoot).not.toHaveBeenCalled()
 
     const listener = runtimeAddListener.mock.calls[0]?.[0]
-    expect(listener).toBeTypeOf("function")
+    const sendResponse = vi.fn()
 
-    const response = await listener?.({
-      type: "ANIME_BT_SCAN_SUBSCRIPTION_LIST",
-      sourceId: "acgrip"
-    })
+    const keepsPortOpen = listener?.(
+      {
+        type: "ANIME_BT_SCAN_SUBSCRIPTION_LIST",
+        sourceId: "acgrip"
+      },
+      {},
+      sendResponse
+    )
 
-    expect(response).toEqual({
-      ok: true,
-      candidates: [expect.objectContaining({ sourceId: "acgrip" })]
+    expect(keepsPortOpen).toBe(true)
+    await vi.waitFor(() => {
+      expect(sendResponse).toHaveBeenCalledWith({
+        ok: true,
+        candidates: [expect.objectContaining({ sourceId: "acgrip" })]
+      })
     })
   })
 })

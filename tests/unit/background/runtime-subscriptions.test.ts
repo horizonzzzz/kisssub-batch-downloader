@@ -199,12 +199,13 @@ describe("background runtime subscription boundary", () => {
 
   it("acknowledges CONTENT_SCRIPT_READY and records the ready state for the sender tab", async () => {
     const { waitForContentScriptReadySignal } = await import("../../../src/lib/subscriptions/content-ready")
+    const { CONTENT_SCRIPT_READY_EVENT } = await import("../../../src/lib/shared/messages")
     const listener = onMessageAddListener.mock.calls[0]?.[0]
     const sendResponse = vi.fn()
 
     const keepsPortOpen = listener?.(
       {
-        type: "CONTENT_SCRIPT_READY",
+        type: CONTENT_SCRIPT_READY_EVENT,
         sourceId: "acgrip"
       },
       {

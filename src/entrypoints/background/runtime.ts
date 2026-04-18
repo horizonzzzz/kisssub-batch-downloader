@@ -28,6 +28,7 @@ import { ensureSettings, getSettings, saveSettings } from "../../lib/settings"
 import { SOURCE_IDS } from "../../lib/sources/catalog"
 import {
   BATCH_EVENT,
+  CONTENT_SCRIPT_READY_EVENT,
   createRuntimeErrorResponse,
   createRuntimeSuccessResponse,
   type RuntimeRequest
@@ -216,7 +217,7 @@ export function registerBackgroundRuntime() {
             await deleteSubscriptionDefinition(runtimeMessage.subscriptionId)
             sendResponse(createRuntimeSuccessResponse("DELETE_SUBSCRIPTION", {}))
             return
-          case "CONTENT_SCRIPT_READY":
+          case CONTENT_SCRIPT_READY_EVENT:
             if (!isValidSourceId(runtimeMessage.sourceId)) {
               sendResponse(createRuntimeErrorResponse("Invalid CONTENT_SCRIPT_READY payload"))
               return
@@ -228,7 +229,7 @@ export function registerBackgroundRuntime() {
             }
 
             markContentScriptReady(sender.tab.id, runtimeMessage.sourceId)
-            sendResponse(createRuntimeSuccessResponse("CONTENT_SCRIPT_READY", {}))
+            sendResponse(createRuntimeSuccessResponse(CONTENT_SCRIPT_READY_EVENT, {}))
             return
           case "SET_SOURCE_ENABLED":
             if (!isValidPopupSourceTogglePayload(message)) {

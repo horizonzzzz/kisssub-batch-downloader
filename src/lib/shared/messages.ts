@@ -71,7 +71,7 @@ export type RuntimeRequest =
   | { type: "UPSERT_SUBSCRIPTION"; subscription: SubscriptionEntry }
   | { type: "DELETE_SUBSCRIPTION"; subscriptionId: string }
   | { type: "SCAN_SUBSCRIPTION_LIST"; sourceId: SourceId }
-  | { type: "CONTENT_SCRIPT_READY"; sourceId: SourceId }
+  | { type: typeof CONTENT_SCRIPT_READY_EVENT; sourceId: SourceId }
 
 export type RuntimeRequestType = RuntimeRequest["type"]
 
@@ -162,7 +162,7 @@ export type RuntimeSuccessResponseMap = {
   UPSERT_SUBSCRIPTION: UpsertSubscriptionSuccessResponse
   DELETE_SUBSCRIPTION: DeleteSubscriptionSuccessResponse
   SCAN_SUBSCRIPTION_LIST: ScanSubscriptionListSuccessResponse
-  CONTENT_SCRIPT_READY: ContentScriptReadySuccessResponse
+  [CONTENT_SCRIPT_READY_EVENT]: ContentScriptReadySuccessResponse
 }
 
 export type RuntimeSuccessResponseFor<TType extends RuntimeRequestType> =
@@ -186,7 +186,7 @@ export type StartBatchDownloadResponse = RuntimeResponseFor<"START_BATCH_DOWNLOA
 export type UpsertSubscriptionResponse = RuntimeResponseFor<"UPSERT_SUBSCRIPTION">
 export type DeleteSubscriptionResponse = RuntimeResponseFor<"DELETE_SUBSCRIPTION">
 export type ScanSubscriptionListResponse = RuntimeResponseFor<"SCAN_SUBSCRIPTION_LIST">
-export type ContentScriptReadyResponse = RuntimeResponseFor<"CONTENT_SCRIPT_READY">
+export type ContentScriptReadyResponse = RuntimeResponseFor<typeof CONTENT_SCRIPT_READY_EVENT>
 export type RuntimeResponse = RuntimeResponseFor<RuntimeRequestType>
 
 export function createRuntimeSuccessResponse<TType extends RuntimeRequestType>(
