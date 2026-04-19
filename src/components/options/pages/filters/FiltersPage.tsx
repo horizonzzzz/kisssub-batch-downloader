@@ -1,7 +1,6 @@
 import { i18n } from "../../../../lib/i18n"
-import { useState } from "react"
+import { useMemo, useState } from "react"
 
-import { useFormContext, useWatch } from "react-hook-form"
 import { HiOutlinePlus } from "react-icons/hi2"
 
 import {
@@ -13,13 +12,11 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  Alert,
   Button,
   Card
 } from "../../../ui"
-import {
-  type SettingsFormInput,
-  type SettingsFormValues
-} from "../../schema/settings-form"
+import type { OptionsApi } from "../../OptionsPage"
 import { FilterRuleBuilderDialog } from "./FilterRuleBuilderDialog"
 import { FilterWorkbenchCard } from "./FilterWorkbenchCards"
 import { FilterWorkbenchTestBench } from "./FilterWorkbenchTestBench"
@@ -31,14 +28,16 @@ import {
   type FilterWorkbenchTestInput,
   type FilterWorkbenchTestResult
 } from "./filter-workbench"
+import { useFilterWorkbench } from "./use-filter-workbench"
 
-export function FiltersPage() {
-  const form = useFormContext<SettingsFormInput, unknown, SettingsFormValues>()
-  const filters =
-    useWatch({
-      control: form.control,
-      name: "filters"
-    }) ?? []
+type FiltersPageProps = {
+  api: OptionsApi
+}
+
+export function FiltersPage({ api }: FiltersPageProps) {
+  const { config, setConfig, status, loading, saving, save } = useFilterWorkbench(api)
+  const filters = config.rules
+
   const [editingIndex, setEditingIndex] = useState<number | null>(null)
   const [creatingFilter, setCreatingFilter] = useState(false)
   const [pendingDeleteIndex, setPendingDeleteIndex] = useState<number | null>(null)
@@ -48,29 +47,26 @@ export function FiltersPage() {
   })
   const [testResult, setTestResult] = useState<FilterWorkbenchTestResult | null>(null)
 
-  const setFilters = (nextFilters: FilterWorkbenchFilter[]) => {
-    form.setValue("filters", nextFilters, {
-      shouldDirty: true,
-      shouldTouch: true
-    })
-  }
-
   const handleAddPresetFilter = () => {
-    const currentFilters = form.getValues("filters") ?? []
-    setFilters([...currentFilters, createAilian1080SimplifiedChineseFilter()])
+    setConfig((current) => ({
+      ...current,
+      rules: [...current.rules, createAilian1080SimplifiedChineseFilter()]
+    }))
   }
 
   const handleSaveFilter = (nextFilter: FilterWorkbenchFilter) => {
-    const currentFilters = form.getValues("filters") ?? []
-
     if (editingIndex === null) {
-      setFilters([...currentFilters, nextFilter])
+      setConfig((current) => ({
+        ...current,
+        rules: [...current.rules, nextFilter]
+      }))
     } else {
-      setFilters(
-        currentFilters.map((filter, index) =>
+      setConfig((current) => ({
+        ...current,
+        rules: current.rules.map((filter, index) =>
           index === editingIndex ? nextFilter : filter
         )
-      )
+      }))
     }
 
     setCreatingFilter(false)
@@ -78,20 +74,33 @@ export function FiltersPage() {
   }
 
   const handleDeleteFilter = (targetIndex: number) => {
-    setFilters(filters.filter((_, index) => index !== targetIndex))
+    setConfig((current) => ({
+      ...current,
+      rules: current.rules.filter((_, index) => index !== targetIndex)
+    }))
   }
 
   const handleToggleEnabled = (targetIndex: number, enabled: boolean) => {
-    setFilters(
-      filters.map((filter, index) =>
+    setConfig((current) => ({
+      ...current,
+      rules: current.rules.map((filter, index) =>
         index === targetIndex ? { ...filter, enabled } : filter
       )
-    )
+    }))
   }
 
   const handleRunTest = () => {
-    setTestResult(runWorkbenchTest(testInput, form.getValues("filters") ?? []))
+    setTestResult(runWorkbenchTest(testInput, filters))
   }
+
+  const initialFilter = useMemo(() => {
+    if (editingIndex === null) {
+      return undefined
+    }
+
+    const editingFilter = filters[editingIndex]
+    return editingFilter ? createFilterDraft(editingFilter) : undefined
+  }, [editingIndex, filters])
 
   const enabledFiltersCount = filters.filter((filter) => filter.enabled).length
   const pendingDeleteFilter =
@@ -99,6 +108,10 @@ export function FiltersPage() {
 
   return (
     <div className="space-y-8" data-testid="filters-workbench">
+      <div role="status" aria-live="polite">
+        <Alert tone={status.tone} title={status.message} />
+      </div>
+
       <Card>
         <div className="flex flex-col gap-5 px-6 py-6">
           <div className="flex flex-wrap items-start justify-between gap-4">
@@ -112,7 +125,7 @@ export function FiltersPage() {
             </div>
 
             <div className="flex flex-wrap gap-2">
-              <Button type="button" variant="outline" onClick={handleAddPresetFilter}>
+              <Button type="button" variant="outline" onClick={handleAddPresetFilter} disabled={loading}>
                 <HiOutlinePlus className="h-4 w-4" />
                 {i18n.t("options.filters.addPreset")}
               </Button>
@@ -121,20 +134,27 @@ export function FiltersPage() {
                 onClick={() => {
                   setEditingIndex(null)
                   setCreatingFilter(true)
-                }}>
+                }}
+                disabled={loading}>
                 <HiOutlinePlus className="h-4 w-4" />
                 {i18n.t("options.filters.add")}
               </Button>
             </div>
           </div>
 
-          <div className="flex flex-wrap gap-3 text-sm text-zinc-600">
-            <div className="rounded-full border border-zinc-200 bg-zinc-50 px-3 py-2">
-              {i18n.t("options.filters.configuredCount", [filters.length])}
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="flex flex-wrap gap-3 text-sm text-zinc-600">
+              <div className="rounded-full border border-zinc-200 bg-zinc-50 px-3 py-2">
+                {i18n.t("options.filters.configuredCount", [filters.length])}
+              </div>
+              <div className="rounded-full border border-zinc-200 bg-zinc-50 px-3 py-2">
+                {i18n.t("options.filters.enabledCount", [enabledFiltersCount])}
+              </div>
             </div>
-            <div className="rounded-full border border-zinc-200 bg-zinc-50 px-3 py-2">
-              {i18n.t("options.filters.enabledCount", [enabledFiltersCount])}
-            </div>
+
+            <Button type="button" onClick={() => void save()} disabled={loading || saving}>
+              {saving ? i18n.t("common.processing") : i18n.t("options.filters.saveFilters")}
+            </Button>
           </div>
         </div>
       </Card>
@@ -198,9 +218,7 @@ export function FiltersPage() {
 
       <FilterRuleBuilderDialog
         open={creatingFilter || editingIndex !== null}
-        initialFilter={
-          editingIndex !== null ? createFilterDraft(filters[editingIndex]) : undefined
-        }
+        initialFilter={initialFilter}
         onClose={() => {
           setCreatingFilter(false)
           setEditingIndex(null)

@@ -403,6 +403,7 @@
       "deleteTitle": "删除筛选器",
       "deleteDescriptionNamed": "确定删除筛选器“$1”吗？",
       "deleteDescription": "确定删除这条筛选器吗？",
+      "saveFilters": "保存筛选器配置",
       "edit": "编辑",
       "badge": {
         "enabled": "已启用",

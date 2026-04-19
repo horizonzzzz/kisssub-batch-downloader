@@ -50,7 +50,7 @@ export const OPTIONS_ROUTES = [
   {
     id: "filters",
     path: FILTERS_ROUTE,
-    mode: "form"
+    mode: "view"
   },
   {
     id: "subscriptions",

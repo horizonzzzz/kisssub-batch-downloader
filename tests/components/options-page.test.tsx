@@ -87,6 +87,8 @@ function createOptionsApi(overrides: Partial<TestOptionsApi> = {}): TestOptionsA
     saveAppSettings: saveSettings,
     loadSettings,
     saveSettings,
+    getFilterConfig: vi.fn().mockResolvedValue({ rules: [] }),
+    saveFilterConfig: vi.fn().mockImplementation(async (config) => config),
     upsertSubscription: vi.fn().mockImplementation(async (subscription) => {
       await upsertSubscription(subscription)
     }),
@@ -376,11 +378,11 @@ describe("OptionsPage", () => {
   })
 
   it(
-    "includes filter edits when saving settings",
+    "saves filter config via the dedicated save button",
     async () => {
       const user = userEvent.setup()
       const api = createOptionsApi({
-        saveSettings: vi.fn().mockImplementation(async (nextSettings) => nextSettings)
+        saveFilterConfig: vi.fn().mockImplementation(async (config) => config)
       })
 
       render(<OptionsPage api={api} />)
@@ -401,12 +403,12 @@ describe("OptionsPage", () => {
 
       expect(screen.getByText("爱恋 1080 简繁")).toBeInTheDocument()
 
-      await user.click(screen.getByRole("button", { name: "保存所有设置" }))
+      await user.click(screen.getByRole("button", { name: "保存筛选器配置" }))
 
       await waitFor(() => {
-        expect(api.saveSettings).toHaveBeenCalledWith(
+        expect(api.saveFilterConfig).toHaveBeenCalledWith(
           expect.objectContaining({
-            filters: expect.arrayContaining([
+            rules: expect.arrayContaining([
               expect.objectContaining({
                 name: "爱恋 1080 简繁",
                 sourceIds: ["kisssub", "dongmanhuayuan", "acgrip", "bangumimoe"],

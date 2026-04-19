@@ -403,6 +403,7 @@
       "deleteTitle": "Delete filter",
       "deleteDescriptionNamed": "Delete the filter \"$1\"?",
       "deleteDescription": "Delete this filter?",
+      "saveFilters": "Save filter config",
       "edit": "Edit",
       "badge": {
         "enabled": "Enabled",

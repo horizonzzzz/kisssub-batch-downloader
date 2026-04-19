@@ -90,7 +90,6 @@ function FormShell({
             }
           />
           <Route path="/sites" element={<SitesPage />} />
-          <Route path="/filters" element={<FiltersPage />} />
           <Route path="*" element={<Navigate to={DEFAULT_OPTIONS_ROUTE} replace />} />
         </Routes>
       </PageShell>
@@ -108,6 +107,7 @@ function ViewShell({
   return (
     <PageShell activeMeta={activeMeta}>
       <Routes>
+        <Route path="/filters" element={<FiltersPage api={api} />} />
         <Route path="/subscriptions" element={<SubscriptionsPage api={api} />} />
         <Route path="/history" element={<HistoryPage />} />
         <Route path="/overview" element={<OverviewPage />} />
