@@ -1,0 +1,78 @@
+// TODO: This hook is scaffolding for future UI integration of the batch execution workbench.
+// The general page currently uses the shared FormProvider. Integrate this hook when
+// refactoring to a dedicated batch execution configuration section.
+import { i18n } from "../../../../lib/i18n"
+import { useEffect, useState } from "react"
+
+import type { BatchExecutionConfig } from "../../../../lib/batch-config/types"
+import type { OptionsApi } from "../../OptionsPage"
+
+export function useBatchExecutionConfigWorkbench(api: OptionsApi) {
+  const [config, setConfig] = useState<BatchExecutionConfig>({
+    concurrency: 3,
+    retryCount: 2,
+    injectTimeoutMs: 15000,
+    domSettleMs: 500
+  })
+  const [status, setStatus] = useState<{
+    tone: "info" | "success" | "warning" | "error"
+    message: string
+  }>({
+    tone: "info",
+    message: i18n.t("options.status.loadingSettings")
+  })
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    let active = true
+
+    void api.getBatchExecutionConfig()
+      .then((nextConfig) => {
+        if (!active) return
+        setConfig(nextConfig)
+        setLoading(false)
+        setStatus({
+          tone: "success",
+          message: i18n.t("options.status.settingsLoaded")
+        })
+      })
+      .catch((error: unknown) => {
+        if (!active) return
+        setLoading(false)
+        setStatus({
+          tone: "error",
+          message: error instanceof Error ? error.message : i18n.t("options.status.loadFailed")
+        })
+      })
+
+    return () => {
+      active = false
+    }
+  }, [api])
+
+  async function save() {
+    setSaving(true)
+    setStatus({
+      tone: "info",
+      message: i18n.t("options.status.savingSettings")
+    })
+    try {
+      const saved = await api.saveBatchExecutionConfig(config)
+      setConfig(saved)
+      setStatus({
+        tone: "success",
+        message: i18n.t("options.status.settingsSaved")
+      })
+    } catch (error: unknown) {
+      setStatus({
+        tone: "error",
+        message: error instanceof Error ? error.message : i18n.t("options.status.saveFailed")
+      })
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return { config, setConfig, status, loading, saving, save }
+}

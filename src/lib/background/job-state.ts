@@ -1,11 +1,47 @@
-import type { BatchJob } from "./types"
-import type { AppSettings, BatchStats, BatchSummary, ClassifiedBatchResult } from "../shared/types"
+import type { BatchJob, BatchRuntimeContext } from "./types"
+import type { BatchStats, BatchSummary, ClassifiedBatchResult } from "../shared/types"
 import type { SourceConfig } from "../sources/config/types"
+import type { ExtractionContext } from "../sources/types"
+import type { DownloaderConfig } from "../downloader/config/types"
+import type { BatchExecutionConfig } from "../batch-config/types"
+import type { FilterEntry } from "../shared/types"
+
+export function buildBatchRuntimeContext(
+  executionConfig: BatchExecutionConfig,
+  filters: FilterEntry[],
+  downloaderConfig: DownloaderConfig,
+  sourceConfig: SourceConfig
+): BatchRuntimeContext {
+  return {
+    execution: executionConfig,
+    filters,
+    downloaderConfig,
+    extractionContext: buildExtractionContextFromConfigs(executionConfig, sourceConfig)
+  }
+}
+
+function buildExtractionContextFromConfigs(
+  executionConfig: BatchExecutionConfig,
+  sourceConfig: SourceConfig
+): ExtractionContext {
+  return {
+    execution: {
+      retryCount: executionConfig.retryCount,
+      injectTimeoutMs: executionConfig.injectTimeoutMs,
+      domSettleMs: executionConfig.domSettleMs
+    },
+    source: {
+      kisssub: {
+        script: sourceConfig.kisssub.script
+      }
+    }
+  }
+}
 
 export function createBatchJob(
   sourceTabId: number,
   total: number,
-  settings: AppSettings,
+  runtimeContext: BatchRuntimeContext,
   sourceConfig: SourceConfig,
   savePath: string
 ): BatchJob {
@@ -13,10 +49,7 @@ export function createBatchJob(
     sourceTabId,
     stats: createBatchStats(total),
     results: [],
-    settings: {
-      ...settings,
-      lastSavePath: savePath
-    },
+    runtimeContext,
     sourceConfig,
     savePath
   }

@@ -1,27 +1,36 @@
 import type { DownloaderAdapter } from "../downloader"
 import type { DownloaderConfig } from "../downloader/config/types"
 import type {
-  AppSettings,
   BatchEventPayload,
   BatchItem,
   BatchStats,
   ClassifiedBatchResult,
-  ExtractionResult
+  ExtractionResult,
+  FilterEntry
 } from "../shared/types"
 import type { SourceConfig } from "../sources/config/types"
+import type { BatchExecutionConfig } from "../batch-config/types"
+import type { ExtractionContext } from "../sources/types"
+
+export type BatchRuntimeContext = {
+  execution: BatchExecutionConfig
+  filters: FilterEntry[]
+  downloaderConfig: DownloaderConfig
+  extractionContext: ExtractionContext
+}
 
 export type BatchJob = {
   sourceTabId: number
   stats: BatchStats
   results: ClassifiedBatchResult[]
-  settings: AppSettings
+  runtimeContext: BatchRuntimeContext
   sourceConfig: SourceConfig
   savePath: string
 }
 
 export type BackgroundBatchDependencies = {
-  saveSettings: (partialSettings: Partial<AppSettings>) => Promise<AppSettings>
-  extractSingleItem: (item: BatchItem, settings: AppSettings) => Promise<ExtractionResult>
+  saveBatchUiPreferences: (preferences: { lastSavePath: string }) => Promise<{ lastSavePath: string }>
+  extractSingleItem: (item: BatchItem, context: ExtractionContext) => Promise<ExtractionResult>
   sendBatchEvent: (tabId: number, payload: BatchEventPayload) => Promise<void>
   getDownloader: (config: DownloaderConfig) => DownloaderAdapter
   ensureDownloaderPermission: (config: DownloaderConfig) => Promise<void>

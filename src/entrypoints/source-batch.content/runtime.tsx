@@ -34,8 +34,8 @@ import { buildSelectableBatchItem, type SelectableBatchItem } from "../../lib/co
 import { getBrowser, getExtensionUrl } from "../../lib/shared/browser"
 import { getLocalizedSiteConfigMeta } from "../../lib/sources/site-meta"
 import type { SourceAdapter } from "../../lib/sources/types"
-import type { SourceConfig } from "../../lib/sources/config/types"
-import type { AppSettings, BatchEventPayload, BatchItem, FilterEntry } from "../../lib/shared/types"
+import type { ContentScriptState } from "../../lib/background/queries/content-script-state"
+import type { BatchEventPayload, BatchItem, FilterEntry } from "../../lib/shared/types"
 import { FILTERS_ROUTE } from "../../lib/shared/options-routes"
 
 type CheckboxMount = {
@@ -209,28 +209,17 @@ export async function startSourceBatchContentScript(ctx: ContentScriptContext) {
       })
   }
 
-  async function loadSettingsForContentScript(): Promise<AppSettings> {
+  async function loadContentScriptState(sourceId: SourceAdapter["id"]): Promise<ContentScriptState> {
     const response = await sendRuntimeRequest({
-      type: "GET_APP_SETTINGS"
+      type: "GET_CONTENT_SCRIPT_STATE",
+      sourceId
     })
 
     if (!response.ok) {
-      throw new Error(response.error || "Failed to load settings for the content script.")
+      throw new Error(response.error || "Failed to load content script state.")
     }
 
-    return response.settings
-  }
-
-  async function loadSourceConfigForContentScript(): Promise<SourceConfig> {
-    const response = await sendRuntimeRequest({
-      type: "GET_SOURCE_CONFIG"
-    })
-
-    if (!response.ok) {
-      throw new Error(response.error || "Failed to load source config for the content script.")
-    }
-
-    return response.config
+    return response.state
   }
 
   function applyFiltersToSnapshot(sourceId: SourceAdapter["id"], filters: FilterEntry[]) {
@@ -259,15 +248,21 @@ export async function startSourceBatchContentScript(ctx: ContentScriptContext) {
   }
 
   async function synchronizeContentSettings() {
-    const settings = await loadSettingsForContentScript()
-    const sourceConfig = await loadSourceConfigForContentScript()
-    hydrateSavePath(settings)
+    if (!matchedPageSource) {
+      return
+    }
 
-    const enabledSource = getEnabledSourceAdapterForLocation(window.location, sourceConfig)
-    const filters = settings.filters ?? []
+    const state = await loadContentScriptState(matchedPageSource.id)
+    hydrateSavePath(state)
+
+    const enabledSource = state.enabled
+      ? matchedPageSource
+      : null
+
+    const filters = state.filters ?? []
 
     if (!enabledSource) {
-      applyFiltersToSnapshot(matchedPageSource?.id ?? "kisssub", filters)
+      applyFiltersToSnapshot(matchedPageSource.id, filters)
 
       if (activeSource) {
         deactivateSource({ preserveRunningState: true })
@@ -621,8 +616,8 @@ export async function startSourceBatchContentScript(ctx: ContentScriptContext) {
     renderAll()
   }
 
-  function hydrateSavePath(settings: Pick<AppSettings, "lastSavePath">) {
-    const loadedPath = String(settings.lastSavePath ?? "").trim()
+  function hydrateSavePath(state: Pick<ContentScriptState, "lastSavePath">) {
+    const loadedPath = String(state.lastSavePath ?? "").trim()
     if (!loadedPath) {
       return
     }

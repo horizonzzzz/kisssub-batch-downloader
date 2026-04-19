@@ -8,8 +8,10 @@ import type {
   SubscriptionEntry
 } from "../shared/types"
 import type { SourceConfig } from "../sources/config/types"
+import type { ExtractionContext } from "../sources/types"
 import { getSettings } from "../settings"
 import { getSourceConfig } from "../sources/config"
+import { getBatchExecutionConfig } from "../batch-config/storage"
 import { extractSingleItem } from "../sources/extraction"
 import {
   buildSubscriptionRoundNotification,
@@ -60,7 +62,7 @@ export type DownloadSubscriptionHitsDependencies = {
   getSourceConfig?: () => Promise<SourceConfig>
   getDownloader?: (settings: AppSettings) => DownloaderAdapter
   fetchTorrentForUpload?: (torrentUrl: string) => Promise<DownloaderTorrentFile>
-  extractSingleItem?: (item: BatchItem, settings: AppSettings) => Promise<ExtractionResult>
+  extractSingleItem?: (item: BatchItem, context: ExtractionContext) => Promise<ExtractionResult>
   now?: () => string
 }
 
@@ -217,9 +219,9 @@ async function defaultFetchTorrentForUpload(
 
 async function defaultExtractSingleItem(
   item: BatchItem,
-  settings: AppSettings
+  context: ExtractionContext
 ): Promise<ExtractionResult> {
-  return extractSingleItem(item, settings)
+  return extractSingleItem(item, context)
 }
 
 async function defaultClearBrowserNotification(notificationId: string): Promise<unknown> {

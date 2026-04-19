@@ -17,7 +17,6 @@ import {
 } from "../../lib/background"
 import { getDownloaderAdapter } from "../../lib/downloader"
 import { ensureDownloaderPermission } from "../../lib/downloader/permissions"
-import { appSettingsToDownloaderConfig } from "../../lib/downloader/config/storage"
 import {
   clearHistory,
   deleteHistoryRecord,
@@ -76,7 +75,7 @@ import iconColor from "../../assets/icon.png"
 import iconGrayscale from "../../assets/icon-grayscale.png"
 
 const batchDownloadManager = createBatchDownloadManager({
-  saveSettings,
+  saveBatchUiPreferences,
   extractSingleItem,
   sendBatchEvent,
   ensureDownloaderPermission: (config) => ensureDownloaderPermission(config),

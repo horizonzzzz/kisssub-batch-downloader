@@ -1,12 +1,29 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
-import { DEFAULT_SETTINGS } from "../../../src/lib/settings"
+import { DEFAULT_BATCH_EXECUTION_CONFIG } from "../../../src/lib/batch-config/defaults"
+import { DEFAULT_SOURCE_CONFIG } from "../../../src/lib/sources/config/defaults"
+import type { ExtractionContext } from "../../../src/lib/sources/types"
 
 const getSourceAdapterById = vi.fn()
 
 vi.mock("../../../src/lib/sources", () => ({
   getSourceAdapterById
 }))
+
+function createExtractionContext(): ExtractionContext {
+  return {
+    execution: {
+      retryCount: DEFAULT_BATCH_EXECUTION_CONFIG.retryCount,
+      injectTimeoutMs: DEFAULT_BATCH_EXECUTION_CONFIG.injectTimeoutMs,
+      domSettleMs: DEFAULT_BATCH_EXECUTION_CONFIG.domSettleMs
+    },
+    source: {
+      kisssub: {
+        script: DEFAULT_SOURCE_CONFIG.kisssub.script
+      }
+    }
+  }
+}
 
 describe("extractSingleItem", () => {
   beforeEach(() => {
@@ -25,7 +42,7 @@ describe("extractSingleItem", () => {
           detailUrl: "https://www.kisssub.org/show-deadbeef.html",
           title: "Episode 01"
         },
-        {} as never
+        createExtractionContext()
       )
     ).resolves.toEqual({
       ok: false,
@@ -52,18 +69,18 @@ describe("extractSingleItem", () => {
       extractSingleItem: extract
     })
 
-    const { extractSingleItem, buildExtractionContext } = await import("../../../src/lib/sources/extraction")
-    const settings = { ...DEFAULT_SETTINGS, retryCount: 1 } as never
+    const { extractSingleItem } = await import("../../../src/lib/sources/extraction")
+    const context = createExtractionContext()
     const item = {
       sourceId: "kisssub" as const,
       detailUrl: "https://www.kisssub.org/show-deadbeef.html",
       title: "Episode 01"
     }
 
-    await expect(extractSingleItem(item, settings)).resolves.toMatchObject({
+    await expect(extractSingleItem(item, context)).resolves.toMatchObject({
       ok: true,
       hash: "deadbeef"
     })
-    expect(extract).toHaveBeenCalledWith(item, buildExtractionContext(settings))
+    expect(extract).toHaveBeenCalledWith(item, context)
   })
 })

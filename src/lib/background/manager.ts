@@ -2,21 +2,41 @@ import { decideFilterAction } from "../filter-rules"
 import { normalizeSavePath } from "../settings"
 import { getSourceConfig } from "../sources/config"
 import { getDisabledSources } from "../sources/config/selectors"
-import { appSettingsToDownloaderConfig } from "../downloader/config/storage"
+import { getDownloaderConfig } from "../downloader/config/storage"
+import { getBatchExecutionConfig } from "../batch-config/storage"
+import { getFilterConfig } from "../filter-rules/storage"
 import {
   classifyExtractionResult,
   createPreparedExtractionResult
 } from "../download-preparation"
 import type { StartBatchDownloadSuccessResponse } from "../shared/messages"
-import type { BatchItem, ClassifiedBatchResult } from "../shared/types"
+import type { BatchItem, ClassifiedBatchResult, FilterEntry } from "../shared/types"
 import type { SourceConfig } from "../sources/config/types"
-import { createBatchJob, recordBatchResult, summarizeBatchResults } from "./job-state"
+import type { BatchExecutionConfig } from "../batch-config/types"
+import type { BatchRuntimeContext } from "./types"
+import { createBatchJob, buildBatchRuntimeContext, recordBatchResult, summarizeBatchResults } from "./job-state"
 import { getBatchStartedMessage, getBatchSubmittingMessage } from "./messages"
 import { normalizeBatchItems } from "./preparation"
 import { fetchTorrentForUpload } from "./torrent-file"
 import type { BackgroundBatchDependencies, BatchJob } from "./types"
 import { persistBatchHistory } from "./history-builder"
 import type { DownloaderUrlSubmissionResult } from "../downloader"
+
+async function getBatchRuntimeContext(): Promise<BatchRuntimeContext> {
+  const [executionConfig, filterConfig, downloaderConfig, sourceConfig] = await Promise.all([
+    getBatchExecutionConfig(),
+    getFilterConfig(),
+    getDownloaderConfig(),
+    getSourceConfig()
+  ])
+
+  return buildBatchRuntimeContext(
+    executionConfig,
+    filterConfig.rules,
+    downloaderConfig,
+    sourceConfig
+  )
+}
 
 export function createBatchDownloadManager(dependencies: BackgroundBatchDependencies) {
   const activeJobs = new Map<number, BatchJob>()
@@ -40,7 +60,9 @@ export function createBatchDownloadManager(dependencies: BackgroundBatchDependen
     }
 
     const savePath = normalizeSavePath(requestedSavePath)
-    const settings = await dependencies.saveSettings({ lastSavePath: savePath })
+    await dependencies.saveBatchUiPreferences({ lastSavePath: savePath })
+
+    const runtimeContext = await getBatchRuntimeContext()
     const sourceConfig = await getSourceConfig()
     const disabledSources = getDisabledSources(
       Array.from(new Set(normalizedItems.map((item) => item.sourceId))),
@@ -50,7 +72,7 @@ export function createBatchDownloadManager(dependencies: BackgroundBatchDependen
       throw new Error(`Batch downloads are disabled for source: ${disabledSources.join(", ")}`)
     }
 
-    const job = createBatchJob(sourceTabId, normalizedItems.length, settings, sourceConfig, savePath)
+    const job = createBatchJob(sourceTabId, normalizedItems.length, runtimeContext, sourceConfig, savePath)
     activeJobs.set(sourceTabId, job)
 
     void runBatch(job, normalizedItems).catch(async (error: unknown) => {
@@ -80,7 +102,7 @@ export function createBatchDownloadManager(dependencies: BackgroundBatchDependen
     const preparedSubmissions: ClassifiedBatchResult[] = []
     const seenHashes = new Set<string>()
     const seenUrls = new Set<string>()
-    const workerCount = Math.min(job.settings.concurrency, pending.length)
+    const workerCount = Math.min(job.runtimeContext.execution.concurrency, pending.length)
 
     const workers = Array.from({ length: workerCount }, () =>
       processQueue(job, pending, preparedSubmissions, seenHashes, seenUrls)
@@ -96,7 +118,7 @@ export function createBatchDownloadManager(dependencies: BackgroundBatchDependen
       })
 
       try {
-        const downloaderConfig = appSettingsToDownloaderConfig(job.settings)
+        const downloaderConfig = job.runtimeContext.downloaderConfig
         await dependencies.ensureDownloaderPermission(downloaderConfig)
         const downloader = dependencies.getDownloader(downloaderConfig)
         await downloader.authenticate(downloaderConfig)
@@ -166,7 +188,7 @@ export function createBatchDownloadManager(dependencies: BackgroundBatchDependen
     job: BatchJob,
     preparedSubmissions: ClassifiedBatchResult[]
   ): Promise<void> {
-    const downloaderConfig = appSettingsToDownloaderConfig(job.settings)
+    const downloaderConfig = job.runtimeContext.downloaderConfig
     const downloader = dependencies.getDownloader(downloaderConfig)
     const { urlSubmissions, torrentFileSubmissions } = splitPreparedSubmissions(preparedSubmissions)
 
@@ -219,7 +241,7 @@ export function createBatchDownloadManager(dependencies: BackgroundBatchDependen
       return classifyExtractionResult(item.sourceId, preparedResult, job.sourceConfig, seenHashes, seenUrls)
     }
 
-    const extractedResult = await dependencies.extractSingleItem(item, job.settings)
+    const extractedResult = await dependencies.extractSingleItem(item, job.runtimeContext.extractionContext)
     if (extractedResult.ok) {
       const blockedExtractedResult = classifyBlockedBatchResult(item, extractedResult, job)
       if (blockedExtractedResult) {
@@ -250,7 +272,7 @@ function classifyBlockedBatchResult(
   const filterDecision = decideFilterAction({
     sourceId: originalItem.sourceId,
     title: originalItem.title,
-    filters: job.settings.filters
+    filters: job.runtimeContext.filters
   })
   if (filterDecision.accepted) {
     return null

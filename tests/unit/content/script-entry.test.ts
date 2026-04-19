@@ -301,10 +301,10 @@ describe("content script runtime", () => {
     })
     runtimeSendMessage.mockResolvedValue({
       ok: true,
-      settings: {
-        enabledSources: {
-          acgrip: false
-        }
+      state: {
+        enabled: false,
+        filters: [],
+        lastSavePath: ""
       }
     })
     getEnabledSourceAdapterForLocation.mockReturnValueOnce(null)
@@ -313,9 +313,10 @@ describe("content script runtime", () => {
     await startSourceBatchContentScript(createTestContext() as never)
 
     expect(runtimeSendMessage).toHaveBeenCalledWith({
-      type: "GET_APP_SETTINGS"
+      type: "GET_CONTENT_SCRIPT_STATE",
+      sourceId: "acgrip"
     })
-    expect(getEnabledSourceAdapterForLocation).toHaveBeenCalledTimes(1)
+    expect(getEnabledSourceAdapterForLocation).not.toHaveBeenCalled()
     expect(createRoot).not.toHaveBeenCalled()
     expect(runtimeAddListener).toHaveBeenCalledTimes(1)
     expect(document.querySelector("[data-anime-bt-batch-panel-root]")).toBeNull()
@@ -328,14 +329,12 @@ describe("content script runtime", () => {
     }
 
     getSourceAdapterForLocation.mockReturnValueOnce(source)
-    getEnabledSourceAdapterForLocation.mockReturnValueOnce(source)
     runtimeSendMessage.mockResolvedValue({
       ok: true,
-      settings: {
-        enabledSources: {
-          acgrip: true
-        },
-        filters: []
+      state: {
+        enabled: true,
+        filters: [],
+        lastSavePath: ""
       }
     })
 
@@ -366,14 +365,12 @@ describe("content script runtime", () => {
     }
 
     getSourceAdapterForLocation.mockReturnValueOnce(source)
-    getEnabledSourceAdapterForLocation.mockReturnValueOnce(source)
     runtimeSendMessage.mockResolvedValue({
       ok: true,
-      settings: {
-        enabledSources: {
-          acgrip: true
-        },
-        filters: []
+      state: {
+        enabled: true,
+        filters: [],
+        lastSavePath: ""
       }
     })
 
@@ -417,7 +414,6 @@ describe("content script runtime", () => {
     }
 
     getSourceAdapterForLocation.mockReturnValueOnce(source)
-    getEnabledSourceAdapterForLocation.mockReturnValueOnce(source)
     getDetailAnchors.mockReturnValueOnce([anchor])
     getBatchItemFromAnchor.mockReturnValueOnce({
       sourceId: "acgrip",
@@ -427,10 +423,8 @@ describe("content script runtime", () => {
     getAnchorMountTarget.mockReturnValueOnce(anchorCell)
     runtimeSendMessage.mockResolvedValue({
       ok: true,
-      settings: {
-        enabledSources: {
-          acgrip: true
-        },
+      state: {
+        enabled: true,
         filters: [
           {
             id: "filter-1",
@@ -447,7 +441,8 @@ describe("content script runtime", () => {
             ],
             any: []
           }
-        ]
+        ],
+        lastSavePath: ""
       }
     })
 
@@ -483,22 +478,19 @@ describe("content script runtime", () => {
     }
 
     getSourceAdapterForLocation.mockReturnValueOnce(source)
-    getEnabledSourceAdapterForLocation.mockReturnValue(source)
     getDetailAnchors.mockReturnValue([anchor])
     getBatchItemFromAnchor.mockReturnValue(item)
     getAnchorMountTarget.mockReturnValue(anchorCell)
 
     runtimeSendMessage.mockImplementation(({ type }) => {
-      if (type === "GET_APP_SETTINGS") {
-        const callCount = runtimeSendMessage.mock.calls.filter((call) => call[0]?.type === "GET_APP_SETTINGS").length
+      if (type === "GET_CONTENT_SCRIPT_STATE") {
+        const callCount = runtimeSendMessage.mock.calls.filter((call) => call[0]?.type === "GET_CONTENT_SCRIPT_STATE").length
 
         if (callCount <= 1) {
           return Promise.resolve({
             ok: true,
-            settings: {
-              enabledSources: {
-                acgrip: true
-              },
+            state: {
+              enabled: true,
               filters: [
                 {
                   id: "filter-1",
@@ -515,18 +507,18 @@ describe("content script runtime", () => {
                   ],
                   any: []
                 }
-              ]
+              ],
+              lastSavePath: ""
             }
           })
         }
 
         return Promise.resolve({
           ok: true,
-          settings: {
-            enabledSources: {
-              acgrip: true
-            },
-            filters: []
+          state: {
+            enabled: true,
+            filters: [],
+            lastSavePath: ""
           }
         })
       }
@@ -552,7 +544,7 @@ describe("content script runtime", () => {
     })
 
     await vi.waitFor(() => {
-      expect(runtimeSendMessage.mock.calls.filter((call) => call[0]?.type === "GET_APP_SETTINGS")).toHaveLength(2)
+      expect(runtimeSendMessage.mock.calls.filter((call) => call[0]?.type === "GET_CONTENT_SCRIPT_STATE")).toHaveLength(2)
       expect(getLatestCheckboxProps()).toMatchObject({
         disabled: false
       })
@@ -573,19 +565,19 @@ describe("content script runtime", () => {
     }
 
     getSourceAdapterForLocation.mockReturnValueOnce(source)
-    getEnabledSourceAdapterForLocation.mockReturnValueOnce(source)
     getDetailAnchors.mockReturnValueOnce([anchor])
     getBatchItemFromAnchor.mockReturnValueOnce({
+      sourceId: "acgrip",
       title: "Episode 01",
       detailUrl: "https://acg.rip/t/1"
     })
     getAnchorMountTarget.mockReturnValueOnce(anchorCell)
     runtimeSendMessage.mockResolvedValue({
       ok: true,
-      settings: {
-        enabledSources: {
-          acgrip: true
-        }
+      state: {
+        enabled: true,
+        filters: [],
+        lastSavePath: ""
       }
     })
 
@@ -619,19 +611,19 @@ describe("content script runtime", () => {
     }
 
     getSourceAdapterForLocation.mockReturnValueOnce(source)
-    getEnabledSourceAdapterForLocation.mockReturnValueOnce(source)
     getDetailAnchors.mockReturnValueOnce([anchor])
     getBatchItemFromAnchor.mockReturnValueOnce({
+      sourceId: "acgrip",
       title: "Episode 01",
       detailUrl: "https://acg.rip/t/1"
     })
     getAnchorMountTarget.mockReturnValueOnce(anchorCell)
     runtimeSendMessage.mockResolvedValue({
       ok: true,
-      settings: {
-        enabledSources: {
-          acgrip: true
-        }
+      state: {
+        enabled: true,
+        filters: [],
+        lastSavePath: ""
       }
     })
 
@@ -670,24 +662,25 @@ describe("content script runtime", () => {
     }
 
     getSourceAdapterForLocation.mockReturnValueOnce(source)
-    getEnabledSourceAdapterForLocation.mockReturnValueOnce(source)
     getDetailAnchors.mockReturnValueOnce([firstAnchor, secondAnchor])
     getBatchItemFromAnchor
       .mockReturnValueOnce({
+        sourceId: "acgrip",
         title: "Episode 01",
         detailUrl: "https://acg.rip/t/1"
       })
       .mockReturnValueOnce({
+        sourceId: "acgrip",
         title: "Episode 02",
         detailUrl: "https://acg.rip/t/2"
       })
     getAnchorMountTarget.mockReturnValueOnce(firstCell).mockReturnValueOnce(secondCell)
     runtimeSendMessage.mockResolvedValue({
       ok: true,
-      settings: {
-        enabledSources: {
-          acgrip: true
-        }
+      state: {
+        enabled: true,
+        filters: [],
+        lastSavePath: ""
       }
     })
 
@@ -717,21 +710,21 @@ describe("content script runtime", () => {
       displayName: "ACG.RIP"
     }
     const item = {
+      sourceId: "acgrip",
       title: "Episode 01",
       detailUrl: "https://acg.rip/t/1"
     }
 
     getSourceAdapterForLocation.mockReturnValueOnce(source)
-    getEnabledSourceAdapterForLocation.mockReturnValueOnce(source)
     getDetailAnchors.mockReturnValueOnce([anchor])
     getBatchItemFromAnchor.mockReturnValueOnce(item)
     getAnchorMountTarget.mockReturnValueOnce(anchorCell)
     runtimeSendMessage.mockResolvedValue({
       ok: true,
-      settings: {
-        enabledSources: {
-          acgrip: true
-        }
+      state: {
+        enabled: true,
+        filters: [],
+        lastSavePath: ""
       }
     })
 
@@ -791,23 +784,23 @@ describe("content script runtime", () => {
       displayName: "ACG.RIP"
     }
     const item = {
+      sourceId: "acgrip",
       title: "Episode 03",
       detailUrl: "https://acg.rip/t/3"
     }
 
     getSourceAdapterForLocation.mockReturnValueOnce(source)
-    getEnabledSourceAdapterForLocation.mockReturnValueOnce(source)
     getDetailAnchors.mockReturnValueOnce([anchor])
     getBatchItemFromAnchor.mockReturnValueOnce(item)
     getAnchorMountTarget.mockReturnValueOnce(anchorCell)
     runtimeSendMessage.mockImplementation(({ type }) => {
-      if (type === "GET_APP_SETTINGS") {
+      if (type === "GET_CONTENT_SCRIPT_STATE") {
         return Promise.resolve({
           ok: true,
-          settings: {
-            enabledSources: {
-              acgrip: true
-            }
+          state: {
+            enabled: true,
+            filters: [],
+            lastSavePath: ""
           }
         })
       }
@@ -943,13 +936,12 @@ describe("content script runtime", () => {
     }
 
     getSourceAdapterForLocation.mockReturnValueOnce(source)
-    getEnabledSourceAdapterForLocation.mockReturnValueOnce(null)
     runtimeSendMessage.mockResolvedValue({
       ok: true,
-      settings: {
-        enabledSources: {
-          acgrip: false
-        }
+      state: {
+        enabled: false,
+        filters: [],
+        lastSavePath: ""
       }
     })
 

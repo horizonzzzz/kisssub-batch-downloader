@@ -1,8 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
-const { persistBatchHistoryMock, getSourceConfigMock } = vi.hoisted(() => ({
+const { persistBatchHistoryMock, getSourceConfigMock, getBatchExecutionConfigMock, getFilterConfigMock, getDownloaderConfigMock } = vi.hoisted(() => ({
   persistBatchHistoryMock: vi.fn(),
-  getSourceConfigMock: vi.fn()
+  getSourceConfigMock: vi.fn(),
+  getBatchExecutionConfigMock: vi.fn(),
+  getFilterConfigMock: vi.fn(),
+  getDownloaderConfigMock: vi.fn()
 }))
 
 vi.mock("../../../src/lib/background/history-builder", () => ({
@@ -13,33 +16,39 @@ vi.mock("../../../src/lib/sources/config", () => ({
   getSourceConfig: getSourceConfigMock
 }))
 
+vi.mock("../../../src/lib/batch-config/storage", () => ({
+  getBatchExecutionConfig: getBatchExecutionConfigMock
+}))
+
+vi.mock("../../../src/lib/filter-rules/storage", () => ({
+  getFilterConfig: getFilterConfigMock
+}))
+
+vi.mock("../../../src/lib/downloader/config/storage", () => ({
+  getDownloaderConfig: getDownloaderConfigMock
+}))
+
 import { createBatchDownloadManager } from "../../../src/lib/background/manager"
 import type { DownloaderAdapter } from "../../../src/lib/downloader"
-import { DEFAULT_SETTINGS } from "../../../src/lib/settings/defaults"
+import { DEFAULT_BATCH_EXECUTION_CONFIG } from "../../../src/lib/batch-config/defaults"
+import { DEFAULT_FILTER_CONFIG } from "../../../src/lib/filter-rules/defaults"
+import { DEFAULT_DOWNLOADER_CONFIG } from "../../../src/lib/downloader/config/defaults"
 import { DEFAULT_SOURCE_CONFIG } from "../../../src/lib/sources/config/defaults"
 import type {
-  AppSettings,
   BatchEventPayload,
   BatchItem,
-  ExtractionResult
+  ExtractionResult,
+  FilterEntry
 } from "../../../src/lib/shared/types"
 import type { SourceConfig } from "../../../src/lib/sources/config/types"
+import type { DownloaderConfig } from "../../../src/lib/downloader/config/types"
+import type { BatchExecutionConfig } from "../../../src/lib/batch-config/types"
+import type { FilterConfig } from "../../../src/lib/filter-rules/types"
+import type { ExtractionContext } from "../../../src/lib/sources/types"
 
-function createSettings(overrides: Partial<AppSettings> = {}): AppSettings {
+function createFilterConfig(filters: FilterEntry[] = []): FilterConfig {
   return {
-    ...DEFAULT_SETTINGS,
-    downloaders: {
-      ...DEFAULT_SETTINGS.downloaders,
-      qbittorrent: {
-        baseUrl: "http://127.0.0.1:17474",
-        username: "admin",
-        password: "secret"
-      }
-    },
-    sourceDeliveryModes: {
-      ...DEFAULT_SETTINGS.sourceDeliveryModes
-    },
-    ...overrides
+    rules: filters
   }
 }
 
@@ -50,9 +59,37 @@ function createSourceConfig(overrides: Partial<SourceConfig> = {}): SourceConfig
   }
 }
 
+function createDownloaderConfig(overrides: Partial<DownloaderConfig> = {}): DownloaderConfig {
+  return {
+    activeId: "qbittorrent",
+    profiles: {
+      qbittorrent: {
+        baseUrl: "http://127.0.0.1:17474",
+        username: "admin",
+        password: "secret"
+      },
+      transmission: {
+        baseUrl: "http://127.0.0.1:9091/transmission/rpc",
+        username: "",
+        password: ""
+      }
+    },
+    ...overrides
+  }
+}
+
+function createBatchExecutionConfig(overrides: Partial<BatchExecutionConfig> = {}): BatchExecutionConfig {
+  return {
+    ...DEFAULT_BATCH_EXECUTION_CONFIG,
+    ...overrides
+  }
+}
+
 function createManager(overrides: Partial<Parameters<typeof createBatchDownloadManager>[0]> = {}) {
-  const settings = createSettings()
+  const downloaderConfig = createDownloaderConfig()
   const sourceConfig = createSourceConfig()
+  const batchExecutionConfig = createBatchExecutionConfig()
+  const filterConfig = createFilterConfig()
   const downloader = {
     id: "qbittorrent",
     displayName: "qBittorrent",
@@ -67,11 +104,14 @@ function createManager(overrides: Partial<Parameters<typeof createBatchDownloadM
     testConnection: vi.fn()
   } satisfies DownloaderAdapter
 
-  // Set up default mock for getSourceConfig
+  // Set up default mocks for storage functions
   getSourceConfigMock.mockResolvedValue(sourceConfig)
+  getBatchExecutionConfigMock.mockResolvedValue(batchExecutionConfig)
+  getFilterConfigMock.mockResolvedValue(filterConfig)
+  getDownloaderConfigMock.mockResolvedValue(downloaderConfig)
 
   const dependencies = {
-    saveSettings: vi.fn().mockResolvedValue(settings),
+    saveBatchUiPreferences: vi.fn().mockResolvedValue({ lastSavePath: "" }),
     extractSingleItem: vi.fn(),
     sendBatchEvent: vi.fn().mockResolvedValue(undefined),
     getDownloader: vi.fn(() => downloader),
@@ -88,8 +128,10 @@ function createManager(overrides: Partial<Parameters<typeof createBatchDownloadM
   Object.assign(dependencies, overrides)
 
   return {
-    settings,
+    downloaderConfig,
     sourceConfig,
+    batchExecutionConfig,
+    filterConfig,
     downloader,
     dependencies,
     manager: createBatchDownloadManager(
@@ -103,7 +145,15 @@ describe("createBatchDownloadManager", () => {
     vi.clearAllMocks()
     persistBatchHistoryMock.mockReset()
     getSourceConfigMock.mockReset()
+    getBatchExecutionConfigMock.mockReset()
+    getFilterConfigMock.mockReset()
+    getDownloaderConfigMock.mockReset()
+
+    // Set up default mocks
     getSourceConfigMock.mockResolvedValue(createSourceConfig())
+    getBatchExecutionConfigMock.mockResolvedValue(createBatchExecutionConfig())
+    getFilterConfigMock.mockResolvedValue(createFilterConfig())
+    getDownloaderConfigMock.mockResolvedValue(createDownloaderConfig())
   })
 
   it("rejects downloads that do not come from a source tab", async () => {
@@ -116,7 +166,7 @@ describe("createBatchDownloadManager", () => {
 
   it("reuses pre-resolved torrent files without opening detail pages again", async () => {
     const { manager, dependencies, downloader } = createManager({
-      saveSettings: vi.fn().mockResolvedValue(createSettings({ lastSavePath: "D:\\Anime" }))
+      saveBatchUiPreferences: vi.fn().mockResolvedValue({ lastSavePath: "D:\\Anime" })
     })
 
     await expect(
@@ -311,27 +361,7 @@ describe("createBatchDownloadManager", () => {
   })
 
   it("blocks items that do not match any enabled filter before submitting them to qBittorrent", async () => {
-    const settings = createSettings({
-      filters: [
-        {
-          id: "filter-subgroup",
-          name: "爱恋 1080 简繁",
-          enabled: true,
-          sourceIds: ["kisssub", "dongmanhuayuan", "acgrip", "bangumimoe"],
-          must: [
-            {
-              id: "condition-subgroup",
-              field: "subgroup",
-              operator: "contains",
-              value: "爱恋字幕社"
-            }
-          ],
-          any: []
-        }
-      ]
-    })
     const { manager, dependencies, downloader } = createManager({
-      saveSettings: vi.fn().mockResolvedValue(settings),
       extractSingleItem: vi.fn().mockResolvedValue({
         ok: true,
         title: "[喵萌奶茶屋] Episode 01 [1080p][RAW]",
@@ -342,6 +372,25 @@ describe("createBatchDownloadManager", () => {
         failureReason: ""
       })
     })
+
+    // Override the filter config mock after createManager sets it up
+    getFilterConfigMock.mockResolvedValue(createFilterConfig([
+      {
+        id: "filter-subgroup",
+        name: "爱恋 1080 简繁",
+        enabled: true,
+        sourceIds: ["kisssub", "dongmanhuayuan", "acgrip", "bangumimoe"],
+        must: [
+          {
+            id: "condition-subgroup",
+            field: "subgroup",
+            operator: "contains",
+            value: "爱恋字幕社"
+          }
+        ],
+        any: []
+      }
+    ]))
 
     await expect(
       manager.startBatchDownload(
@@ -403,27 +452,7 @@ describe("createBatchDownloadManager", () => {
   })
 
   it("blocks unmatched extracted items when enabled filters exist", async () => {
-    const settings = createSettings({
-      filters: [
-        {
-          id: "filter-include",
-          name: "仅保留喵萌",
-          enabled: true,
-          sourceIds: ["kisssub", "dongmanhuayuan", "acgrip", "bangumimoe"],
-          must: [
-            {
-              id: "condition-subgroup",
-              field: "subgroup",
-              operator: "contains",
-              value: "喵萌奶茶屋"
-            }
-          ],
-          any: []
-        }
-      ]
-    })
     const { manager, dependencies, downloader } = createManager({
-      saveSettings: vi.fn().mockResolvedValue(settings),
       extractSingleItem: vi.fn().mockResolvedValue({
         ok: true,
         title: "[LoliHouse] Episode 01 [1080p]",
@@ -434,6 +463,25 @@ describe("createBatchDownloadManager", () => {
         failureReason: ""
       })
     })
+
+    // Override the filter config mock after createManager sets it up
+    getFilterConfigMock.mockResolvedValue(createFilterConfig([
+      {
+        id: "filter-include",
+        name: "仅保留喵萌",
+        enabled: true,
+        sourceIds: ["kisssub", "dongmanhuayuan", "acgrip", "bangumimoe"],
+        must: [
+          {
+            id: "condition-subgroup",
+            field: "subgroup",
+            operator: "contains",
+            value: "喵萌奶茶屋"
+          }
+        ],
+        any: []
+      }
+    ]))
 
     await expect(
       manager.startBatchDownload(
@@ -477,28 +525,26 @@ describe("createBatchDownloadManager", () => {
   })
 
   it("blocks unmatched pre-resolved direct-link items before qB submission", async () => {
-    const settings = createSettings({
-      filters: [
-        {
-          id: "filter-include",
-          name: "仅保留喵萌",
-          enabled: true,
-          sourceIds: ["kisssub", "dongmanhuayuan", "acgrip", "bangumimoe"],
-          must: [
-            {
-              id: "condition-subgroup",
-              field: "subgroup",
-              operator: "contains",
-              value: "喵萌奶茶屋"
-            }
-          ],
-          any: []
-        }
-      ]
-    })
-    const { manager, dependencies, downloader } = createManager({
-      saveSettings: vi.fn().mockResolvedValue(settings)
-    })
+    const { manager, dependencies, downloader } = createManager()
+
+    // Override the filter config mock after createManager sets it up
+    getFilterConfigMock.mockResolvedValue(createFilterConfig([
+      {
+        id: "filter-include",
+        name: "仅保留喵萌",
+        enabled: true,
+        sourceIds: ["kisssub", "dongmanhuayuan", "acgrip", "bangumimoe"],
+        must: [
+          {
+            id: "condition-subgroup",
+            field: "subgroup",
+            operator: "contains",
+            value: "喵萌奶茶屋"
+          }
+        ],
+        any: []
+      }
+    ]))
 
     await expect(
       manager.startBatchDownload(
@@ -543,27 +589,7 @@ describe("createBatchDownloadManager", () => {
   })
 
   it("keeps using the original list title for filtering even when extraction reveals a matching subgroup", async () => {
-    const settings = createSettings({
-      filters: [
-        {
-          id: "filter-subgroup",
-          name: "仅保留喵萌",
-          enabled: true,
-          sourceIds: ["kisssub", "dongmanhuayuan", "acgrip", "bangumimoe"],
-          must: [
-            {
-              id: "condition-subgroup",
-              field: "subgroup",
-              operator: "contains",
-              value: "喵萌奶茶屋"
-            }
-          ],
-          any: []
-        }
-      ]
-    })
     const { manager, dependencies, downloader } = createManager({
-      saveSettings: vi.fn().mockResolvedValue(settings),
       extractSingleItem: vi.fn().mockResolvedValue({
         ok: true,
         title: "[喵萌奶茶屋] Episode 01 [1080p]",
@@ -574,6 +600,25 @@ describe("createBatchDownloadManager", () => {
         failureReason: ""
       })
     })
+
+    // Override the filter config mock after createManager sets it up
+    getFilterConfigMock.mockResolvedValue(createFilterConfig([
+      {
+        id: "filter-subgroup",
+        name: "仅保留喵萌",
+        enabled: true,
+        sourceIds: ["kisssub", "dongmanhuayuan", "acgrip", "bangumimoe"],
+        must: [
+          {
+            id: "condition-subgroup",
+            field: "subgroup",
+            operator: "contains",
+            value: "喵萌奶茶屋"
+          }
+        ],
+        any: []
+      }
+    ]))
 
     await expect(
       manager.startBatchDownload(
@@ -617,28 +662,26 @@ describe("createBatchDownloadManager", () => {
   })
 
   it("ignores enabled rules that only target other sites when deciding whether to submit", async () => {
-    const settings = createSettings({
-      filters: [
-        {
-          id: "bangumi-only",
-          name: "Bangumi 专用",
-          enabled: true,
-          sourceIds: ["bangumimoe"],
-          must: [
-            {
-              id: "condition-title",
-              field: "title",
-              operator: "contains",
-              value: "1080p"
-            }
-          ],
-          any: []
-        }
-      ]
-    })
-    const { manager, dependencies, downloader } = createManager({
-      saveSettings: vi.fn().mockResolvedValue(settings)
-    })
+    const { manager, dependencies, downloader } = createManager()
+
+    // Override the filter config mock after createManager sets it up
+    getFilterConfigMock.mockResolvedValue(createFilterConfig([
+      {
+        id: "bangumi-only",
+        name: "Bangumi 专用",
+        enabled: true,
+        sourceIds: ["bangumimoe"],
+        must: [
+          {
+            id: "condition-title",
+            field: "title",
+            operator: "contains",
+            value: "1080p"
+          }
+        ],
+        any: []
+      }
+    ]))
 
     await expect(
       manager.startBatchDownload(
@@ -769,7 +812,10 @@ describe("createBatchDownloadManager", () => {
   })
 
   it("rejects batch downloads from disabled sources before starting a job", async () => {
-    getSourceConfigMock.mockResolvedValueOnce(
+    const { manager, dependencies } = createManager()
+
+    // Override the source config mock after createManager sets it up
+    getSourceConfigMock.mockResolvedValue(
       createSourceConfig({
         acgrip: {
           ...DEFAULT_SOURCE_CONFIG.acgrip,
@@ -777,17 +823,6 @@ describe("createBatchDownloadManager", () => {
         }
       })
     )
-
-    const { manager, dependencies } = createManager({
-      saveSettings: vi.fn().mockResolvedValue(
-        createSettings({
-          enabledSources: {
-            ...DEFAULT_SETTINGS.enabledSources,
-            acgrip: false
-          }
-        })
-      )
-    })
 
     await expect(
       manager.startBatchDownload(

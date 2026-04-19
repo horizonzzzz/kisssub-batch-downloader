@@ -18,8 +18,10 @@ import type {
   SubscriptionHitRecord
 } from "../shared/types"
 import type { SourceConfig } from "../sources/config/types"
+import type { ExtractionContext } from "../sources/types"
 import { getSourceConfig } from "../sources/config"
 import { resolveSourceEnabled } from "../sources/config/selectors"
+import { getBatchExecutionConfig } from "../batch-config/storage"
 import { listSubscriptionsByIds } from "./catalog-repository"
 import { subscriptionDb } from "./db"
 import { getNotificationRound } from "./notification-round-repository"
@@ -41,7 +43,7 @@ export type DownloadSubscriptionHitsResult = {
 export type SubscriptionNotificationDownloadDependencies = {
   downloader: DownloaderAdapter
   fetchTorrentForUpload: (torrentUrl: string) => Promise<DownloaderTorrentFile>
-  extractSingleItem: (item: BatchItem, settings: AppSettings) => Promise<ExtractionResult>
+  extractSingleItem: (item: BatchItem, context: ExtractionContext) => Promise<ExtractionResult>
   now?: () => string
 }
 
@@ -83,6 +85,19 @@ export async function downloadSubscriptionNotificationHits(
   }
 
   const sourceConfig = await getSourceConfig()
+  const batchExecutionConfig = await getBatchExecutionConfig()
+  const extractionContext: ExtractionContext = {
+    execution: {
+      retryCount: batchExecutionConfig.retryCount,
+      injectTimeoutMs: batchExecutionConfig.injectTimeoutMs,
+      domSettleMs: batchExecutionConfig.domSettleMs
+    },
+    source: {
+      kisssub: {
+        script: sourceConfig.kisssub.script
+      }
+    }
+  }
   const hits = notificationRound.hits.map((hit) => ({ ...hit }))
   const subscriptions = await listSubscriptionsByIds([
     ...new Set(hits.map((hit) => hit.subscriptionId))
@@ -130,7 +145,7 @@ export async function downloadSubscriptionNotificationHits(
       seenHashes,
       seenUrls,
       dependencies.extractSingleItem,
-      input.appSettings
+      extractionContext
     )
 
     if (classified.status === "ready") {
@@ -301,9 +316,9 @@ async function prepareSubscriptionHit(
   seenUrls: Set<string>,
   extractSingleItem: (
     item: BatchItem,
-    settings: AppSettings
+    context: ExtractionContext
   ) => Promise<ExtractionResult>,
-  settings: AppSettings
+  context: ExtractionContext
 ): Promise<ClassifiedBatchResult> {
   const batchItem: BatchItem = {
     sourceId: hit.sourceId,
@@ -333,7 +348,7 @@ async function prepareSubscriptionHit(
     }
   }
 
-  const extractedResult = await extractSingleItem(batchItem, settings)
+  const extractedResult = await extractSingleItem(batchItem, context)
   return classifyExtractionResult(hit.sourceId, extractedResult, sourceConfig, seenHashes, seenUrls)
 }
 

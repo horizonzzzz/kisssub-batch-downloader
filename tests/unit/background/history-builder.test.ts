@@ -1,16 +1,37 @@
 import { describe, expect, it } from "vitest"
 
 import { buildHistoryRecord } from "../../../src/lib/background/history-builder"
-import { DEFAULT_SETTINGS } from "../../../src/lib/settings"
 import { DEFAULT_SOURCE_CONFIG } from "../../../src/lib/sources/config/defaults"
-import type { BatchJob } from "../../../src/lib/background/types"
+import { DEFAULT_DOWNLOADER_CONFIG } from "../../../src/lib/downloader/config/defaults"
+import { DEFAULT_BATCH_EXECUTION_CONFIG } from "../../../src/lib/batch-config/defaults"
+import type { BatchJob, BatchRuntimeContext } from "../../../src/lib/background/types"
+
+function createRuntimeContext(): BatchRuntimeContext {
+  return {
+    execution: DEFAULT_BATCH_EXECUTION_CONFIG,
+    filters: [],
+    downloaderConfig: DEFAULT_DOWNLOADER_CONFIG,
+    extractionContext: {
+      execution: {
+        retryCount: DEFAULT_BATCH_EXECUTION_CONFIG.retryCount,
+        injectTimeoutMs: DEFAULT_BATCH_EXECUTION_CONFIG.injectTimeoutMs,
+        domSettleMs: DEFAULT_BATCH_EXECUTION_CONFIG.domSettleMs
+      },
+      source: {
+        kisssub: {
+          script: DEFAULT_SOURCE_CONFIG.kisssub.script
+        }
+      }
+    }
+  }
+}
 
 describe("buildHistoryRecord", () => {
   it("marks filter-blocked failures as non-retryable filtered items", () => {
     const job: BatchJob = {
       sourceTabId: 1,
       savePath: "",
-      settings: DEFAULT_SETTINGS,
+      runtimeContext: createRuntimeContext(),
       sourceConfig: DEFAULT_SOURCE_CONFIG,
       stats: {
         total: 1,

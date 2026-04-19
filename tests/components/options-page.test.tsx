@@ -135,6 +135,15 @@ function createOptionsApi(overrides: Partial<TestOptionsApi> = {}): TestOptionsA
     saveSourceConfig: vi.fn().mockImplementation(async (config) => config),
     getDownloaderConfig: vi.fn().mockResolvedValue(downloaderConfig),
     saveDownloaderConfig: vi.fn().mockImplementation(async (config) => config),
+    getBatchExecutionConfig: vi.fn().mockResolvedValue({
+      concurrency: 3,
+      retryCount: 3,
+      injectTimeoutMs: 15000,
+      domSettleMs: 1200
+    }),
+    saveBatchExecutionConfig: vi.fn().mockImplementation(async (config) => config),
+    getBatchUiPreferences: vi.fn().mockResolvedValue({ lastSavePath: "" }),
+    saveBatchUiPreferences: vi.fn().mockImplementation(async (preferences) => preferences),
     upsertSubscription: vi.fn().mockImplementation(async (subscription) => {
       await upsertSubscription(subscription)
     }),

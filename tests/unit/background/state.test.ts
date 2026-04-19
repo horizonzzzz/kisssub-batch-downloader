@@ -1,24 +1,33 @@
 import { describe, expect, it } from "vitest"
 
-import type { AppSettings, ClassifiedBatchResult } from "../../../src/lib/shared/types"
+import type { ClassifiedBatchResult } from "../../../src/lib/shared/types"
 import {
   createBatchJob,
   recordBatchResult,
   summarizeBatchResults
 } from "../../../src/lib/background/job-state"
-import { DEFAULT_SETTINGS } from "../../../src/lib/settings"
 import { DEFAULT_SOURCE_CONFIG } from "../../../src/lib/sources/config/defaults"
+import { DEFAULT_DOWNLOADER_CONFIG } from "../../../src/lib/downloader/config/defaults"
+import { DEFAULT_BATCH_EXECUTION_CONFIG } from "../../../src/lib/batch-config/defaults"
+import type { BatchRuntimeContext } from "../../../src/lib/background/types"
 
-function createSettings(overrides: Partial<AppSettings> = {}): AppSettings {
+function createRuntimeContext(): BatchRuntimeContext {
   return {
-    ...DEFAULT_SETTINGS,
-    sourceDeliveryModes: {
-      ...DEFAULT_SETTINGS.sourceDeliveryModes
-    },
-    enabledSources: {
-      ...DEFAULT_SETTINGS.enabledSources
-    },
-    ...overrides
+    execution: DEFAULT_BATCH_EXECUTION_CONFIG,
+    filters: [],
+    downloaderConfig: DEFAULT_DOWNLOADER_CONFIG,
+    extractionContext: {
+      execution: {
+        retryCount: DEFAULT_BATCH_EXECUTION_CONFIG.retryCount,
+        injectTimeoutMs: DEFAULT_BATCH_EXECUTION_CONFIG.injectTimeoutMs,
+        domSettleMs: DEFAULT_BATCH_EXECUTION_CONFIG.domSettleMs
+      },
+      source: {
+        kisssub: {
+          script: DEFAULT_SOURCE_CONFIG.kisssub.script
+        }
+      }
+    }
   }
 }
 
@@ -41,15 +50,12 @@ function createResult(overrides: Partial<ClassifiedBatchResult> = {}): Classifie
 
 describe("background job state helpers", () => {
   it("creates a job with isolated stats and the normalized save path state", () => {
-    const settings = createSettings()
+    const runtimeContext = createRuntimeContext()
 
-    expect(createBatchJob(18, 3, settings, DEFAULT_SOURCE_CONFIG, "D:\\Anime")).toEqual({
+    expect(createBatchJob(18, 3, runtimeContext, DEFAULT_SOURCE_CONFIG, "D:\\Anime")).toEqual({
       sourceTabId: 18,
       savePath: "D:\\Anime",
-      settings: {
-        ...settings,
-        lastSavePath: "D:\\Anime"
-      },
+      runtimeContext,
       sourceConfig: DEFAULT_SOURCE_CONFIG,
       stats: {
         total: 3,
@@ -64,7 +70,8 @@ describe("background job state helpers", () => {
   })
 
   it("records prepared, duplicate, and failed results into the running stats", () => {
-    const job = createBatchJob(18, 4, createSettings(), DEFAULT_SOURCE_CONFIG, "")
+    const runtimeContext = createRuntimeContext()
+    const job = createBatchJob(18, 4, runtimeContext, DEFAULT_SOURCE_CONFIG, "")
 
     recordBatchResult(job, createResult())
     recordBatchResult(
