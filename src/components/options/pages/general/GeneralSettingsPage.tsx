@@ -52,17 +52,22 @@ export function GeneralSettingsPage({ api }: GeneralSettingsPageProps) {
     })
 
     try {
-      const [downloaderSaved, batchSaved] = await Promise.all([
-        downloaderWorkbench.save(),
-        batchWorkbench.save()
-      ])
+      const saved = await api.saveGeneralSettings({
+        downloaderConfig: downloaderWorkbench.config,
+        batchExecutionConfig: batchWorkbench.config
+      })
+
+      downloaderWorkbench.setConfig(saved.downloaderConfig)
+      batchWorkbench.setConfig(saved.batchExecutionConfig)
 
       setSaveStatus({
-        tone: downloaderSaved && batchSaved ? "success" : "error",
-        message:
-          downloaderSaved && batchSaved
-            ? i18n.t("options.status.settingsSaved")
-            : i18n.t("options.general.saveCombinedFailed")
+        tone: "success",
+        message: i18n.t("options.status.settingsSaved")
+      })
+    } catch {
+      setSaveStatus({
+        tone: "error",
+        message: i18n.t("options.general.saveCombinedFailed")
       })
     } finally {
       setGeneralSaving(false)

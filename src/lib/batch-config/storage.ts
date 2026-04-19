@@ -3,7 +3,7 @@ import { DEFAULT_BATCH_EXECUTION_CONFIG } from "./defaults"
 import { batchExecutionConfigSchema } from "./schema"
 import type { BatchExecutionConfig } from "./types"
 
-const BATCH_EXECUTION_CONFIG_STORAGE_KEY = "batch_execution_config"
+export const BATCH_EXECUTION_CONFIG_STORAGE_KEY = "batch_execution_config"
 
 export async function getBatchExecutionConfig(): Promise<BatchExecutionConfig> {
   const extensionBrowser = getBrowser()

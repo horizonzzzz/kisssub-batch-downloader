@@ -10,6 +10,7 @@ import {
   openOptionsPageForRoute,
   reconcileSubscriptionAlarm,
   retryFailedItems,
+  saveGeneralSettings,
   testDownloaderConnection,
   setSourceEnabledForPopup,
   upsertSubscriptionDefinition
@@ -237,6 +238,18 @@ export function registerBackgroundRuntime() {
             sendResponse(
               createRuntimeSuccessResponse("SAVE_DOWNLOADER_CONFIG", {
                 config: savedDownloaderConfig
+              })
+            )
+            return
+          case "SAVE_GENERAL_SETTINGS":
+            const savedGeneralSettings = await saveGeneralSettings({
+              downloaderConfig: runtimeMessage.downloaderConfig,
+              batchExecutionConfig: runtimeMessage.batchExecutionConfig
+            })
+            sendResponse(
+              createRuntimeSuccessResponse("SAVE_GENERAL_SETTINGS", {
+                downloaderConfig: savedGeneralSettings.downloaderConfig,
+                batchExecutionConfig: savedGeneralSettings.batchExecutionConfig
               })
             )
             return

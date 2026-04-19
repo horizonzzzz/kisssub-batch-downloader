@@ -72,6 +72,83 @@ describe("runtime message helpers", () => {
     })
   })
 
+  it("supports unified general-settings runtime requests", async () => {
+    runtimeSendMessage.mockResolvedValue({
+      ok: true,
+      downloaderConfig: {
+        activeId: "qbittorrent",
+        profiles: {
+          qbittorrent: {
+            baseUrl: "http://127.0.0.1:17474",
+            username: "",
+            password: ""
+          },
+          transmission: {
+            baseUrl: "http://127.0.0.1:9091/transmission/rpc",
+            username: "",
+            password: ""
+          }
+        }
+      },
+      batchExecutionConfig: {
+        concurrency: 3,
+        retryCount: 3,
+        injectTimeoutMs: 15000,
+        domSettleMs: 1200
+      }
+    })
+
+    await sendRuntimeRequest({
+      type: "SAVE_GENERAL_SETTINGS",
+      downloaderConfig: {
+        activeId: "qbittorrent",
+        profiles: {
+          qbittorrent: {
+            baseUrl: "http://127.0.0.1:17474",
+            username: "",
+            password: ""
+          },
+          transmission: {
+            baseUrl: "http://127.0.0.1:9091/transmission/rpc",
+            username: "",
+            password: ""
+          }
+        }
+      },
+      batchExecutionConfig: {
+        concurrency: 3,
+        retryCount: 3,
+        injectTimeoutMs: 15000,
+        domSettleMs: 1200
+      }
+    })
+
+    expect(runtimeSendMessage).toHaveBeenCalledWith({
+      type: "SAVE_GENERAL_SETTINGS",
+      downloaderConfig: {
+        activeId: "qbittorrent",
+        profiles: {
+          qbittorrent: {
+            baseUrl: "http://127.0.0.1:17474",
+            username: "",
+            password: ""
+          },
+          transmission: {
+            baseUrl: "http://127.0.0.1:9091/transmission/rpc",
+            username: "",
+            password: ""
+          }
+        }
+      },
+      batchExecutionConfig: {
+        concurrency: 3,
+        retryCount: 3,
+        injectTimeoutMs: 15000,
+        domSettleMs: 1200
+      }
+    })
+  })
+
   it("creates typed success responses for batch startup", () => {
     expect(
       createRuntimeSuccessResponse("START_BATCH_DOWNLOAD", {

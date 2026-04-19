@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import { OptionsPage, type OptionsApi } from "../../src/components/options/OptionsPage"
+import type { BatchExecutionConfig } from "../../src/lib/batch-config/types"
 import type { SubscriptionEntry } from "../../src/lib/shared/types"
 import type { SourceConfig } from "../../src/lib/sources/config/types"
 import type { SubscriptionPolicyConfig } from "../../src/lib/subscriptions/policy/types"
@@ -141,6 +142,7 @@ function createOptionsApi(overrides: Partial<OptionsApi> = {}): OptionsApi {
       domSettleMs: 1200
     }),
     saveBatchExecutionConfig: vi.fn().mockImplementation(async (config) => config),
+    saveGeneralSettings: vi.fn().mockImplementation(async (payload) => payload),
     getBatchUiPreferences: vi.fn().mockResolvedValue({ lastSavePath: "" }),
     saveBatchUiPreferences: vi.fn().mockImplementation(async (preferences) => preferences),
     getSubscriptionPolicy: vi.fn().mockResolvedValue(subscriptionPolicy),
@@ -940,7 +942,7 @@ describe("OptionsPage", () => {
     async () => {
       const user = userEvent.setup()
       const api = createOptionsApi({
-        saveDownloaderConfig: vi.fn().mockImplementation(async (config) => config),
+        saveGeneralSettings: vi.fn().mockImplementation(async (payload) => payload),
         saveSourceConfig: vi.fn().mockImplementation(async (config) => config)
       })
 
@@ -956,13 +958,16 @@ describe("OptionsPage", () => {
       await user.click(screen.getByRole("button", { name: "保存基础设置" }))
 
       await waitFor(() => {
-        expect(api.saveDownloaderConfig).toHaveBeenCalledWith(
+        expect(api.saveGeneralSettings).toHaveBeenCalledWith(
           expect.objectContaining({
-            profiles: expect.objectContaining({
-              qbittorrent: expect.objectContaining({
-                username: "operator"
+            downloaderConfig: expect.objectContaining({
+              profiles: expect.objectContaining({
+                qbittorrent: expect.objectContaining({
+                  username: "operator"
+                })
               })
-            })
+            }),
+            batchExecutionConfig: expect.any(Object)
           })
         )
       })
@@ -1008,11 +1013,19 @@ describe("OptionsPage", () => {
 
   it("disables the general save button while persisting settings", async () => {
     const user = userEvent.setup()
-    let resolveSave: ((value: DownloaderConfig) => void) | undefined
+    let resolveSave:
+      | ((value: {
+          downloaderConfig: DownloaderConfig
+          batchExecutionConfig: BatchExecutionConfig
+        }) => void)
+      | undefined
     const api = createOptionsApi({
-      saveDownloaderConfig: vi.fn().mockImplementation(
+      saveGeneralSettings: vi.fn().mockImplementation(
         () =>
-          new Promise<DownloaderConfig>((resolve) => {
+          new Promise<{
+            downloaderConfig: DownloaderConfig
+            batchExecutionConfig: BatchExecutionConfig
+          }>((resolve) => {
             resolveSave = resolve
           })
       )
@@ -1027,16 +1040,47 @@ describe("OptionsPage", () => {
 
     await user.click(saveButton)
 
-    expect(api.saveDownloaderConfig).toHaveBeenCalledTimes(1)
+    expect(api.saveGeneralSettings).toHaveBeenCalledTimes(1)
     await waitFor(() => {
       expect(saveButton).toBeDisabled()
     })
 
-    resolveSave?.(downloaderConfig)
+    resolveSave?.({
+      downloaderConfig,
+      batchExecutionConfig: {
+        concurrency: 3,
+        retryCount: 3,
+        injectTimeoutMs: 15000,
+        domSettleMs: 1200
+      }
+    })
 
     await waitFor(() => {
       expect(saveButton).not.toBeDisabled()
     })
+  })
+
+  it("does not trigger the legacy independent general-setting saves from the unified button", async () => {
+    const user = userEvent.setup()
+    const api = createOptionsApi({
+      saveGeneralSettings: vi.fn().mockRejectedValue(new Error("general save failed"))
+    })
+
+    render(<OptionsPage api={api} />)
+
+    expect(await screen.findByDisplayValue("http://127.0.0.1:17474")).toBeInTheDocument()
+
+    await user.clear(screen.getByLabelText("并发数"))
+    await user.type(screen.getByLabelText("并发数"), "5")
+    await user.click(screen.getByRole("button", { name: "保存基础设置" }))
+
+    await waitFor(() => {
+      expect(screen.getByRole("status")).toHaveTextContent("基础设置中有配置项保存失败，请重试。")
+    })
+
+    expect(api.saveGeneralSettings).toHaveBeenCalledTimes(1)
+    expect(api.saveDownloaderConfig).not.toHaveBeenCalled()
+    expect(api.saveBatchExecutionConfig).not.toHaveBeenCalled()
   })
 
   it(
@@ -1248,7 +1292,7 @@ describe("OptionsPage", () => {
     async () => {
       const user = userEvent.setup()
       const api = createOptionsApi({
-        saveDownloaderConfig: vi.fn().mockImplementation(async (config) => config)
+        saveGeneralSettings: vi.fn().mockImplementation(async (payload) => payload)
       })
 
       render(<OptionsPage api={api} />)
@@ -1266,14 +1310,17 @@ describe("OptionsPage", () => {
       await user.click(screen.getByRole("button", { name: "保存基础设置" }))
 
       await waitFor(() => {
-        expect(api.saveDownloaderConfig).toHaveBeenCalledWith(
+        expect(api.saveGeneralSettings).toHaveBeenCalledWith(
           expect.objectContaining({
-            activeId: "qbittorrent",
-            profiles: expect.objectContaining({
-              transmission: expect.objectContaining({
-                baseUrl: ""
+            downloaderConfig: expect.objectContaining({
+              activeId: "qbittorrent",
+              profiles: expect.objectContaining({
+                transmission: expect.objectContaining({
+                  baseUrl: ""
+                })
               })
-            })
+            }),
+            batchExecutionConfig: expect.any(Object)
           })
         )
       })

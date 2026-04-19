@@ -1,4 +1,5 @@
 export { createBatchDownloadManager } from "./manager"
+export { saveGeneralSettings } from "./general-settings"
 export {
   buildPopupState,
   notifySupportedSourceTabsOfContentSettingsChange,

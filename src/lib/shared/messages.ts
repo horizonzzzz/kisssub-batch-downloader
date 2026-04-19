@@ -64,6 +64,11 @@ export type RuntimeRequest =
   | { type: "TEST_DOWNLOADER_CONNECTION"; settings?: DownloaderConfig }
   | { type: "GET_DOWNLOADER_CONFIG" }
   | { type: "SAVE_DOWNLOADER_CONFIG"; config: DownloaderConfig }
+  | {
+      type: "SAVE_GENERAL_SETTINGS"
+      downloaderConfig: DownloaderConfig
+      batchExecutionConfig: BatchExecutionConfig
+    }
   | { type: "GET_HISTORY_PAGE_CONTEXT" }
   | { type: "GET_FILTER_CONFIG" }
   | { type: "SAVE_FILTER_CONFIG"; config: FilterConfig }
@@ -181,6 +186,12 @@ export type SaveDownloaderConfigSuccessResponse = {
   config: DownloaderConfig
 }
 
+export type SaveGeneralSettingsSuccessResponse = {
+  ok: true
+  downloaderConfig: DownloaderConfig
+  batchExecutionConfig: BatchExecutionConfig
+}
+
 export type GetHistoryPageContextSuccessResponse = {
   ok: true
   context: HistoryPageContext
@@ -238,6 +249,7 @@ export type RuntimeSuccessResponseMap = {
   SAVE_SOURCE_CONFIG: SaveSourceConfigSuccessResponse
   GET_DOWNLOADER_CONFIG: GetDownloaderConfigSuccessResponse
   SAVE_DOWNLOADER_CONFIG: SaveDownloaderConfigSuccessResponse
+  SAVE_GENERAL_SETTINGS: SaveGeneralSettingsSuccessResponse
   GET_HISTORY_PAGE_CONTEXT: GetHistoryPageContextSuccessResponse
   GET_BATCH_EXECUTION_CONFIG: GetBatchExecutionConfigSuccessResponse
   SAVE_BATCH_EXECUTION_CONFIG: SaveBatchExecutionConfigSuccessResponse
@@ -283,6 +295,7 @@ export type GetSourceConfigResponse = RuntimeResponseFor<"GET_SOURCE_CONFIG">
 export type SaveSourceConfigResponse = RuntimeResponseFor<"SAVE_SOURCE_CONFIG">
 export type GetDownloaderConfigResponse = RuntimeResponseFor<"GET_DOWNLOADER_CONFIG">
 export type SaveDownloaderConfigResponse = RuntimeResponseFor<"SAVE_DOWNLOADER_CONFIG">
+export type SaveGeneralSettingsResponse = RuntimeResponseFor<"SAVE_GENERAL_SETTINGS">
 export type GetHistoryPageContextResponse = RuntimeResponseFor<"GET_HISTORY_PAGE_CONTEXT">
 export type GetBatchExecutionConfigResponse = RuntimeResponseFor<"GET_BATCH_EXECUTION_CONFIG">
 export type SaveBatchExecutionConfigResponse = RuntimeResponseFor<"SAVE_BATCH_EXECUTION_CONFIG">

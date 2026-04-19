@@ -8,6 +8,7 @@ const {
   buildPopupStateMock,
   openOptionsPageForRouteMock,
   getDownloaderConfigMock,
+  saveGeneralSettingsMock,
   saveDownloaderConfigMock,
   setSourceEnabledForPopupMock
 } = vi.hoisted(() => ({
@@ -15,6 +16,7 @@ const {
   buildPopupStateMock: vi.fn(),
   openOptionsPageForRouteMock: vi.fn(),
   getDownloaderConfigMock: vi.fn(),
+  saveGeneralSettingsMock: vi.fn(),
   saveDownloaderConfigMock: vi.fn(),
   setSourceEnabledForPopupMock: vi.fn()
 }))
@@ -32,6 +34,7 @@ vi.mock("../../../src/lib/background", async () => {
     buildPopupState: buildPopupStateMock,
     openOptionsPageForRoute: openOptionsPageForRouteMock,
     setSourceEnabledForPopup: setSourceEnabledForPopupMock,
+    saveGeneralSettings: saveGeneralSettingsMock,
     fetchTorrentForUpload: vi.fn(),
     retryFailedItems: vi.fn(),
     testDownloaderConnection: vi.fn()
@@ -201,6 +204,117 @@ describe("background downloader config runtime boundary", () => {
             password: "transpass"
           }
         }
+      }
+    })
+  })
+
+  it("routes unified general-settings saves through the background helper", async () => {
+    const listener = onMessageAddListener.mock.calls[0]?.[0]
+    const sendResponse = vi.fn()
+
+    saveGeneralSettingsMock.mockResolvedValue({
+      downloaderConfig: {
+        activeId: "qbittorrent",
+        profiles: {
+          qbittorrent: {
+            baseUrl: "http://127.0.0.1:17474",
+            username: "admin",
+            password: "secret"
+          },
+          transmission: {
+            baseUrl: "http://127.0.0.1:9091/transmission/rpc",
+            username: "",
+            password: ""
+          }
+        }
+      },
+      batchExecutionConfig: {
+        concurrency: 5,
+        retryCount: 4,
+        injectTimeoutMs: 25000,
+        domSettleMs: 900
+      }
+    })
+
+    listener?.(
+      {
+        type: "SAVE_GENERAL_SETTINGS",
+        downloaderConfig: {
+          activeId: "qbittorrent",
+          profiles: {
+            qbittorrent: {
+              baseUrl: "http://127.0.0.1:17474",
+              username: "admin",
+              password: "secret"
+            },
+            transmission: {
+              baseUrl: "http://127.0.0.1:9091/transmission/rpc",
+              username: "",
+              password: ""
+            }
+          }
+        },
+        batchExecutionConfig: {
+          concurrency: 5,
+          retryCount: 4,
+          injectTimeoutMs: 25000,
+          domSettleMs: 900
+        }
+      },
+      {},
+      sendResponse
+    )
+
+    await vi.waitFor(() => {
+      expect(sendResponse).toHaveBeenCalledTimes(1)
+    })
+
+    expect(saveGeneralSettingsMock).toHaveBeenCalledWith({
+      downloaderConfig: {
+        activeId: "qbittorrent",
+        profiles: {
+          qbittorrent: {
+            baseUrl: "http://127.0.0.1:17474",
+            username: "admin",
+            password: "secret"
+          },
+          transmission: {
+            baseUrl: "http://127.0.0.1:9091/transmission/rpc",
+            username: "",
+            password: ""
+          }
+        }
+      },
+      batchExecutionConfig: {
+        concurrency: 5,
+        retryCount: 4,
+        injectTimeoutMs: 25000,
+        domSettleMs: 900
+      }
+    })
+
+    expect(sendResponse).toHaveBeenCalledWith({
+      ok: true,
+      downloaderConfig: {
+        activeId: "qbittorrent",
+        profiles: {
+          qbittorrent: {
+            baseUrl: "http://127.0.0.1:17474",
+            username: "admin",
+            password: "secret"
+          },
+          transmission: {
+            baseUrl: "http://127.0.0.1:9091/transmission/rpc",
+            username: "",
+            password: ""
+          }
+        }
+      },
+      batchExecutionConfig: {
+        concurrency: 5,
+        retryCount: 4,
+        injectTimeoutMs: 25000,
+        domSettleMs: 900
       }
     })
   })

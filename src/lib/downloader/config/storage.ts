@@ -3,7 +3,7 @@ import { DEFAULT_DOWNLOADER_CONFIG } from "./defaults"
 import { downloaderConfigSchema } from "./schema"
 import type { DownloaderConfig } from "./types"
 
-const DOWNLOADER_CONFIG_STORAGE_KEY = "downloader_config"
+export const DOWNLOADER_CONFIG_STORAGE_KEY = "downloader_config"
 
 export async function getDownloaderConfig(): Promise<DownloaderConfig> {
   const extensionBrowser = getBrowser()

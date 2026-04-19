@@ -19,6 +19,13 @@ export type OptionsApi = {
   testConnection: (config: DownloaderConfig) => Promise<TestDownloaderConnectionResult>
   getBatchExecutionConfig: () => Promise<BatchExecutionConfig>
   saveBatchExecutionConfig: (config: BatchExecutionConfig) => Promise<BatchExecutionConfig>
+  saveGeneralSettings: (payload: {
+    downloaderConfig: DownloaderConfig
+    batchExecutionConfig: BatchExecutionConfig
+  }) => Promise<{
+    downloaderConfig: DownloaderConfig
+    batchExecutionConfig: BatchExecutionConfig
+  }>
   getBatchUiPreferences: () => Promise<BatchUiPreferences>
   saveBatchUiPreferences: (preferences: Partial<BatchUiPreferences>) => Promise<BatchUiPreferences>
   getSubscriptionPolicy: () => Promise<SubscriptionPolicyConfig>
@@ -159,6 +166,22 @@ export const optionsApi: OptionsApi = {
     }
 
     return response.config
+  },
+  async saveGeneralSettings(payload) {
+    const response = await sendRuntimeRequest({
+      type: "SAVE_GENERAL_SETTINGS",
+      downloaderConfig: payload.downloaderConfig,
+      batchExecutionConfig: payload.batchExecutionConfig
+    })
+
+    if (!response.ok) {
+      throw new Error(response.error || i18n.t("options.general.saveCombinedFailed"))
+    }
+
+    return {
+      downloaderConfig: response.downloaderConfig,
+      batchExecutionConfig: response.batchExecutionConfig
+    }
   },
   async getBatchUiPreferences() {
     const response = await sendRuntimeRequest({ type: "GET_BATCH_UI_PREFERENCES" })

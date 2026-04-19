@@ -49,6 +49,13 @@ export type OptionsApi = {
   saveDownloaderConfig: (config: DownloaderConfig) => Promise<DownloaderConfig>
   getBatchExecutionConfig: () => Promise<BatchExecutionConfig>
   saveBatchExecutionConfig: (config: BatchExecutionConfig) => Promise<BatchExecutionConfig>
+  saveGeneralSettings: (payload: {
+    downloaderConfig: DownloaderConfig
+    batchExecutionConfig: BatchExecutionConfig
+  }) => Promise<{
+    downloaderConfig: DownloaderConfig
+    batchExecutionConfig: BatchExecutionConfig
+  }>
   getBatchUiPreferences: () => Promise<BatchUiPreferences>
   saveBatchUiPreferences: (preferences: Partial<BatchUiPreferences>) => Promise<BatchUiPreferences>
   getSubscriptionPolicy: () => Promise<SubscriptionPolicyConfig>
