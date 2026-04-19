@@ -1,22 +1,29 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
-const { persistBatchHistoryMock } = vi.hoisted(() => ({
-  persistBatchHistoryMock: vi.fn()
+const { persistBatchHistoryMock, getSourceConfigMock } = vi.hoisted(() => ({
+  persistBatchHistoryMock: vi.fn(),
+  getSourceConfigMock: vi.fn()
 }))
 
 vi.mock("../../../src/lib/background/history-builder", () => ({
   persistBatchHistory: persistBatchHistoryMock
 }))
 
+vi.mock("../../../src/lib/sources/config", () => ({
+  getSourceConfig: getSourceConfigMock
+}))
+
 import { createBatchDownloadManager } from "../../../src/lib/background/manager"
 import type { DownloaderAdapter } from "../../../src/lib/downloader"
 import { DEFAULT_SETTINGS } from "../../../src/lib/settings/defaults"
+import { DEFAULT_SOURCE_CONFIG } from "../../../src/lib/sources/config/defaults"
 import type {
   AppSettings,
   BatchEventPayload,
   BatchItem,
   ExtractionResult
 } from "../../../src/lib/shared/types"
+import type { SourceConfig } from "../../../src/lib/sources/config/types"
 
 function createSettings(overrides: Partial<AppSettings> = {}): AppSettings {
   return {
@@ -36,8 +43,16 @@ function createSettings(overrides: Partial<AppSettings> = {}): AppSettings {
   }
 }
 
+function createSourceConfig(overrides: Partial<SourceConfig> = {}): SourceConfig {
+  return {
+    ...DEFAULT_SOURCE_CONFIG,
+    ...overrides
+  }
+}
+
 function createManager(overrides: Partial<Parameters<typeof createBatchDownloadManager>[0]> = {}) {
   const settings = createSettings()
+  const sourceConfig = createSourceConfig()
   const downloader = {
     id: "qbittorrent",
     displayName: "qBittorrent",
@@ -51,6 +66,9 @@ function createManager(overrides: Partial<Parameters<typeof createBatchDownloadM
     addTorrentFiles: vi.fn().mockResolvedValue(undefined),
     testConnection: vi.fn()
   } satisfies DownloaderAdapter
+
+  // Set up default mock for getSourceConfig
+  getSourceConfigMock.mockResolvedValue(sourceConfig)
 
   const dependencies = {
     saveSettings: vi.fn().mockResolvedValue(settings),
@@ -71,6 +89,7 @@ function createManager(overrides: Partial<Parameters<typeof createBatchDownloadM
 
   return {
     settings,
+    sourceConfig,
     downloader,
     dependencies,
     manager: createBatchDownloadManager(
@@ -83,6 +102,8 @@ describe("createBatchDownloadManager", () => {
   beforeEach(() => {
     vi.clearAllMocks()
     persistBatchHistoryMock.mockReset()
+    getSourceConfigMock.mockReset()
+    getSourceConfigMock.mockResolvedValue(createSourceConfig())
   })
 
   it("rejects downloads that do not come from a source tab", async () => {
@@ -740,6 +761,15 @@ describe("createBatchDownloadManager", () => {
   })
 
   it("rejects batch downloads from disabled sources before starting a job", async () => {
+    getSourceConfigMock.mockResolvedValueOnce(
+      createSourceConfig({
+        acgrip: {
+          ...DEFAULT_SOURCE_CONFIG.acgrip,
+          enabled: false
+        }
+      })
+    )
+
     const { manager, dependencies } = createManager({
       saveSettings: vi.fn().mockResolvedValue(
         createSettings({

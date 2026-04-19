@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import { OptionsPage, type OptionsApi } from "../../src/components/options/OptionsPage"
 import type { SubscriptionEntry } from "../../src/lib/shared/types"
+import type { SourceConfig } from "../../src/lib/sources/config/types"
 import {
   deleteSubscription,
   resetSubscriptionDb,
@@ -55,6 +56,29 @@ const settings = {
   notificationDownloadActionEnabled: true
 }
 
+const sourceConfig: SourceConfig = {
+  kisssub: {
+    enabled: true,
+    deliveryMode: "magnet",
+    script: {
+      url: "//1.acgscript.com/script/miobt/4.js?3",
+      revision: "20181120.2"
+    }
+  },
+  dongmanhuayuan: {
+    enabled: true,
+    deliveryMode: "magnet"
+  },
+  acgrip: {
+    enabled: true,
+    deliveryMode: "torrent-file"
+  },
+  bangumimoe: {
+    enabled: true,
+    deliveryMode: "magnet"
+  }
+}
+
 const editableSettings = settings
 const {
   subscriptionsEnabled: _subscriptionsEnabled,
@@ -89,6 +113,8 @@ function createOptionsApi(overrides: Partial<TestOptionsApi> = {}): TestOptionsA
     saveSettings,
     getFilterConfig: vi.fn().mockResolvedValue({ rules: [] }),
     saveFilterConfig: vi.fn().mockImplementation(async (config) => config),
+    getSourceConfig: vi.fn().mockResolvedValue(sourceConfig),
+    saveSourceConfig: vi.fn().mockImplementation(async (config) => config),
     upsertSubscription: vi.fn().mockImplementation(async (subscription) => {
       await upsertSubscription(subscription)
     }),

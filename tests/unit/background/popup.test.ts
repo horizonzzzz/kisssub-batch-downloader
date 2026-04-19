@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest"
 
 import { DEFAULT_SETTINGS } from "../../../src/lib/settings/defaults"
+import { DEFAULT_SOURCE_CONFIG } from "../../../src/lib/sources/config/defaults"
 import {
   buildPopupState,
   notifyActiveTabOfSourceEnabledChange,
@@ -10,6 +11,7 @@ import {
 } from "../../../src/lib/background/popup"
 import { SOURCE_IDS } from "../../../src/lib/sources/catalog"
 import type { AppSettings } from "../../../src/lib/shared/types"
+import type { SourceConfig } from "../../../src/lib/sources/config/types"
 
 function createSettings(overrides: Partial<AppSettings> = {}): AppSettings {
   return {
@@ -24,6 +26,13 @@ function createSettings(overrides: Partial<AppSettings> = {}): AppSettings {
   }
 }
 
+function createSourceConfig(overrides: Partial<SourceConfig> = {}): SourceConfig {
+  return {
+    ...DEFAULT_SOURCE_CONFIG,
+    ...overrides
+  }
+}
+
 describe("popup background helpers", () => {
   it("builds popup state from settings, active tab URL, site metadata, and version info", async () => {
     const settings = createSettings({
@@ -34,14 +43,17 @@ describe("popup background helpers", () => {
           username: "admin",
           password: "secret"
         }
-      },
-      enabledSources: {
-        ...DEFAULT_SETTINGS.enabledSources,
-        acgrip: false
+      }
+    })
+    const sourceConfig = createSourceConfig({
+      acgrip: {
+        ...DEFAULT_SOURCE_CONFIG.acgrip,
+        enabled: false
       }
     })
 
     const state = await buildPopupState({
+      getSourceConfig: async () => sourceConfig,
       getSettings: async () => settings,
       getActiveTabContext: async () => ({
         id: 17,
@@ -73,6 +85,7 @@ describe("popup background helpers", () => {
 
   it("treats www.acg.rip list pages as supported active tabs", async () => {
     const state = await buildPopupState({
+      getSourceConfig: async () => createSourceConfig(),
       getSettings: async () => createSettings(),
       getActiveTabContext: async () => ({
         id: 23,
@@ -94,6 +107,7 @@ describe("popup background helpers", () => {
 
   it("keeps unsupported pages idle even when downloader credentials are explicitly changed", async () => {
     const state = await buildPopupState({
+      getSourceConfig: async () => createSourceConfig(),
       getSettings: async () =>
         createSettings({
           downloaders: {
@@ -118,6 +132,7 @@ describe("popup background helpers", () => {
 
   it("marks supported and enabled active tabs as requiring a downloader connection check even with the default placeholder config", async () => {
     const state = await buildPopupState({
+      getSourceConfig: async () => createSourceConfig(),
       getSettings: async () => createSettings(),
       getActiveTabContext: async () => ({
         id: 19,
@@ -139,6 +154,7 @@ describe("popup background helpers", () => {
 
   it("treats null or malformed active-tab URLs as unsupported without throwing", async () => {
     const nullUrlState = await buildPopupState({
+      getSourceConfig: async () => createSourceConfig(),
       getSettings: async () => createSettings(),
       getActiveTabContext: async () => ({
         id: null,
@@ -148,6 +164,7 @@ describe("popup background helpers", () => {
       isBatchRunningInTab: () => true
     })
     const malformedUrlState = await buildPopupState({
+      getSourceConfig: async () => createSourceConfig(),
       getSettings: async () => createSettings(),
       getActiveTabContext: async () => ({
         id: 88,
@@ -173,51 +190,42 @@ describe("popup background helpers", () => {
     })
   })
 
-  it("updates only enabledSources when toggling a source from popup", async () => {
-    const settings = createSettings({
-      downloaders: {
-        ...DEFAULT_SETTINGS.downloaders,
-        qbittorrent: {
-          ...DEFAULT_SETTINGS.downloaders.qbittorrent,
-          baseUrl: "http://127.0.0.1:18444"
-        }
+  it("updates source config when toggling a source from popup", async () => {
+    const sourceConfig = createSourceConfig({
+      kisssub: {
+        ...DEFAULT_SOURCE_CONFIG.kisssub,
+        enabled: true
       },
-      enabledSources: {
-        kisssub: true,
-        dongmanhuayuan: true,
-        acgrip: true,
-        bangumimoe: false
+      dongmanhuayuan: {
+        ...DEFAULT_SOURCE_CONFIG.dongmanhuayuan,
+        enabled: true
+      },
+      acgrip: {
+        ...DEFAULT_SOURCE_CONFIG.acgrip,
+        enabled: true
+      },
+      bangumimoe: {
+        ...DEFAULT_SOURCE_CONFIG.bangumimoe,
+        enabled: false
       }
     })
-    const saveSettings = vi.fn(async (partial: Partial<AppSettings>) => ({
-      ...settings,
-      ...partial,
-      enabledSources: {
-        ...settings.enabledSources,
-        ...(partial.enabledSources ?? {})
-      }
-    }))
+    const saveSourceConfig = vi.fn(async (config: SourceConfig) => config)
 
     const updated = await setSourceEnabledForPopup("acgrip", false, {
-      getSettings: async () => settings,
-      saveSettings
+      getSourceConfig: async () => sourceConfig,
+      saveSourceConfig
     })
 
-    expect(saveSettings).toHaveBeenCalledWith({
-      enabledSources: {
-        kisssub: true,
-        dongmanhuayuan: true,
-        acgrip: false,
-        bangumimoe: false
+    expect(saveSourceConfig).toHaveBeenCalledWith({
+      ...sourceConfig,
+      acgrip: {
+        ...sourceConfig.acgrip,
+        enabled: false
       }
     })
-    expect(updated.downloaders.qbittorrent.baseUrl).toBe("http://127.0.0.1:18444")
-    expect(updated.enabledSources).toEqual({
-      kisssub: true,
-      dongmanhuayuan: true,
-      acgrip: false,
-      bangumimoe: false
-    })
+    expect(updated.acgrip.enabled).toBe(false)
+    expect(updated.kisssub.enabled).toBe(true)
+    expect(updated.bangumimoe.enabled).toBe(false)
   })
 
   it("normalizes popup options routes and opens deep-linked options tabs", async () => {

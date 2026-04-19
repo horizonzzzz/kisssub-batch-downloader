@@ -7,7 +7,7 @@ import type {
   PopupDownloaderConnectionStatus,
   PopupStateViewModel
 } from "../../lib/shared/popup"
-import type { AppSettings, SourceId } from "../../lib/shared/types"
+import type { SourceId } from "../../lib/shared/types"
 import { Alert, Button } from "../ui"
 import { PopupPage } from "./PopupPage"
 
@@ -31,6 +31,34 @@ function resolveDownloaderConnectionStatus(
   }
 
   return "idle"
+}
+
+function applySourceToggleToPopupState(
+  current: PopupStateViewModel,
+  sourceId: SourceId,
+  enabled: boolean
+): PopupStateViewModel {
+  const nextActiveTab =
+    current.activeTab.sourceId === sourceId
+      ? {
+          ...current.activeTab,
+          enabled
+        }
+      : current.activeTab
+
+  return {
+    ...current,
+    downloaderConnectionStatus: resolveDownloaderConnectionStatus(nextActiveTab),
+    activeTab: nextActiveTab,
+    supportedSites: current.supportedSites.map((site) =>
+      site.id === sourceId
+        ? {
+            ...site,
+            enabled
+          }
+        : site
+    )
+  }
 }
 
 export function PopupContainer() {
@@ -139,34 +167,6 @@ export function PopupContainer() {
     }
   }
 
-  function applySettingsToPopupState(
-    current: PopupStateViewModel,
-    settings: AppSettings
-  ): PopupStateViewModel {
-    const resolveEnabled = (sourceId: SourceId, fallbackEnabled: boolean) => {
-      const savedEnabled = settings.enabledSources[sourceId]
-      return typeof savedEnabled === "boolean" ? savedEnabled : fallbackEnabled
-    }
-
-    const nextActiveTab =
-      current.activeTab.sourceId === null
-        ? current.activeTab
-        : {
-            ...current.activeTab,
-            enabled: resolveEnabled(current.activeTab.sourceId, current.activeTab.enabled)
-          }
-
-    return {
-      ...current,
-      downloaderConnectionStatus: resolveDownloaderConnectionStatus(nextActiveTab),
-      activeTab: nextActiveTab,
-      supportedSites: current.supportedSites.map((site) => ({
-        ...site,
-        enabled: resolveEnabled(site.id, site.enabled)
-      }))
-    }
-  }
-
   async function toggleCurrentSiteEnabled(sourceId: SourceId, enabled: boolean) {
     if (actionInFlight) {
       return
@@ -192,7 +192,7 @@ export function PopupContainer() {
           return currentState
         }
 
-        return applySettingsToPopupState(currentState, response.settings)
+        return applySourceToggleToPopupState(currentState, response.sourceId, response.enabled)
       })
 
       await loadState(false, true)

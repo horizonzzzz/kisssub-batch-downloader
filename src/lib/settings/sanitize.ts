@@ -1,4 +1,5 @@
-import { normalizeSourceDeliveryModes } from "../sources/delivery"
+import { sanitizeSourceConfig } from "../sources/config/schema"
+import { DEFAULT_SOURCE_CONFIG } from "../sources/config/defaults"
 import type {
   AppSettings,
   DownloaderId,
@@ -7,7 +8,6 @@ import type {
   SourceId
 } from "../shared/types"
 import { DEFAULT_SETTINGS } from "./defaults"
-import { normalizeEnabledSources } from "./source-enablement"
 
 type RawSettings = Record<string, unknown>
 
@@ -22,6 +22,37 @@ const MIN_SUBSCRIPTION_POLLING_INTERVAL_MINUTES = 5
 const MAX_SUBSCRIPTION_POLLING_INTERVAL_MINUTES = 120
 
 export function sanitizeSettings(raw: RawSettings): AppSettings {
+  // Normalize source config separately
+  const rawEnabledSources = raw.enabledSources && typeof raw.enabledSources === "object"
+    ? (raw.enabledSources as Record<string, unknown>)
+    : {}
+  const rawSourceDeliveryModes = raw.sourceDeliveryModes && typeof raw.sourceDeliveryModes === "object"
+    ? (raw.sourceDeliveryModes as Record<string, unknown>)
+    : {}
+
+  const sourceConfig = sanitizeSourceConfig({
+    kisssub: {
+      enabled: rawEnabledSources.kisssub ?? DEFAULT_SOURCE_CONFIG.kisssub.enabled,
+      deliveryMode: rawSourceDeliveryModes.kisssub ?? DEFAULT_SOURCE_CONFIG.kisssub.deliveryMode,
+      script: {
+        url: raw.remoteScriptUrl ?? DEFAULT_SOURCE_CONFIG.kisssub.script.url,
+        revision: raw.remoteScriptRevision ?? DEFAULT_SOURCE_CONFIG.kisssub.script.revision
+      }
+    },
+    dongmanhuayuan: {
+      enabled: rawEnabledSources.dongmanhuayuan ?? DEFAULT_SOURCE_CONFIG.dongmanhuayuan.enabled,
+      deliveryMode: rawSourceDeliveryModes.dongmanhuayuan ?? DEFAULT_SOURCE_CONFIG.dongmanhuayuan.deliveryMode
+    },
+    acgrip: {
+      enabled: rawEnabledSources.acgrip ?? DEFAULT_SOURCE_CONFIG.acgrip.enabled,
+      deliveryMode: rawSourceDeliveryModes.acgrip ?? DEFAULT_SOURCE_CONFIG.acgrip.deliveryMode
+    },
+    bangumimoe: {
+      enabled: rawEnabledSources.bangumimoe ?? DEFAULT_SOURCE_CONFIG.bangumimoe.enabled,
+      deliveryMode: rawSourceDeliveryModes.bangumimoe ?? DEFAULT_SOURCE_CONFIG.bangumimoe.deliveryMode
+    }
+  })
+
   return {
     currentDownloaderId: normalizeDownloaderId(
       raw.currentDownloaderId ?? DEFAULT_SETTINGS.currentDownloaderId
@@ -31,15 +62,21 @@ export function sanitizeSettings(raw: RawSettings): AppSettings {
     injectTimeoutMs: clampInteger(raw.injectTimeoutMs, 3000, 60000, DEFAULT_SETTINGS.injectTimeoutMs),
     domSettleMs: clampInteger(raw.domSettleMs, 200, 10000, DEFAULT_SETTINGS.domSettleMs),
     retryCount: clampInteger(raw.retryCount, 0, 5, DEFAULT_SETTINGS.retryCount),
-    remoteScriptUrl: normalizeRemoteScriptUrl(raw.remoteScriptUrl ?? DEFAULT_SETTINGS.remoteScriptUrl),
-    remoteScriptRevision:
-      String(raw.remoteScriptRevision ?? DEFAULT_SETTINGS.remoteScriptRevision).trim() ||
-      DEFAULT_SETTINGS.remoteScriptRevision,
+    remoteScriptUrl: sourceConfig.kisssub.script.url,
+    remoteScriptRevision: sourceConfig.kisssub.script.revision,
     lastSavePath: normalizeSavePath(raw.lastSavePath ?? DEFAULT_SETTINGS.lastSavePath),
-    sourceDeliveryModes: normalizeSourceDeliveryModes(
-      raw.sourceDeliveryModes ?? DEFAULT_SETTINGS.sourceDeliveryModes
-    ),
-    enabledSources: normalizeEnabledSources(raw.enabledSources ?? DEFAULT_SETTINGS.enabledSources),
+    sourceDeliveryModes: {
+      kisssub: sourceConfig.kisssub.deliveryMode,
+      dongmanhuayuan: sourceConfig.dongmanhuayuan.deliveryMode,
+      acgrip: sourceConfig.acgrip.deliveryMode,
+      bangumimoe: sourceConfig.bangumimoe.deliveryMode
+    },
+    enabledSources: {
+      kisssub: sourceConfig.kisssub.enabled,
+      dongmanhuayuan: sourceConfig.dongmanhuayuan.enabled,
+      acgrip: sourceConfig.acgrip.enabled,
+      bangumimoe: sourceConfig.bangumimoe.enabled
+    },
     filters: normalizeFilters(raw.filters ?? DEFAULT_SETTINGS.filters),
     subscriptionsEnabled: normalizeBoolean(
       raw.subscriptionsEnabled,

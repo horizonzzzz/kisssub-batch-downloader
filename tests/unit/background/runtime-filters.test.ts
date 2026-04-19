@@ -6,9 +6,15 @@ type RuntimeMessageListener = Parameters<typeof fakeBrowser.runtime.onMessage.ad
 type TabsUpdatedListener = Parameters<typeof fakeBrowser.tabs.onUpdated.addListener>[0]
 type TabsActivatedListener = Parameters<typeof fakeBrowser.tabs.onActivated.addListener>[0]
 
+type MockTab = {
+  id: number
+  url: string
+  active: boolean
+}
+
 const onMessageAddListener = vi.hoisted(() => vi.fn())
 const sendMessageMock = vi.hoisted(() => vi.fn())
-const queryTabsMock = vi.hoisted(() => vi.fn(async () => []))
+const queryTabsMock = vi.hoisted(() => vi.fn<() => Promise<MockTab[]>>(async () => []))
 
 function installBrowserSpies() {
   vi.spyOn(fakeBrowser.runtime.onInstalled, "addListener").mockImplementation(
@@ -19,7 +25,7 @@ function installBrowserSpies() {
       onMessageAddListener(listener)
     }
   )
-  vi.spyOn(fakeBrowser.tabs, "query").mockImplementation(queryTabsMock as never)
+  vi.spyOn(fakeBrowser.tabs, "query").mockImplementation(queryTabsMock)
   vi.spyOn(fakeBrowser.tabs, "sendMessage").mockImplementation(sendMessageMock as never)
   vi.spyOn(fakeBrowser.tabs.onUpdated, "addListener").mockImplementation(
     (listener: TabsUpdatedListener) => {}

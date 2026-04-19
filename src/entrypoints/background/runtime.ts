@@ -30,6 +30,10 @@ import {
   getFilterConfig,
   saveFilterConfig
 } from "../../lib/filter-rules"
+import {
+  getSourceConfig,
+  saveSourceConfig
+} from "../../lib/sources/config"
 import { SOURCE_IDS } from "../../lib/sources/catalog"
 import {
   BATCH_EVENT,
@@ -218,10 +222,26 @@ export function registerBackgroundRuntime() {
               })
             )
             return
+          case "GET_SOURCE_CONFIG":
+            sendResponse(
+              createRuntimeSuccessResponse("GET_SOURCE_CONFIG", {
+                config: await getSourceConfig()
+              })
+            )
+            return
+          case "SAVE_SOURCE_CONFIG":
+            const savedSourceConfig = await saveSourceConfig(runtimeMessage.config)
+            sendResponse(
+              createRuntimeSuccessResponse("SAVE_SOURCE_CONFIG", {
+                config: savedSourceConfig
+              })
+            )
+            return
           case "GET_POPUP_STATE":
             sendResponse(
               createRuntimeSuccessResponse("GET_POPUP_STATE", {
                 state: await buildPopupState({
+                  getSourceConfig,
                   getSettings,
                   getActiveTabContext: queryCurrentActiveTabContext,
                   getExtensionVersion: () => extensionBrowser.runtime.getManifest().version,
@@ -265,11 +285,12 @@ export function registerBackgroundRuntime() {
               return
             }
 
-            const settings = await setSourceEnabledForPopup(message.sourceId, message.enabled)
+            await setSourceEnabledForPopup(message.sourceId, message.enabled)
             await notifyActiveTabOfSourceEnabledChange(message.sourceId, message.enabled)
             sendResponse(
               createRuntimeSuccessResponse("SET_SOURCE_ENABLED", {
-                settings
+                sourceId: message.sourceId,
+                enabled: message.enabled
               })
             )
             return

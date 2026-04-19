@@ -34,6 +34,7 @@ import { buildSelectableBatchItem, type SelectableBatchItem } from "../../lib/co
 import { getBrowser, getExtensionUrl } from "../../lib/shared/browser"
 import { getLocalizedSiteConfigMeta } from "../../lib/sources/site-meta"
 import type { SourceAdapter } from "../../lib/sources/types"
+import type { SourceConfig } from "../../lib/sources/config/types"
 import type { AppSettings, BatchEventPayload, BatchItem, FilterEntry } from "../../lib/shared/types"
 import { FILTERS_ROUTE } from "../../lib/shared/options-routes"
 
@@ -220,6 +221,18 @@ export async function startSourceBatchContentScript(ctx: ContentScriptContext) {
     return response.settings
   }
 
+  async function loadSourceConfigForContentScript(): Promise<SourceConfig> {
+    const response = await sendRuntimeRequest({
+      type: "GET_SOURCE_CONFIG"
+    })
+
+    if (!response.ok) {
+      throw new Error(response.error || "Failed to load source config for the content script.")
+    }
+
+    return response.config
+  }
+
   function applyFiltersToSnapshot(sourceId: SourceAdapter["id"], filters: FilterEntry[]) {
     snapshot.filters = filters
     snapshot.filterStatus = createBatchPanelFilterStatus({
@@ -247,9 +260,10 @@ export async function startSourceBatchContentScript(ctx: ContentScriptContext) {
 
   async function synchronizeContentSettings() {
     const settings = await loadSettingsForContentScript()
+    const sourceConfig = await loadSourceConfigForContentScript()
     hydrateSavePath(settings)
 
-    const enabledSource = getEnabledSourceAdapterForLocation(window.location, settings)
+    const enabledSource = getEnabledSourceAdapterForLocation(window.location, sourceConfig)
     const filters = settings.filters ?? []
 
     if (!enabledSource) {

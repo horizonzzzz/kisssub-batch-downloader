@@ -4,7 +4,8 @@ import type {
   SubscriptionEntry,
   SubscriptionHitRecord
 } from "../shared/types"
-import { resolveSourceEnabled } from "../settings"
+import type { SourceConfig } from "../sources/config/types"
+import { resolveSourceEnabled } from "../sources/config/selectors"
 import { subscriptionDb } from "./db"
 import { createSubscriptionFingerprint } from "./fingerprint"
 import { matchesSubscriptionCandidate } from "./match"
@@ -21,6 +22,7 @@ import { LAST_SCHEDULER_RUN_AT_META_KEY } from "./runtime-query"
 
 export type ScanSubscriptionsDependencies = {
   appSettings: AppSettings
+  sourceConfig: SourceConfig
   subscriptions: SubscriptionEntry[]
   now?: () => string
   scanCandidatesFromSource?: (
@@ -67,7 +69,7 @@ export async function scanSubscriptions(
   }
 
   for (const [sourceId, sourceSubscriptions] of groupSubscriptionsBySource(
-    input.appSettings,
+    input.sourceConfig,
     enabledSubscriptions
   )) {
     scannedSourceIds.push(sourceId)
@@ -174,14 +176,14 @@ async function persistScanState(
 }
 
 function groupSubscriptionsBySource(
-  appSettings: Pick<AppSettings, "enabledSources">,
+  sourceConfig: SourceConfig,
   subscriptions: SubscriptionEntry[]
 ): Map<SourceId, SubscriptionEntry[]> {
   const grouped = new Map<SourceId, SubscriptionEntry[]>()
 
   for (const subscription of subscriptions) {
     for (const sourceId of subscription.sourceIds) {
-      if (!resolveSourceEnabled(sourceId, appSettings)) {
+      if (!resolveSourceEnabled(sourceId, sourceConfig)) {
         continue
       }
 

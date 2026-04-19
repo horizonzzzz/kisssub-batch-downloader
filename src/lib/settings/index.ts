@@ -3,9 +3,4 @@ export { ensureSettings, getSettings, saveSettings } from "./storage"
 export { normalizeSavePath, sanitizeSettings } from "./sanitize"
 export { mergeSettings } from "./merge"
 export type { AppSettings } from "../shared/types"
-export {
-  DEFAULT_ENABLED_SOURCES,
-  getDisabledSources,
-  normalizeEnabledSources,
-  resolveSourceEnabled
-} from "./source-enablement"
+export { getDisabledSources } from "../sources/config/selectors"

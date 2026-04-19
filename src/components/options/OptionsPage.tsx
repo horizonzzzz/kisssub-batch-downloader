@@ -17,6 +17,7 @@ import type {
   TestDownloaderConnectionResult
 } from "../../lib/shared/types"
 import type { FilterConfig } from "../../lib/filter-rules/types"
+import type { SourceConfig } from "../../lib/sources/config/types"
 import {
   DEFAULT_OPTIONS_ROUTE,
   getOptionsRoutes,
@@ -44,6 +45,8 @@ export type OptionsApi = SettingsFormApi & {
   deleteSubscription: (subscriptionId: string) => Promise<void>
   getFilterConfig: () => Promise<FilterConfig>
   saveFilterConfig: (config: FilterConfig) => Promise<FilterConfig>
+  getSourceConfig: () => Promise<SourceConfig>
+  saveSourceConfig: (config: SourceConfig) => Promise<SourceConfig>
 }
 
 type OptionsPageProps = {

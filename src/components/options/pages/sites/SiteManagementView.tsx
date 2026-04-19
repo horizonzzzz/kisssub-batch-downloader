@@ -7,11 +7,11 @@ import acgripSiteIcon from "../../../../assets/site-icon-acgrip.png"
 import bangumiMoeSiteIcon from "../../../../assets/site-icon-bangumimoe.svg"
 import dongmanhuayuanSiteIcon from "../../../../assets/site-icon-dongmanhuayuan.png"
 import kisssubSiteIcon from "../../../../assets/site-icon-kisssub.png"
-import { resolveSourceDeliveryMode } from "../../../../lib/sources/delivery"
+import { resolveSourceDeliveryMode } from "../../../../lib/sources/config/selectors"
 import { SOURCE_IDS } from "../../../../lib/sources/catalog"
 import { getLocalizedSiteConfigMeta } from "../../../../lib/sources/site-meta"
-import { normalizeEnabledSources, resolveSourceEnabled } from "../../../../lib/settings"
-import type { SourceId } from "../../../../lib/shared/types"
+import { DEFAULT_SOURCE_CONFIG } from "../../../../lib/sources/config/defaults"
+import type { DeliveryMode, SourceId } from "../../../../lib/shared/types"
 import type {
   SettingsFormInput,
   SettingsFormValues
@@ -31,22 +31,54 @@ const SITE_ICONS: Record<SourceId, string> = {
   bangumimoe: bangumiMoeSiteIcon
 }
 
+function normalizeEnabledSourcesFromForm(raw: unknown): Record<SourceId, boolean> {
+  const record = typeof raw === "object" && raw ? (raw as Record<string, unknown>) : {}
+  const normalized = {} as Record<SourceId, boolean>
+
+  for (const sourceId of SOURCE_IDS) {
+    normalized[sourceId] =
+      typeof record[sourceId] === "boolean"
+        ? (record[sourceId] as boolean)
+        : DEFAULT_SOURCE_CONFIG[sourceId].enabled
+  }
+
+  return normalized
+}
+
+function resolveSourceEnabledFromForm(
+  sourceId: SourceId,
+  enabledSources: unknown
+): boolean {
+  const normalized = normalizeEnabledSourcesFromForm(enabledSources)
+  return normalized[sourceId]
+}
+
+function resolveSourceDeliveryModeFromForm(
+  sourceId: SourceId,
+  sourceDeliveryModes: unknown
+): DeliveryMode {
+  const record = typeof sourceDeliveryModes === "object" && sourceDeliveryModes
+    ? (sourceDeliveryModes as Record<string, unknown>)
+    : {}
+  const deliveryMode = record[sourceId]
+  return typeof deliveryMode === "string" ? (deliveryMode as DeliveryMode) : DEFAULT_SOURCE_CONFIG[sourceId].deliveryMode
+}
+
 export function SiteManagementView() {
   const { control, setValue } = useFormContext<
     SettingsFormInput,
     unknown,
     SettingsFormValues
   >()
-  const enabledSources = normalizeEnabledSources(
-    useWatch({ control, name: "enabledSources" })
-  )
+  const enabledSourcesRaw = useWatch({ control, name: "enabledSources" })
+  const enabledSources = normalizeEnabledSourcesFromForm(enabledSourcesRaw)
   const sourceDeliveryModes = useWatch({ control, name: "sourceDeliveryModes" }) ?? {}
   const [expandedSites, setExpandedSites] = useState<SourceId[]>([])
   const hasSyncedExpandedSites = useRef(false)
   const previousEnabledSourcesRef = useRef<SettingsFormValues["enabledSources"] | null>(null)
 
   useEffect(() => {
-    const currentEnabledSources = normalizeEnabledSources(enabledSources)
+    const currentEnabledSources = normalizeEnabledSourcesFromForm(enabledSourcesRaw)
 
     if (!hasSyncedExpandedSites.current) {
       setExpandedSites(getInitialExpandedSites(currentEnabledSources))
@@ -66,14 +98,14 @@ export function SiteManagementView() {
     )
 
     previousEnabledSourcesRef.current = currentEnabledSources
-  }, [enabledSources])
+  }, [enabledSourcesRaw])
 
-  const sortedSites = useMemo(() => buildSortedSites(enabledSources), [enabledSources])
+  const sortedSites = useMemo(() => buildSortedSites(enabledSourcesRaw), [enabledSourcesRaw])
 
-  const enabledCount = useMemo(() => countEnabledSites(enabledSources), [enabledSources])
+  const enabledCount = useMemo(() => countEnabledSites(enabledSourcesRaw), [enabledSourcesRaw])
 
   const toggleSiteExpanded = (sourceId: SourceId) => {
-    if (!resolveSourceEnabled(sourceId, { enabledSources })) {
+    if (!resolveSourceEnabledFromForm(sourceId, enabledSourcesRaw)) {
       return
     }
 
@@ -104,9 +136,9 @@ export function SiteManagementView() {
       <div className="grid gap-4">
         {sortedSites.map((site) => {
           const localizedSite = getLocalizedSiteConfigMeta(site.id)
-          const isEnabled = resolveSourceEnabled(site.id, { enabledSources })
+          const isEnabled = resolveSourceEnabledFromForm(site.id, enabledSourcesRaw)
           const isExpanded = isEnabled && expandedSites.includes(site.id)
-          const currentMode = resolveSourceDeliveryMode(site.id, { sourceDeliveryModes })
+          const currentMode = resolveSourceDeliveryModeFromForm(site.id, sourceDeliveryModes)
 
           return (
             <SiteCard

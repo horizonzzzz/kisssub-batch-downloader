@@ -7,6 +7,7 @@ import {
   summarizeBatchResults
 } from "../../../src/lib/background/job-state"
 import { DEFAULT_SETTINGS } from "../../../src/lib/settings"
+import { DEFAULT_SOURCE_CONFIG } from "../../../src/lib/sources/config/defaults"
 
 function createSettings(overrides: Partial<AppSettings> = {}): AppSettings {
   return {
@@ -42,13 +43,14 @@ describe("background job state helpers", () => {
   it("creates a job with isolated stats and the normalized save path state", () => {
     const settings = createSettings()
 
-    expect(createBatchJob(18, 3, settings, "D:\\Anime")).toEqual({
+    expect(createBatchJob(18, 3, settings, DEFAULT_SOURCE_CONFIG, "D:\\Anime")).toEqual({
       sourceTabId: 18,
       savePath: "D:\\Anime",
       settings: {
         ...settings,
         lastSavePath: "D:\\Anime"
       },
+      sourceConfig: DEFAULT_SOURCE_CONFIG,
       stats: {
         total: 3,
         processed: 0,
@@ -62,7 +64,7 @@ describe("background job state helpers", () => {
   })
 
   it("records prepared, duplicate, and failed results into the running stats", () => {
-    const job = createBatchJob(18, 4, createSettings(), "")
+    const job = createBatchJob(18, 4, createSettings(), DEFAULT_SOURCE_CONFIG, "")
 
     recordBatchResult(job, createResult())
     recordBatchResult(

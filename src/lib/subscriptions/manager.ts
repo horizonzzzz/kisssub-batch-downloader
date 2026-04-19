@@ -1,4 +1,5 @@
 import type { AppSettings, SubscriptionEntry } from "../shared/types"
+import type { SourceConfig } from "../sources/config/types"
 
 import {
   deleteSubscription,
@@ -27,6 +28,7 @@ export class SubscriptionManager {
   constructor(
     private readonly input: {
       appSettings: AppSettings
+      sourceConfig: SourceConfig
       now?: () => string
     }
   ) {}
@@ -34,13 +36,14 @@ export class SubscriptionManager {
   async scan(
     dependencies: Omit<
       ScanSubscriptionsDependencies,
-      "appSettings" | "subscriptions" | "now"
+      "appSettings" | "sourceConfig" | "subscriptions" | "now"
     > = {}
   ): Promise<SubscriptionManagerScanResult> {
     const subscriptions = await listSubscriptions()
 
     return scanSubscriptions({
       appSettings: this.input.appSettings,
+      sourceConfig: this.input.sourceConfig,
       subscriptions,
       now: this.input.now,
       ...dependencies

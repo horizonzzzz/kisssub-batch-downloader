@@ -1,7 +1,8 @@
 import { getSourceAdapterForPage } from "../sources"
 import type { SourceAdapter } from "../sources/types"
-import { resolveSourceEnabled } from "../settings"
-import type { AppSettings, BatchItem } from "../shared/types"
+import { resolveSourceEnabled } from "../sources/config/selectors"
+import type { SourceConfig } from "../sources/config/types"
+import type { BatchItem } from "../shared/types"
 
 function toUrl(location: Pick<Location, "href"> | URL): URL {
   return location instanceof URL ? location : new URL(location.href)
@@ -13,14 +14,14 @@ export function getSourceAdapterForLocation(location: Pick<Location, "href"> | U
 
 export function getEnabledSourceAdapterForLocation(
   location: Pick<Location, "href"> | URL,
-  settings: Pick<AppSettings, "enabledSources">
+  sourceConfig: SourceConfig
 ): SourceAdapter | null {
   const source = getSourceAdapterForLocation(location)
   if (!source) {
     return null
   }
 
-  return resolveSourceEnabled(source.id, settings) ? source : null
+  return resolveSourceEnabled(source.id, sourceConfig) ? source : null
 }
 
 export function isListPage(location: Pick<Location, "href"> | URL): boolean {

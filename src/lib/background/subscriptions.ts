@@ -7,7 +7,9 @@ import type {
   ExtractionResult,
   SubscriptionEntry
 } from "../shared/types"
+import type { SourceConfig } from "../sources/config/types"
 import { getSettings } from "../settings"
+import { getSourceConfig } from "../sources/config"
 import { extractSingleItem } from "../sources/extraction"
 import {
   buildSubscriptionRoundNotification,
@@ -33,9 +35,10 @@ let queuedSubscriptionMutation: Promise<void> = Promise.resolve()
 
 export type ExecuteSubscriptionScanDependencies = Omit<
   ScanSubscriptionsDependencies,
-  "appSettings" | "subscriptions"
+  "appSettings" | "sourceConfig" | "subscriptions"
 > & {
   getSettings?: () => Promise<AppSettings>
+  getSourceConfig?: () => Promise<SourceConfig>
   createNotification?: (
     notificationId: string,
     options: SubscriptionRoundNotificationPayload["options"]
@@ -54,6 +57,7 @@ export type SubscriptionCatalogCommandDependencies = {
 
 export type DownloadSubscriptionHitsDependencies = {
   getSettings?: () => Promise<AppSettings>
+  getSourceConfig?: () => Promise<SourceConfig>
   getDownloader?: (settings: AppSettings) => DownloaderAdapter
   fetchTorrentForUpload?: (torrentUrl: string) => Promise<DownloaderTorrentFile>
   extractSingleItem?: (item: BatchItem, settings: AppSettings) => Promise<ExtractionResult>
@@ -69,8 +73,10 @@ export async function executeSubscriptionScan(
 ): Promise<ScanSubscriptionsResult> {
   return enqueueSubscriptionMutation(async () => {
     const appSettings = await (dependencies.getSettings ?? getSettings)()
+    const sourceConfig = await (dependencies.getSourceConfig ?? getSourceConfig)()
     const manager = new SubscriptionManager({
       appSettings,
+      sourceConfig,
       now: dependencies.now
     })
     const result = await manager.scan({
@@ -174,8 +180,10 @@ export async function downloadSubscriptionHits(
 ): Promise<DownloadSubscriptionHitsResult> {
   return enqueueSubscriptionMutation(async () => {
     const appSettings = await (dependencies.getSettings ?? getSettings)()
+    const sourceConfig = await (dependencies.getSourceConfig ?? getSourceConfig)()
     const manager = new SubscriptionManager({
-      appSettings
+      appSettings,
+      sourceConfig
     })
     const getDownloaderImpl =
       dependencies.getDownloader ??

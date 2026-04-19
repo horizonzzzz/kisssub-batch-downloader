@@ -147,8 +147,25 @@ describe("background popup runtime boundary", () => {
     const sendResponse = vi.fn()
 
     setSourceEnabledForPopupMock.mockResolvedValue({
-      enabledSources: {
-        kisssub: false
+      kisssub: {
+        enabled: false,
+        deliveryMode: "magnet",
+        script: {
+          url: "//1.acgscript.com/script/miobt/4.js?3",
+          revision: "20181120.2"
+        }
+      },
+      dongmanhuayuan: {
+        enabled: true,
+        deliveryMode: "magnet"
+      },
+      acgrip: {
+        enabled: true,
+        deliveryMode: "torrent-file"
+      },
+      bangumimoe: {
+        enabled: true,
+        deliveryMode: "magnet"
       }
     })
     notifyActiveTabOfSourceEnabledChangeMock.mockResolvedValue(undefined)
@@ -171,11 +188,8 @@ describe("background popup runtime boundary", () => {
     expect(notifyActiveTabOfSourceEnabledChangeMock).toHaveBeenCalledWith("kisssub", false)
     expect(sendResponse).toHaveBeenCalledWith({
       ok: true,
-      settings: {
-        enabledSources: {
-          kisssub: false
-        }
-      }
+      sourceId: "kisssub",
+      enabled: false
     })
   })
 

@@ -15,7 +15,9 @@ import type {
   SubscriptionEntry,
   SubscriptionHitRecord
 } from "../shared/types"
-import { resolveSourceEnabled } from "../settings"
+import type { SourceConfig } from "../sources/config/types"
+import { getSourceConfig } from "../sources/config"
+import { resolveSourceEnabled } from "../sources/config/selectors"
 import { listSubscriptionsByIds } from "./catalog-repository"
 import { subscriptionDb } from "./db"
 import { getNotificationRound } from "./notification-round-repository"
@@ -78,6 +80,7 @@ export async function downloadSubscriptionNotificationHits(
     return createEmptyDownloadSubscriptionHitsResult()
   }
 
+  const sourceConfig = await getSourceConfig()
   const hits = notificationRound.hits.map((hit) => ({ ...hit }))
   const subscriptions = await listSubscriptionsByIds([
     ...new Set(hits.map((hit) => hit.subscriptionId))
@@ -90,7 +93,7 @@ export async function downloadSubscriptionNotificationHits(
       isSubscriptionHitDownloadable(
         hit,
         subscriptionById.get(hit.subscriptionId),
-        input.appSettings
+        sourceConfig
       )
     )
     .map((hit) => ({ ...hit }))
@@ -121,10 +124,11 @@ export async function downloadSubscriptionNotificationHits(
     const classified = await prepareSubscriptionHit(
       hit,
       subscriptionById.get(hit.subscriptionId),
-      input.appSettings,
+      sourceConfig,
       seenHashes,
       seenUrls,
-      dependencies.extractSingleItem
+      dependencies.extractSingleItem,
+      input.appSettings
     )
 
     if (classified.status === "ready") {
@@ -281,21 +285,22 @@ async function updateRuntimeRowsForDownloadedHits(
 function isSubscriptionHitDownloadable(
   hit: SubscriptionHitRecord,
   subscription: SubscriptionEntry | undefined,
-  settings: AppSettings
+  sourceConfig: SourceConfig
 ): boolean {
-  return Boolean(subscription?.enabled) && resolveSourceEnabled(hit.sourceId, settings)
+  return Boolean(subscription?.enabled) && resolveSourceEnabled(hit.sourceId, sourceConfig)
 }
 
 async function prepareSubscriptionHit(
   hit: SubscriptionHitRecord,
   subscription: SubscriptionEntry | undefined,
-  settings: AppSettings,
+  sourceConfig: SourceConfig,
   seenHashes: Set<string>,
   seenUrls: Set<string>,
   extractSingleItem: (
     item: BatchItem,
     settings: AppSettings
-  ) => Promise<ExtractionResult>
+  ) => Promise<ExtractionResult>,
+  settings: AppSettings
 ): Promise<ClassifiedBatchResult> {
   const batchItem: BatchItem = {
     sourceId: hit.sourceId,
@@ -306,7 +311,7 @@ async function prepareSubscriptionHit(
   }
   const preparedResult = createPreparedExtractionResult(batchItem)
   if (preparedResult) {
-    return classifyExtractionResult(hit.sourceId, preparedResult, settings, seenHashes, seenUrls)
+    return classifyExtractionResult(hit.sourceId, preparedResult, sourceConfig, seenHashes, seenUrls)
   }
 
   if (subscription?.deliveryMode !== "allow-detail-extraction") {
@@ -326,7 +331,7 @@ async function prepareSubscriptionHit(
   }
 
   const extractedResult = await extractSingleItem(batchItem, settings)
-  return classifyExtractionResult(hit.sourceId, extractedResult, settings, seenHashes, seenUrls)
+  return classifyExtractionResult(hit.sourceId, extractedResult, sourceConfig, seenHashes, seenUrls)
 }
 
 async function submitPreparedHits(

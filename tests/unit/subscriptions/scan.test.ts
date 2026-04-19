@@ -1,8 +1,10 @@
 import { afterEach, beforeEach, describe, expect, expectTypeOf, it, vi } from "vitest"
 
 import type { AppSettings, SubscriptionEntry, DeliveryMode } from "../../../src/lib/shared/types"
+import type { SourceConfig } from "../../../src/lib/sources/config/types"
 import type { ScanSubscriptionListResultMessage } from "../../../src/lib/shared/messages"
 import { DEFAULT_SETTINGS } from "../../../src/lib/settings/defaults"
+import { DEFAULT_SOURCE_CONFIG } from "../../../src/lib/sources/config/defaults"
 import { upsertSubscription } from "../../../src/lib/subscriptions/catalog-repository"
 import { markContentScriptReady, resetContentScriptReadyRegistry } from "../../../src/lib/subscriptions/content-ready"
 import { resetSubscriptionDb, subscriptionDb } from "../../../src/lib/subscriptions/db"
@@ -18,6 +20,13 @@ function createAppSettings(overrides: Partial<AppSettings> = {}): AppSettings {
     ...DEFAULT_SETTINGS,
     subscriptionsEnabled: true,
     notificationsEnabled: true,
+    ...overrides
+  }
+}
+
+function createSourceConfig(overrides: Partial<SourceConfig> = {}): SourceConfig {
+  return {
+    ...DEFAULT_SOURCE_CONFIG,
     ...overrides
   }
 }
@@ -108,6 +117,7 @@ describe("scanSubscriptions", () => {
 
     const result = await scanSubscriptions({
       appSettings: createAppSettings(),
+      sourceConfig: createSourceConfig(),
       subscriptions: [subscription],
       now: () => now,
       scanCandidatesFromSource: vi.fn(async () => [createCandidate()])
@@ -131,6 +141,7 @@ describe("scanSubscriptions", () => {
 
     const result = await scanSubscriptions({
       appSettings: createAppSettings(),
+      sourceConfig: createSourceConfig(),
       subscriptions: [subscription],
       now: () => now,
       scanCandidatesFromSource: vi.fn(async () => {
@@ -171,6 +182,7 @@ describe("scanSubscriptions", () => {
 
     const result = await scanSubscriptions({
       appSettings: createAppSettings(),
+      sourceConfig: createSourceConfig(),
       subscriptions: [subscription],
       now: () => now,
       scanCandidatesFromSource: vi.fn(async () => [
@@ -208,6 +220,7 @@ describe("scanSubscriptions", () => {
     await upsertSubscription(enabledSubscription)
     await scanSubscriptions({
       appSettings: createAppSettings(),
+      sourceConfig: createSourceConfig(),
       subscriptions: [enabledSubscription],
       now: () => initialNow,
       scanCandidatesFromSource: vi.fn(async () => [createCandidate()])
@@ -221,6 +234,7 @@ describe("scanSubscriptions", () => {
 
     const resumedResult = await scanSubscriptions({
       appSettings: createAppSettings(),
+      sourceConfig: createSourceConfig(),
       subscriptions: [enabledSubscription],
       now: () => resumedNow,
       scanCandidatesFromSource: vi.fn(async () => [

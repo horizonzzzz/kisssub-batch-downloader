@@ -6,7 +6,7 @@ import {
   extractDetailHash,
   extractMagnetHash
 } from "../../src/lib/download-preparation"
-import { DEFAULT_SETTINGS } from "../../src/lib/settings/defaults"
+import { DEFAULT_SOURCE_CONFIG } from "../../src/lib/sources/config/defaults"
 
 describe("classifyPreparedBatchItem", () => {
   it("returns null when no valid magnet or torrent candidate is available", () => {
@@ -19,7 +19,7 @@ describe("classifyPreparedBatchItem", () => {
           magnetUrl: "https://example.com/not-a-magnet",
           torrentUrl: "/t/350361.torrent"
         },
-        DEFAULT_SETTINGS,
+        DEFAULT_SOURCE_CONFIG,
         new Set<string>(),
         new Set<string>()
       )
@@ -35,7 +35,7 @@ describe("classifyPreparedBatchItem", () => {
           title: "Hell Mode - 11",
           torrentUrl: "https://acg.rip/t/350361.torrent"
         },
-        DEFAULT_SETTINGS,
+        DEFAULT_SOURCE_CONFIG,
         new Set<string>(),
         new Set<string>()
       )
@@ -58,7 +58,7 @@ describe("classifyPreparedBatchItem", () => {
           title: "Hell Mode - 11",
           torrentUrl: "https://acg.rip/t/350361.torrent"
         },
-        DEFAULT_SETTINGS,
+        DEFAULT_SOURCE_CONFIG,
         new Set<string>(),
         new Set<string>(["https://acg.rip/t/350361.torrent"])
       )
@@ -88,7 +88,7 @@ describe("classifyExtractionResult", () => {
           torrentUrl: "https://example.com/file.torrent",
           failureReason: ""
         },
-        DEFAULT_SETTINGS,
+        DEFAULT_SOURCE_CONFIG,
         seenHashes,
         seenUrls
       )
@@ -115,7 +115,7 @@ describe("classifyExtractionResult", () => {
           torrentUrl: "",
           failureReason: ""
         },
-        DEFAULT_SETTINGS,
+        DEFAULT_SOURCE_CONFIG,
         new Set<string>(["abcdef123456"]),
         new Set<string>()
       )
@@ -141,7 +141,7 @@ describe("classifyExtractionResult", () => {
           torrentUrl: "https://example.com/file.torrent",
           failureReason: ""
         },
-        DEFAULT_SETTINGS,
+        DEFAULT_SOURCE_CONFIG,
         seenHashes,
         seenUrls
       )
@@ -167,7 +167,7 @@ describe("classifyExtractionResult", () => {
           torrentUrl: "https://files.example.com/cafebabe.torrent",
           failureReason: ""
         },
-        DEFAULT_SETTINGS,
+        DEFAULT_SOURCE_CONFIG,
         seenHashes,
         seenUrls
       )
@@ -192,7 +192,7 @@ describe("classifyExtractionResult", () => {
           torrentUrl: "",
           failureReason: "No download link could be extracted from the detail page."
         },
-        DEFAULT_SETTINGS,
+        DEFAULT_SOURCE_CONFIG,
         new Set<string>(),
         new Set<string>()
       )
@@ -215,7 +215,7 @@ describe("classifyExtractionResult", () => {
           torrentUrl: "https://files.example.com/movie-pack.torrent",
           failureReason: ""
         },
-        DEFAULT_SETTINGS,
+        DEFAULT_SOURCE_CONFIG,
         new Set<string>(),
         new Set<string>()
       )

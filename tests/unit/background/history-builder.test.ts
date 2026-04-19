@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest"
 
 import { buildHistoryRecord } from "../../../src/lib/background/history-builder"
 import { DEFAULT_SETTINGS } from "../../../src/lib/settings"
+import { DEFAULT_SOURCE_CONFIG } from "../../../src/lib/sources/config/defaults"
 import type { BatchJob } from "../../../src/lib/background/types"
 
 describe("buildHistoryRecord", () => {
@@ -10,6 +11,7 @@ describe("buildHistoryRecord", () => {
       sourceTabId: 1,
       savePath: "",
       settings: DEFAULT_SETTINGS,
+      sourceConfig: DEFAULT_SOURCE_CONFIG,
       stats: {
         total: 1,
         processed: 1,

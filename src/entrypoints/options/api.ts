@@ -74,5 +74,25 @@ export const optionsApi: OptionsApi = {
     }
 
     return response.config
+  },
+  async getSourceConfig() {
+    const response = await sendRuntimeRequest({ type: "GET_SOURCE_CONFIG" })
+    if (!response.ok) {
+      throw new Error(response.error || i18n.t("options.status.loadFailed"))
+    }
+
+    return response.config
+  },
+  async saveSourceConfig(config) {
+    const response = await sendRuntimeRequest({
+      type: "SAVE_SOURCE_CONFIG",
+      config
+    })
+
+    if (!response.ok) {
+      throw new Error(response.error || i18n.t("options.status.saveFailed"))
+    }
+
+    return response.config
   }
 }

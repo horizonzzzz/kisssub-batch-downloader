@@ -1,6 +1,5 @@
-import { DEFAULT_SOURCE_DELIVERY_MODES } from "../sources/delivery"
+import { DEFAULT_SOURCE_CONFIG } from "../sources/config/defaults"
 import type { AppSettings } from "../shared/types"
-import { DEFAULT_ENABLED_SOURCES } from "./source-enablement"
 
 export const DEFAULT_SETTINGS: AppSettings = Object.freeze({
   currentDownloaderId: "qbittorrent",
@@ -20,11 +19,21 @@ export const DEFAULT_SETTINGS: AppSettings = Object.freeze({
   injectTimeoutMs: 15000,
   domSettleMs: 1200,
   retryCount: 3,
-  remoteScriptUrl: "//1.acgscript.com/script/miobt/4.js?3",
-  remoteScriptRevision: "20181120.2",
+  remoteScriptUrl: DEFAULT_SOURCE_CONFIG.kisssub.script.url,
+  remoteScriptRevision: DEFAULT_SOURCE_CONFIG.kisssub.script.revision,
   lastSavePath: "",
-  sourceDeliveryModes: DEFAULT_SOURCE_DELIVERY_MODES,
-  enabledSources: DEFAULT_ENABLED_SOURCES,
+  sourceDeliveryModes: {
+    kisssub: DEFAULT_SOURCE_CONFIG.kisssub.deliveryMode,
+    dongmanhuayuan: DEFAULT_SOURCE_CONFIG.dongmanhuayuan.deliveryMode,
+    acgrip: DEFAULT_SOURCE_CONFIG.acgrip.deliveryMode,
+    bangumimoe: DEFAULT_SOURCE_CONFIG.bangumimoe.deliveryMode
+  },
+  enabledSources: {
+    kisssub: DEFAULT_SOURCE_CONFIG.kisssub.enabled,
+    dongmanhuayuan: DEFAULT_SOURCE_CONFIG.dongmanhuayuan.enabled,
+    acgrip: DEFAULT_SOURCE_CONFIG.acgrip.enabled,
+    bangumimoe: DEFAULT_SOURCE_CONFIG.bangumimoe.enabled
+  },
   filters: [],
   subscriptionsEnabled: false,
   pollingIntervalMinutes: 30,

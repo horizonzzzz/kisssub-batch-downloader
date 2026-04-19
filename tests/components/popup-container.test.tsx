@@ -241,7 +241,8 @@ describe("PopupContainer", () => {
       })
       .mockResolvedValueOnce({
         ok: true,
-        settings: DEFAULT_SETTINGS
+        sourceId: "kisssub",
+        enabled: false
       })
       .mockResolvedValueOnce({
         ok: true,
@@ -356,15 +357,8 @@ describe("PopupContainer", () => {
       })
       .mockResolvedValueOnce({
         ok: true,
-        settings: {
-          ...DEFAULT_SETTINGS,
-          enabledSources: {
-            kisssub: false,
-            dongmanhuayuan: true,
-            acgrip: false,
-            bangumimoe: true
-          }
-        }
+        sourceId: "kisssub",
+        enabled: false
       })
       .mockResolvedValueOnce({
         ok: false,

@@ -10,6 +10,7 @@ import type { TaskHistoryRecord } from "../history/types"
 import type { PopupOptionsRoute, PopupStateViewModel } from "./popup"
 import type { SourceSubscriptionScanCandidate } from "../sources/types"
 import type { FilterConfig } from "../filter-rules/types"
+import type { SourceConfig } from "../sources/config/types"
 import { getBrowser } from "./browser"
 
 export const BATCH_EVENT = "ANIME_BT_BATCH_EVENT"
@@ -67,6 +68,8 @@ export type RuntimeRequest =
   | { type: "TEST_DOWNLOADER_CONNECTION"; settings?: Partial<AppSettings> | null }
   | { type: "GET_FILTER_CONFIG" }
   | { type: "SAVE_FILTER_CONFIG"; config: FilterConfig }
+  | { type: "GET_SOURCE_CONFIG" }
+  | { type: "SAVE_SOURCE_CONFIG"; config: SourceConfig }
   | { type: "GET_POPUP_STATE" }
   | { type: "SET_SOURCE_ENABLED"; sourceId: SourceId; enabled: boolean }
   | { type: "OPEN_OPTIONS_PAGE"; route?: PopupOptionsRoute }
@@ -109,7 +112,8 @@ export type GetPopupStateSuccessResponse = {
 
 export type SetSourceEnabledSuccessResponse = {
   ok: true
-  settings: AppSettings
+  sourceId: SourceId
+  enabled: boolean
 }
 
 export type StartBatchDownloadSuccessResponse = {
@@ -160,6 +164,16 @@ export type SaveFilterConfigSuccessResponse = {
   config: FilterConfig
 }
 
+export type GetSourceConfigSuccessResponse = {
+  ok: true
+  config: SourceConfig
+}
+
+export type SaveSourceConfigSuccessResponse = {
+  ok: true
+  config: SourceConfig
+}
+
 export type RuntimeSuccessResponseMap = {
   GET_HISTORY: GetHistorySuccessResponse
   CLEAR_HISTORY: ClearHistorySuccessResponse
@@ -170,6 +184,8 @@ export type RuntimeSuccessResponseMap = {
   TEST_DOWNLOADER_CONNECTION: TestDownloaderConnectionSuccessResponse
   GET_FILTER_CONFIG: GetFilterConfigSuccessResponse
   SAVE_FILTER_CONFIG: SaveFilterConfigSuccessResponse
+  GET_SOURCE_CONFIG: GetSourceConfigSuccessResponse
+  SAVE_SOURCE_CONFIG: SaveSourceConfigSuccessResponse
   GET_POPUP_STATE: GetPopupStateSuccessResponse
   SET_SOURCE_ENABLED: SetSourceEnabledSuccessResponse
   OPEN_OPTIONS_PAGE: OpenOptionsPageSuccessResponse
@@ -204,6 +220,8 @@ export type ScanSubscriptionListResponse = RuntimeResponseFor<"SCAN_SUBSCRIPTION
 export type ContentScriptReadyResponse = RuntimeResponseFor<typeof CONTENT_SCRIPT_READY_EVENT>
 export type GetFilterConfigResponse = RuntimeResponseFor<"GET_FILTER_CONFIG">
 export type SaveFilterConfigResponse = RuntimeResponseFor<"SAVE_FILTER_CONFIG">
+export type GetSourceConfigResponse = RuntimeResponseFor<"GET_SOURCE_CONFIG">
+export type SaveSourceConfigResponse = RuntimeResponseFor<"SAVE_SOURCE_CONFIG">
 export type RuntimeResponse = RuntimeResponseFor<RuntimeRequestType>
 
 export function createRuntimeSuccessResponse<TType extends RuntimeRequestType>(

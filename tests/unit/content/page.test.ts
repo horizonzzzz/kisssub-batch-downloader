@@ -10,6 +10,8 @@ import {
   isValidDetailAnchor,
   normalizeText
 } from "../../../src/lib/content/page"
+import { DEFAULT_SOURCE_CONFIG } from "../../../src/lib/sources/config/defaults"
+import type { SourceConfig } from "../../../src/lib/sources/config/types"
 
 describe("content page helpers", () => {
   beforeEach(() => {
@@ -223,26 +225,24 @@ describe("content page helpers", () => {
 
   it("respects source enablement when resolving the active adapter for a page", () => {
     const location = new URL("https://acg.rip/")
-    const enabledSettings = {
-      enabledSources: {
-        kisssub: true,
-        dongmanhuayuan: true,
-        acgrip: true,
-        bangumimoe: true
-      }
+    const enabledConfig: SourceConfig = {
+      ...DEFAULT_SOURCE_CONFIG,
+      kisssub: { ...DEFAULT_SOURCE_CONFIG.kisssub, enabled: true },
+      dongmanhuayuan: { ...DEFAULT_SOURCE_CONFIG.dongmanhuayuan, enabled: true },
+      acgrip: { ...DEFAULT_SOURCE_CONFIG.acgrip, enabled: true },
+      bangumimoe: { ...DEFAULT_SOURCE_CONFIG.bangumimoe, enabled: true }
     }
-    const disabledSettings = {
-      enabledSources: {
-        kisssub: true,
-        dongmanhuayuan: true,
-        acgrip: false,
-        bangumimoe: true
-      }
+    const disabledConfig: SourceConfig = {
+      ...DEFAULT_SOURCE_CONFIG,
+      kisssub: { ...DEFAULT_SOURCE_CONFIG.kisssub, enabled: true },
+      dongmanhuayuan: { ...DEFAULT_SOURCE_CONFIG.dongmanhuayuan, enabled: true },
+      acgrip: { ...DEFAULT_SOURCE_CONFIG.acgrip, enabled: false },
+      bangumimoe: { ...DEFAULT_SOURCE_CONFIG.bangumimoe, enabled: true }
     }
 
-    expect(getEnabledSourceAdapterForLocation(location, enabledSettings)?.id).toBe("acgrip")
-    expect(getEnabledSourceAdapterForLocation(location, disabledSettings)).toBeNull()
-    expect(getEnabledSourceAdapterForLocation(new URL("https://example.com/list.html"), enabledSettings)).toBeNull()
+    expect(getEnabledSourceAdapterForLocation(location, enabledConfig)?.id).toBe("acgrip")
+    expect(getEnabledSourceAdapterForLocation(location, disabledConfig)).toBeNull()
+    expect(getEnabledSourceAdapterForLocation(new URL("https://example.com/list.html"), enabledConfig)).toBeNull()
   })
 
   it("finds the nearest mount target for supported anchors", () => {

@@ -1,11 +1,11 @@
 import { getDeliveryModePriority } from "./sources/delivery"
 import type {
-  AppSettings,
   BatchItem,
   ClassifiedBatchResult,
   ExtractionResult,
   SourceId
 } from "./shared/types"
+import type { SourceConfig } from "./sources/config/types"
 
 export function normalizeTitle(title: unknown): string {
   return String(title ?? "")
@@ -15,7 +15,7 @@ export function normalizeTitle(title: unknown): string {
 
 export function classifyPreparedBatchItem(
   item: BatchItem,
-  settings: Pick<AppSettings, "sourceDeliveryModes">,
+  sourceConfig: SourceConfig,
   seenHashes: Set<string>,
   seenUrls: Set<string>
 ): ClassifiedBatchResult | null {
@@ -24,7 +24,7 @@ export function classifyPreparedBatchItem(
     return null
   }
 
-  return classifyCandidateUrls(item.sourceId, preparedResult, settings, seenHashes, seenUrls)
+  return classifyCandidateUrls(item.sourceId, preparedResult, sourceConfig, seenHashes, seenUrls)
 }
 
 export function createPreparedExtractionResult(item: BatchItem): ExtractionResult | null {
@@ -51,7 +51,7 @@ export function createPreparedExtractionResult(item: BatchItem): ExtractionResul
 export function classifyExtractionResult(
   sourceId: SourceId,
   result: ExtractionResult,
-  settings: Pick<AppSettings, "sourceDeliveryModes">,
+  sourceConfig: SourceConfig,
   seenHashes: Set<string>,
   seenUrls: Set<string>
 ): ClassifiedBatchResult {
@@ -73,7 +73,7 @@ export function classifyExtractionResult(
     return classified
   }
 
-  return classifyCandidateUrls(sourceId, classified, settings, seenHashes, seenUrls)
+  return classifyCandidateUrls(sourceId, classified, sourceConfig, seenHashes, seenUrls)
 }
 
 export function extractMagnetHash(magnetUrl: string): string {
@@ -89,7 +89,7 @@ export function extractDetailHash(url: string): string {
 function classifyCandidateUrls(
   sourceId: SourceId,
   result: ExtractionResult,
-  settings: Pick<AppSettings, "sourceDeliveryModes">,
+  sourceConfig: SourceConfig,
   seenHashes: Set<string>,
   seenUrls: Set<string>
 ): ClassifiedBatchResult {
@@ -105,7 +105,7 @@ function classifyCandidateUrls(
     message: ""
   }
 
-  for (const deliveryMode of getDeliveryModePriority(sourceId, settings)) {
+  for (const deliveryMode of getDeliveryModePriority(sourceId, sourceConfig)) {
     if (deliveryMode === "magnet") {
       if (!classified.magnetUrl) {
         continue

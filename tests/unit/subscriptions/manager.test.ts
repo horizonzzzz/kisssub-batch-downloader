@@ -5,8 +5,10 @@ import type {
   SubscriptionEntry,
   SubscriptionHitRecord
 } from "../../../src/lib/shared/types"
+import type { SourceConfig } from "../../../src/lib/sources/config/types"
 import type { DownloaderAdapter, DownloaderTorrentFile } from "../../../src/lib/downloader"
 import { DEFAULT_SETTINGS } from "../../../src/lib/settings/defaults"
+import { DEFAULT_SOURCE_CONFIG } from "../../../src/lib/sources/config/defaults"
 import { listNotificationRounds } from "../../../src/lib/subscriptions/runtime-query"
 import { resetSubscriptionDb, subscriptionDb } from "../../../src/lib/subscriptions/db"
 import { SubscriptionManager } from "../../../src/lib/subscriptions/manager"
@@ -17,6 +19,13 @@ function createAppSettings(overrides: Partial<AppSettings> = {}): AppSettings {
     ...DEFAULT_SETTINGS,
     subscriptionsEnabled: true,
     notificationsEnabled: true,
+    ...overrides
+  }
+}
+
+function createSourceConfig(overrides: Partial<SourceConfig> = {}): SourceConfig {
+  return {
+    ...DEFAULT_SOURCE_CONFIG,
     ...overrides
   }
 }
@@ -102,6 +111,7 @@ describe("SubscriptionManager", () => {
 
     const manager = new SubscriptionManager({
       appSettings: createAppSettings(),
+      sourceConfig: createSourceConfig(),
       now: () => now
     })
     const result = await manager.scan({
@@ -183,7 +193,8 @@ describe("SubscriptionManager", () => {
     const extractSingleItem = vi.fn()
 
     const manager = new SubscriptionManager({
-      appSettings: createAppSettings()
+      appSettings: createAppSettings(),
+      sourceConfig: createSourceConfig()
     })
     const result = await manager.downloadFromNotification(
       { roundId: "subscription-round:20260414093000000" },

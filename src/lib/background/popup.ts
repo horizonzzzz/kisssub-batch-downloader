@@ -2,7 +2,9 @@ import packageJson from "../../../package.json"
 import { getDownloaderMeta } from "../downloader"
 import { getSourceAdapterForPage } from "../sources"
 import { getLocalizedSiteConfigMeta } from "../sources/site-meta"
-import { getSettings, resolveSourceEnabled, saveSettings } from "../settings"
+import { getSourceConfig, saveSourceConfig } from "../sources/config"
+import { resolveSourceEnabled } from "../sources/config/selectors"
+import { getSettings } from "../settings"
 import {
   FILTERS_UPDATED_EVENT,
   SOURCE_ENABLED_CHANGE_EVENT,
@@ -18,8 +20,10 @@ import {
   type PopupStateViewModel
 } from "../shared/popup"
 import type { AppSettings, SourceId } from "../shared/types"
+import type { SourceConfig } from "../sources/config/types"
 
 type BuildPopupStateDependencies = {
+  getSourceConfig: () => Promise<SourceConfig>
   getSettings: () => Promise<AppSettings>
   getActiveTabContext: () => Promise<{ id: number | null; url: string | null }>
   getExtensionVersion: () => string
@@ -27,8 +31,8 @@ type BuildPopupStateDependencies = {
 }
 
 type SetSourceEnabledDependencies = {
-  getSettings: () => Promise<AppSettings>
-  saveSettings: (partialSettings: Partial<AppSettings>) => Promise<AppSettings>
+  getSourceConfig: () => Promise<SourceConfig>
+  saveSourceConfig: (config: SourceConfig) => Promise<SourceConfig>
 }
 
 type OptionsTabTarget = {
@@ -55,6 +59,7 @@ type NotifySupportedSourceTabsOfFilterChangeDependencies = {
 }
 
 const DEFAULT_BUILD_POPUP_STATE_DEPENDENCIES: BuildPopupStateDependencies = {
+  getSourceConfig,
   getSettings,
   getActiveTabContext: queryActiveTabContext,
   getExtensionVersion: () => packageJson.version,
@@ -62,8 +67,8 @@ const DEFAULT_BUILD_POPUP_STATE_DEPENDENCIES: BuildPopupStateDependencies = {
 }
 
 const DEFAULT_SET_SOURCE_ENABLED_DEPENDENCIES: SetSourceEnabledDependencies = {
-  getSettings,
-  saveSettings
+  getSourceConfig,
+  saveSourceConfig
 }
 
 const DEFAULT_OPEN_OPTIONS_PAGE_DEPENDENCIES: OpenOptionsPageDependencies = {
@@ -122,10 +127,11 @@ const DEFAULT_NOTIFY_SUPPORTED_SOURCE_TABS_OF_FILTER_CHANGE_DEPENDENCIES: Notify
 export async function buildPopupState(
   dependencies: BuildPopupStateDependencies = DEFAULT_BUILD_POPUP_STATE_DEPENDENCIES
 ): Promise<PopupStateViewModel> {
+  const sourceConfig = await dependencies.getSourceConfig()
   const settings = await dependencies.getSettings()
   const activeTab = await dependencies.getActiveTabContext()
   const activeSourceId = resolveActiveSourceId(activeTab.url)
-  const activeTabEnabled = activeSourceId ? resolveSourceEnabled(activeSourceId, settings) : false
+  const activeTabEnabled = activeSourceId ? resolveSourceEnabled(activeSourceId, sourceConfig) : false
   const activeTabBatchRunning =
     typeof activeTab.id === "number" ? dependencies.isBatchRunningInTab(activeTab.id) : false
   const currentDownloader = getDownloaderMeta(settings.currentDownloaderId)
@@ -151,7 +157,7 @@ export async function buildPopupState(
         label: siteMeta.navLabel,
         displayName: siteMeta.displayName,
         url: siteMeta.url,
-        enabled: resolveSourceEnabled(sourceId, settings)
+        enabled: resolveSourceEnabled(sourceId, sourceConfig)
       }
     }),
     version: dependencies.getExtensionVersion(),
@@ -163,12 +169,13 @@ export async function setSourceEnabledForPopup(
   sourceId: SourceId,
   enabled: boolean,
   dependencies: SetSourceEnabledDependencies = DEFAULT_SET_SOURCE_ENABLED_DEPENDENCIES
-): Promise<AppSettings> {
-  const settings = await dependencies.getSettings()
-  return dependencies.saveSettings({
-    enabledSources: {
-      ...settings.enabledSources,
-      [sourceId]: enabled
+): Promise<SourceConfig> {
+  const config = await dependencies.getSourceConfig()
+  return dependencies.saveSourceConfig({
+    ...config,
+    [sourceId]: {
+      ...config[sourceId],
+      enabled
     }
   })
 }

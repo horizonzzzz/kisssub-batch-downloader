@@ -1,11 +1,14 @@
 import { decideFilterAction } from "../filter-rules"
-import { getDisabledSources, normalizeSavePath } from "../settings"
+import { normalizeSavePath } from "../settings"
+import { getSourceConfig } from "../sources/config"
+import { getDisabledSources } from "../sources/config/selectors"
 import {
   classifyExtractionResult,
   createPreparedExtractionResult
 } from "../download-preparation"
 import type { StartBatchDownloadSuccessResponse } from "../shared/messages"
 import type { BatchItem, ClassifiedBatchResult } from "../shared/types"
+import type { SourceConfig } from "../sources/config/types"
 import { createBatchJob, recordBatchResult, summarizeBatchResults } from "./job-state"
 import { getBatchStartedMessage, getBatchSubmittingMessage } from "./messages"
 import { normalizeBatchItems } from "./preparation"
@@ -37,15 +40,16 @@ export function createBatchDownloadManager(dependencies: BackgroundBatchDependen
 
     const savePath = normalizeSavePath(requestedSavePath)
     const settings = await dependencies.saveSettings({ lastSavePath: savePath })
+    const sourceConfig = await getSourceConfig()
     const disabledSources = getDisabledSources(
       Array.from(new Set(normalizedItems.map((item) => item.sourceId))),
-      settings
+      sourceConfig
     )
     if (disabledSources.length) {
       throw new Error(`Batch downloads are disabled for source: ${disabledSources.join(", ")}`)
     }
 
-    const job = createBatchJob(sourceTabId, normalizedItems.length, settings, savePath)
+    const job = createBatchJob(sourceTabId, normalizedItems.length, settings, sourceConfig, savePath)
     activeJobs.set(sourceTabId, job)
 
     void runBatch(job, normalizedItems).catch(async (error: unknown) => {
@@ -209,7 +213,7 @@ export function createBatchDownloadManager(dependencies: BackgroundBatchDependen
         return blockedPreparedResult
       }
 
-      return classifyExtractionResult(item.sourceId, preparedResult, job.settings, seenHashes, seenUrls)
+      return classifyExtractionResult(item.sourceId, preparedResult, job.sourceConfig, seenHashes, seenUrls)
     }
 
     const extractedResult = await dependencies.extractSingleItem(item, job.settings)
@@ -223,7 +227,7 @@ export function createBatchDownloadManager(dependencies: BackgroundBatchDependen
     return classifyExtractionResult(
       item.sourceId,
       extractedResult,
-      job.settings,
+      job.sourceConfig,
       seenHashes,
       seenUrls
     )

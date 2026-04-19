@@ -1,10 +1,12 @@
 import type { BatchJob } from "./types"
 import type { AppSettings, BatchStats, BatchSummary, ClassifiedBatchResult } from "../shared/types"
+import type { SourceConfig } from "../sources/config/types"
 
 export function createBatchJob(
   sourceTabId: number,
   total: number,
   settings: AppSettings,
+  sourceConfig: SourceConfig,
   savePath: string
 ): BatchJob {
   return {
@@ -15,6 +17,7 @@ export function createBatchJob(
       ...settings,
       lastSavePath: savePath
     },
+    sourceConfig,
     savePath
   }
 }

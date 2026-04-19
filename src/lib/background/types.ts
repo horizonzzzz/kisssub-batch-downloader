@@ -7,12 +7,14 @@ import type {
   ClassifiedBatchResult,
   ExtractionResult
 } from "../shared/types"
+import type { SourceConfig } from "../sources/config/types"
 
 export type BatchJob = {
   sourceTabId: number
   stats: BatchStats
   results: ClassifiedBatchResult[]
   settings: AppSettings
+  sourceConfig: SourceConfig
   savePath: string
 }
 
