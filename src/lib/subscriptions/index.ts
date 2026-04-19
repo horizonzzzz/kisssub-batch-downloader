@@ -52,6 +52,14 @@ export {
   canCreateSubscriptionNotifications,
   canDownloadSubscriptionNotifications
 } from "./policy"
+export {
+  DEFAULT_SUBSCRIPTION_POLICY_CONFIG,
+  ensureSubscriptionPolicyConfig,
+  getSubscriptionPolicyConfig,
+  sanitizeSubscriptionPolicyConfig,
+  saveSubscriptionPolicyConfig
+} from "./policy/index"
+export type { SubscriptionPolicyConfig } from "./policy/index"
 export type {
   DownloadSubscriptionHitsRequest,
   DownloadSubscriptionHitsResult,

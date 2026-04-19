@@ -1,9 +1,10 @@
 import { afterEach, beforeEach, describe, expect, expectTypeOf, it, vi } from "vitest"
 
-import type { AppSettings, SubscriptionEntry, DeliveryMode } from "../../../src/lib/shared/types"
+import type { SubscriptionEntry, DeliveryMode } from "../../../src/lib/shared/types"
 import type { SourceConfig } from "../../../src/lib/sources/config/types"
 import type { ScanSubscriptionListResultMessage } from "../../../src/lib/shared/messages"
-import { DEFAULT_SETTINGS } from "../../../src/lib/settings/defaults"
+import type { SubscriptionPolicyConfig } from "../../../src/lib/subscriptions/policy/types"
+import { DEFAULT_SUBSCRIPTION_POLICY_CONFIG } from "../../../src/lib/subscriptions/policy/defaults"
 import { DEFAULT_SOURCE_CONFIG } from "../../../src/lib/sources/config/defaults"
 import { upsertSubscription } from "../../../src/lib/subscriptions/catalog-repository"
 import { markContentScriptReady, resetContentScriptReadyRegistry } from "../../../src/lib/subscriptions/content-ready"
@@ -15,10 +16,10 @@ import type { SubscriptionCandidate } from "../../../src/lib/subscriptions/types
 import type { SourceSubscriptionScanCandidate } from "../../../src/lib/sources/types"
 import { SCAN_SUBSCRIPTION_LIST_REQUEST } from "../../../src/lib/shared/messages"
 
-function createAppSettings(overrides: Partial<AppSettings> = {}): AppSettings {
+function createSubscriptionPolicy(overrides: Partial<SubscriptionPolicyConfig> = {}): SubscriptionPolicyConfig {
   return {
-    ...DEFAULT_SETTINGS,
-    subscriptionsEnabled: true,
+    ...DEFAULT_SUBSCRIPTION_POLICY_CONFIG,
+    enabled: true,
     notificationsEnabled: true,
     ...overrides
   }
@@ -116,7 +117,7 @@ describe("scanSubscriptions", () => {
     const subscription = createSubscription()
 
     const result = await scanSubscriptions({
-      appSettings: createAppSettings(),
+      subscriptionPolicy: createSubscriptionPolicy(),
       sourceConfig: createSourceConfig(),
       subscriptions: [subscription],
       now: () => now,
@@ -140,7 +141,7 @@ describe("scanSubscriptions", () => {
     const subscription = createSubscription()
 
     const result = await scanSubscriptions({
-      appSettings: createAppSettings(),
+      subscriptionPolicy: createSubscriptionPolicy(),
       sourceConfig: createSourceConfig(),
       subscriptions: [subscription],
       now: () => now,
@@ -181,7 +182,7 @@ describe("scanSubscriptions", () => {
     })
 
     const result = await scanSubscriptions({
-      appSettings: createAppSettings(),
+      subscriptionPolicy: createSubscriptionPolicy(),
       sourceConfig: createSourceConfig(),
       subscriptions: [subscription],
       now: () => now,
@@ -219,7 +220,7 @@ describe("scanSubscriptions", () => {
 
     await upsertSubscription(enabledSubscription)
     await scanSubscriptions({
-      appSettings: createAppSettings(),
+      subscriptionPolicy: createSubscriptionPolicy(),
       sourceConfig: createSourceConfig(),
       subscriptions: [enabledSubscription],
       now: () => initialNow,
@@ -233,7 +234,7 @@ describe("scanSubscriptions", () => {
     await upsertSubscription(enabledSubscription)
 
     const resumedResult = await scanSubscriptions({
-      appSettings: createAppSettings(),
+      subscriptionPolicy: createSubscriptionPolicy(),
       sourceConfig: createSourceConfig(),
       subscriptions: [enabledSubscription],
       now: () => resumedNow,

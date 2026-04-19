@@ -1,24 +1,33 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 import type {
-  AppSettings,
   SubscriptionEntry,
   SubscriptionHitRecord
 } from "../../../src/lib/shared/types"
 import type { SourceConfig } from "../../../src/lib/sources/config/types"
 import type { DownloaderAdapter, DownloaderTorrentFile } from "../../../src/lib/downloader"
-import { DEFAULT_SETTINGS } from "../../../src/lib/settings/defaults"
+import type { SubscriptionPolicyConfig } from "../../../src/lib/subscriptions/policy/types"
+import type { DownloaderConfig } from "../../../src/lib/downloader/config/types"
+import { DEFAULT_SUBSCRIPTION_POLICY_CONFIG } from "../../../src/lib/subscriptions/policy/defaults"
+import { DEFAULT_DOWNLOADER_CONFIG } from "../../../src/lib/downloader/config/defaults"
 import { DEFAULT_SOURCE_CONFIG } from "../../../src/lib/sources/config/defaults"
 import { listNotificationRounds } from "../../../src/lib/subscriptions/runtime-query"
 import { resetSubscriptionDb, subscriptionDb } from "../../../src/lib/subscriptions/db"
 import { SubscriptionManager } from "../../../src/lib/subscriptions/manager"
 import type { SubscriptionCandidate } from "../../../src/lib/subscriptions/types"
 
-function createAppSettings(overrides: Partial<AppSettings> = {}): AppSettings {
+function createSubscriptionPolicy(overrides: Partial<SubscriptionPolicyConfig> = {}): SubscriptionPolicyConfig {
   return {
-    ...DEFAULT_SETTINGS,
-    subscriptionsEnabled: true,
+    ...DEFAULT_SUBSCRIPTION_POLICY_CONFIG,
+    enabled: true,
     notificationsEnabled: true,
+    ...overrides
+  }
+}
+
+function createDownloaderConfig(overrides: Partial<DownloaderConfig> = {}): DownloaderConfig {
+  return {
+    ...DEFAULT_DOWNLOADER_CONFIG,
     ...overrides
   }
 }
@@ -110,7 +119,7 @@ describe("SubscriptionManager", () => {
     })
 
     const manager = new SubscriptionManager({
-      appSettings: createAppSettings(),
+      subscriptionPolicy: createSubscriptionPolicy(),
       sourceConfig: createSourceConfig(),
       now: () => now
     })
@@ -193,7 +202,7 @@ describe("SubscriptionManager", () => {
     const extractSingleItem = vi.fn()
 
     const manager = new SubscriptionManager({
-      appSettings: createAppSettings(),
+      subscriptionPolicy: createSubscriptionPolicy(),
       sourceConfig: createSourceConfig()
     })
     const result = await manager.downloadFromNotification(
@@ -202,6 +211,7 @@ describe("SubscriptionManager", () => {
         downloader,
         fetchTorrentForUpload,
         extractSingleItem,
+        getDownloaderConfig: async () => createDownloaderConfig(),
         now: () => now
       }
     )

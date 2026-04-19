@@ -1,15 +1,15 @@
-import type { AppSettings } from "../shared/types"
+import type { SubscriptionPolicyConfig } from "./policy/types"
 
 export function canCreateSubscriptionNotifications(
-  settings: Pick<AppSettings, "subscriptionsEnabled" | "notificationsEnabled">
+  settings: Pick<SubscriptionPolicyConfig, "enabled" | "notificationsEnabled">
 ): boolean {
-  return settings.subscriptionsEnabled && settings.notificationsEnabled
+  return settings.enabled && settings.notificationsEnabled
 }
 
 export function canDownloadSubscriptionNotifications(
   settings: Pick<
-    AppSettings,
-    "subscriptionsEnabled" | "notificationsEnabled" | "notificationDownloadActionEnabled"
+    SubscriptionPolicyConfig,
+    "enabled" | "notificationsEnabled" | "notificationDownloadActionEnabled"
   >
 ): boolean {
   return canCreateSubscriptionNotifications(settings) && settings.notificationDownloadActionEnabled

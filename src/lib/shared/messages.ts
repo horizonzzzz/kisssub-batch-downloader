@@ -16,6 +16,7 @@ import type { HistoryPageContext } from "../background/queries/history-context"
 import type { BatchExecutionConfig } from "../batch-config/types"
 import type { BatchUiPreferences } from "../batch-preferences/types"
 import type { ContentScriptState } from "../background/queries/content-script-state"
+import type { SubscriptionPolicyConfig } from "../subscriptions/policy/types"
 import { getBrowser } from "./browser"
 
 export const BATCH_EVENT = "ANIME_BT_BATCH_EVENT"
@@ -91,6 +92,8 @@ export type RuntimeRequest =
   | { type: "DELETE_SUBSCRIPTION"; subscriptionId: string }
   | { type: "SCAN_SUBSCRIPTION_LIST"; sourceId: SourceId }
   | { type: typeof CONTENT_SCRIPT_READY_EVENT; sourceId: SourceId }
+  | { type: "GET_SUBSCRIPTION_POLICY" }
+  | { type: "SAVE_SUBSCRIPTION_POLICY"; config: SubscriptionPolicyConfig }
 
 export type RuntimeRequestType = RuntimeRequest["type"]
 
@@ -227,6 +230,16 @@ export type GetContentScriptStateSuccessResponse = {
   state: ContentScriptState
 }
 
+export type GetSubscriptionPolicySuccessResponse = {
+  ok: true
+  config: SubscriptionPolicyConfig
+}
+
+export type SaveSubscriptionPolicySuccessResponse = {
+  ok: true
+  config: SubscriptionPolicyConfig
+}
+
 export type RuntimeSuccessResponseMap = {
   GET_HISTORY: GetHistorySuccessResponse
   CLEAR_HISTORY: ClearHistorySuccessResponse
@@ -255,6 +268,8 @@ export type RuntimeSuccessResponseMap = {
   DELETE_SUBSCRIPTION: DeleteSubscriptionSuccessResponse
   SCAN_SUBSCRIPTION_LIST: ScanSubscriptionListSuccessResponse
   [CONTENT_SCRIPT_READY_EVENT]: ContentScriptReadySuccessResponse
+  GET_SUBSCRIPTION_POLICY: GetSubscriptionPolicySuccessResponse
+  SAVE_SUBSCRIPTION_POLICY: SaveSubscriptionPolicySuccessResponse
 }
 
 export type RuntimeSuccessResponseFor<TType extends RuntimeRequestType> =
@@ -291,6 +306,8 @@ export type SaveBatchExecutionConfigResponse = RuntimeResponseFor<"SAVE_BATCH_EX
 export type GetBatchUiPreferencesResponse = RuntimeResponseFor<"GET_BATCH_UI_PREFERENCES">
 export type SaveBatchUiPreferencesResponse = RuntimeResponseFor<"SAVE_BATCH_UI_PREFERENCES">
 export type GetContentScriptStateResponse = RuntimeResponseFor<"GET_CONTENT_SCRIPT_STATE">
+export type GetSubscriptionPolicyResponse = RuntimeResponseFor<"GET_SUBSCRIPTION_POLICY">
+export type SaveSubscriptionPolicyResponse = RuntimeResponseFor<"SAVE_SUBSCRIPTION_POLICY">
 export type RuntimeResponse = RuntimeResponseFor<RuntimeRequestType>
 
 export function createRuntimeSuccessResponse<TType extends RuntimeRequestType>(

@@ -3,14 +3,12 @@ import type {
   DownloaderTorrentFile,
   DownloaderUrlSubmissionResult
 } from "../downloader"
-import { appSettingsToDownloaderConfig } from "../downloader/config/storage"
 import type { DownloaderConfig } from "../downloader/config/types"
 import {
   classifyExtractionResult,
   createPreparedExtractionResult
 } from "../download-preparation"
 import type {
-  AppSettings,
   BatchItem,
   ClassifiedBatchResult,
   ExtractionResult,
@@ -19,9 +17,11 @@ import type {
 } from "../shared/types"
 import type { SourceConfig } from "../sources/config/types"
 import type { ExtractionContext } from "../sources/types"
+import type { SubscriptionPolicyConfig } from "./policy/types"
 import { getSourceConfig } from "../sources/config"
 import { resolveSourceEnabled } from "../sources/config/selectors"
 import { getBatchExecutionConfig } from "../batch-config/storage"
+import { getDownloaderConfig } from "../downloader/config/storage"
 import { buildExtractionContextFromConfigs } from "../background/job-state"
 import { listSubscriptionsByIds } from "./catalog-repository"
 import { subscriptionDb } from "./db"
@@ -45,6 +45,7 @@ export type SubscriptionNotificationDownloadDependencies = {
   downloader: DownloaderAdapter
   fetchTorrentForUpload: (torrentUrl: string) => Promise<DownloaderTorrentFile>
   extractSingleItem: (item: BatchItem, context: ExtractionContext) => Promise<ExtractionResult>
+  getDownloaderConfig?: () => Promise<DownloaderConfig>
   now?: () => string
 }
 
@@ -63,7 +64,7 @@ type SubmissionStatusByHitId = Record<
 
 export async function downloadSubscriptionNotificationHits(
   input: {
-    appSettings: AppSettings
+    subscriptionPolicy: SubscriptionPolicyConfig
     roundId: string
   },
   dependencies: SubscriptionNotificationDownloadDependencies
@@ -80,13 +81,14 @@ export async function downloadSubscriptionNotificationHits(
     throw new Error(`Subscription notification round not found: ${normalizedRoundId}`)
   }
 
-  if (!canDownloadSubscriptionNotifications(input.appSettings)) {
+  if (!canDownloadSubscriptionNotifications(input.subscriptionPolicy)) {
     await persistDownloadState(notificationRound.id, [])
     return createEmptyDownloadSubscriptionHitsResult()
   }
 
   const sourceConfig = await getSourceConfig()
   const batchExecutionConfig = await getBatchExecutionConfig()
+  const downloaderConfig = await (dependencies.getDownloaderConfig ?? getDownloaderConfig)()
   const extractionContext = buildExtractionContextFromConfigs(batchExecutionConfig, sourceConfig)
   const hits = notificationRound.hits.map((hit) => ({ ...hit }))
   const subscriptions = await listSubscriptionsByIds([
@@ -164,7 +166,6 @@ export async function downloadSubscriptionNotificationHits(
 
   if (preparedHits.length > 0) {
     try {
-      const downloaderConfig = appSettingsToDownloaderConfig(input.appSettings)
       await dependencies.downloader.authenticate(downloaderConfig)
       const submissionResult = await submitPreparedHits(
         preparedHits,

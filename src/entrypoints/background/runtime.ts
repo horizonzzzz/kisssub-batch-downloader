@@ -68,7 +68,10 @@ import {
   clearContentScriptReadyForTab,
   markContentScriptReady,
   parseSubscriptionNotificationRoundId,
-  SUBSCRIPTION_ALARM_NAME
+  SUBSCRIPTION_ALARM_NAME,
+  getSubscriptionPolicyConfig,
+  saveSubscriptionPolicyConfig,
+  type SubscriptionPolicyConfig
 } from "../../lib/subscriptions"
 
 import iconColor from "../../assets/icon.png"
@@ -140,8 +143,8 @@ export function registerBackgroundRuntime() {
     }
 
     void (async () => {
-      const settings = await getSettings()
-      if (!canDownloadSubscriptionNotifications(settings)) {
+      const policy = await getSubscriptionPolicyConfig()
+      if (!canDownloadSubscriptionNotifications(policy)) {
         return
       }
 
@@ -441,6 +444,27 @@ export function registerBackgroundRuntime() {
             }
             return
           }
+          case "GET_SUBSCRIPTION_POLICY": {
+            const config = await getSubscriptionPolicyConfig()
+            sendResponse(createRuntimeSuccessResponse("GET_SUBSCRIPTION_POLICY", { config }))
+            return
+          }
+          case "SAVE_SUBSCRIPTION_POLICY": {
+            const previousPolicy = await getSubscriptionPolicyConfig()
+            const savedConfig = await saveSubscriptionPolicyConfig(runtimeMessage.config)
+            await reconcileSubscriptionAlarm({
+              getSubscriptionPolicy: async () => savedConfig,
+              alarms: extensionBrowser.alarms
+            })
+            if (didDisableSubscriptionNotificationEntryPoints(previousPolicy, savedConfig)) {
+              await clearPendingSubscriptionNotifications({
+                clearBrowserNotification: (notificationId) =>
+                  extensionBrowser.notifications.clear(notificationId)
+              })
+            }
+            sendResponse(createRuntimeSuccessResponse("SAVE_SUBSCRIPTION_POLICY", { config: savedConfig }))
+            return
+          }
           default:
             sendResponse(
               createRuntimeErrorResponse(
@@ -513,10 +537,12 @@ function didContentSyncRelevantSettingsChange(
 }
 
 function didDisableSubscriptionNotificationEntryPoints(
-  previousSettings: Pick<AppSettings, "subscriptionsEnabled" | "notificationsEnabled">,
-  nextSettings: Pick<AppSettings, "subscriptionsEnabled" | "notificationsEnabled">
+  previousSettings: Pick<AppSettings, "subscriptionsEnabled" | "notificationsEnabled"> | Pick<SubscriptionPolicyConfig, "enabled" | "notificationsEnabled">,
+  nextSettings: Pick<AppSettings, "subscriptionsEnabled" | "notificationsEnabled"> | Pick<SubscriptionPolicyConfig, "enabled" | "notificationsEnabled">
 ): boolean {
-  return (previousSettings.subscriptionsEnabled && !nextSettings.subscriptionsEnabled) ||
+  const previousEnabled = "enabled" in previousSettings ? previousSettings.enabled : previousSettings.subscriptionsEnabled
+  const nextEnabled = "enabled" in nextSettings ? nextSettings.enabled : nextSettings.subscriptionsEnabled
+  return (previousEnabled && !nextEnabled) ||
     (previousSettings.notificationsEnabled && !nextSettings.notificationsEnabled)
 }
 

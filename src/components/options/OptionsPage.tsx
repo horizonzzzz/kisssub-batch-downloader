@@ -16,6 +16,7 @@ import type {
   SubscriptionEntry,
   TestDownloaderConnectionResult
 } from "../../lib/shared/types"
+import type { SubscriptionPolicyConfig } from "../../lib/subscriptions/policy/types"
 import type { FilterConfig } from "../../lib/filter-rules/types"
 import type { SourceConfig } from "../../lib/sources/config/types"
 import type { DownloaderConfig } from "../../lib/downloader/config/types"
@@ -46,6 +47,8 @@ export type SettingsFormApi = {
 export type OptionsApi = SettingsFormApi & {
   upsertSubscription: (subscription: SubscriptionEntry) => Promise<void>
   deleteSubscription: (subscriptionId: string) => Promise<void>
+  getSubscriptionPolicy: () => Promise<SubscriptionPolicyConfig>
+  saveSubscriptionPolicy: (config: SubscriptionPolicyConfig) => Promise<SubscriptionPolicyConfig>
   getFilterConfig: () => Promise<FilterConfig>
   saveFilterConfig: (config: FilterConfig) => Promise<FilterConfig>
   getSourceConfig: () => Promise<SourceConfig>

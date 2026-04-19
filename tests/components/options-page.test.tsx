@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 import { OptionsPage, type OptionsApi } from "../../src/components/options/OptionsPage"
 import type { SubscriptionEntry } from "../../src/lib/shared/types"
 import type { SourceConfig } from "../../src/lib/sources/config/types"
+import type { SubscriptionPolicyConfig } from "../../src/lib/subscriptions/policy/types"
 import {
   deleteSubscription,
   resetSubscriptionDb,
@@ -97,6 +98,13 @@ const downloaderConfig: DownloaderConfig = {
   }
 }
 
+const subscriptionPolicy: SubscriptionPolicyConfig = {
+  enabled: false,
+  pollingIntervalMinutes: 30,
+  notificationsEnabled: true,
+  notificationDownloadActionEnabled: true
+}
+
 const editableSettings = settings
 const {
   subscriptionsEnabled: _subscriptionsEnabled,
@@ -144,6 +152,8 @@ function createOptionsApi(overrides: Partial<TestOptionsApi> = {}): TestOptionsA
     saveBatchExecutionConfig: vi.fn().mockImplementation(async (config) => config),
     getBatchUiPreferences: vi.fn().mockResolvedValue({ lastSavePath: "" }),
     saveBatchUiPreferences: vi.fn().mockImplementation(async (preferences) => preferences),
+    getSubscriptionPolicy: vi.fn().mockResolvedValue(subscriptionPolicy),
+    saveSubscriptionPolicy: vi.fn().mockImplementation(async (config) => config),
     upsertSubscription: vi.fn().mockImplementation(async (subscription) => {
       await upsertSubscription(subscription)
     }),
@@ -556,9 +566,9 @@ describe("OptionsPage", () => {
   })
 
   it("disables subscription global controls until the dedicated settings load resolves", async () => {
-    const deferred = createDeferred<typeof settings>()
+    const deferred = createDeferred<typeof subscriptionPolicy>()
     const api = createOptionsApi({
-      loadAppSettings: vi.fn().mockReturnValue(deferred.promise)
+      getSubscriptionPolicy: vi.fn().mockReturnValue(deferred.promise)
     })
 
     window.location.hash = "#/subscriptions"
@@ -570,7 +580,7 @@ describe("OptionsPage", () => {
     expect(screen.getByRole("switch", { name: "启用后台订阅轮询" })).toBeDisabled()
     expect(screen.getByRole("spinbutton", { name: "轮询间隔（分钟）" })).toBeDisabled()
 
-    deferred.resolve(settings)
+    deferred.resolve(subscriptionPolicy)
 
     await waitFor(() => {
       expect(screen.getByRole("button", { name: "保存订阅设置" })).not.toBeDisabled()

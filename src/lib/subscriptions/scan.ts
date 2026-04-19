@@ -1,10 +1,10 @@
 import type {
-  AppSettings,
   SourceId,
   SubscriptionEntry,
   SubscriptionHitRecord
 } from "../shared/types"
 import type { SourceConfig } from "../sources/config/types"
+import type { SubscriptionPolicyConfig } from "./policy/types"
 import { resolveSourceEnabled } from "../sources/config/selectors"
 import { subscriptionDb } from "./db"
 import { createSubscriptionFingerprint } from "./fingerprint"
@@ -21,7 +21,7 @@ import type { SubscriptionCandidate, SubscriptionQuery } from "./types"
 import { LAST_SCHEDULER_RUN_AT_META_KEY } from "./runtime-query"
 
 export type ScanSubscriptionsDependencies = {
-  appSettings: AppSettings
+  subscriptionPolicy: SubscriptionPolicyConfig
   sourceConfig: SourceConfig
   subscriptions: SubscriptionEntry[]
   now?: () => string
@@ -57,7 +57,7 @@ export async function scanSubscriptions(
   const scannedSourceIds: SourceId[] = []
   const errors: SubscriptionScanError[] = []
 
-  if (!input.appSettings.subscriptionsEnabled || enabledSubscriptions.length === 0) {
+  if (!input.subscriptionPolicy.enabled || enabledSubscriptions.length === 0) {
     await persistScanState(now, runtimeBySubscriptionId, null)
     return {
       lastSchedulerRunAt: now,

@@ -1,21 +1,30 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 import type {
-  AppSettings,
   SubscriptionEntry,
   SubscriptionHitRecord
 } from "../../../src/lib/shared/types"
 import type { DownloaderAdapter, DownloaderTorrentFile } from "../../../src/lib/downloader"
-import { DEFAULT_SETTINGS } from "../../../src/lib/settings/defaults"
+import type { SubscriptionPolicyConfig } from "../../../src/lib/subscriptions/policy/types"
+import type { DownloaderConfig } from "../../../src/lib/downloader/config/types"
+import { DEFAULT_SUBSCRIPTION_POLICY_CONFIG } from "../../../src/lib/subscriptions/policy/defaults"
+import { DEFAULT_DOWNLOADER_CONFIG } from "../../../src/lib/downloader/config/defaults"
 import { resetSubscriptionDb, subscriptionDb } from "../../../src/lib/subscriptions/db"
 import { downloadSubscriptionNotificationHits } from "../../../src/lib/subscriptions/download-notification"
 import { listNotificationRounds } from "../../../src/lib/subscriptions/runtime-query"
 
-function createAppSettings(overrides: Partial<AppSettings> = {}): AppSettings {
+function createSubscriptionPolicy(overrides: Partial<SubscriptionPolicyConfig> = {}): SubscriptionPolicyConfig {
   return {
-    ...DEFAULT_SETTINGS,
-    subscriptionsEnabled: true,
+    ...DEFAULT_SUBSCRIPTION_POLICY_CONFIG,
+    enabled: true,
     notificationsEnabled: true,
+    ...overrides
+  }
+}
+
+function createDownloaderConfig(overrides: Partial<DownloaderConfig> = {}): DownloaderConfig {
+  return {
+    ...DEFAULT_DOWNLOADER_CONFIG,
     ...overrides
   }
 }
@@ -105,7 +114,7 @@ describe("downloadSubscriptionNotificationHits", () => {
 
     const result = await downloadSubscriptionNotificationHits(
       {
-        appSettings: createAppSettings(),
+        subscriptionPolicy: createSubscriptionPolicy(),
         roundId: "subscription-round:20260414093000000"
       },
       {
@@ -117,6 +126,7 @@ describe("downloadSubscriptionNotificationHits", () => {
           })
         ),
         extractSingleItem: vi.fn(),
+        getDownloaderConfig: async () => createDownloaderConfig(),
         now: () => now
       }
     )
@@ -151,7 +161,7 @@ describe("downloadSubscriptionNotificationHits", () => {
 
     const result = await downloadSubscriptionNotificationHits(
       {
-        appSettings: createAppSettings({
+        subscriptionPolicy: createSubscriptionPolicy({
           notificationsEnabled: false
         }),
         roundId: "subscription-round:20260414093000000"
@@ -165,6 +175,7 @@ describe("downloadSubscriptionNotificationHits", () => {
           })
         ),
         extractSingleItem: vi.fn(),
+        getDownloaderConfig: async () => createDownloaderConfig(),
         now: () => now
       }
     )
@@ -214,7 +225,7 @@ describe("downloadSubscriptionNotificationHits", () => {
 
     const result = await downloadSubscriptionNotificationHits(
       {
-        appSettings: createAppSettings(),
+        subscriptionPolicy: createSubscriptionPolicy(),
         roundId: "subscription-round:20260414093000000"
       },
       {
@@ -226,6 +237,7 @@ describe("downloadSubscriptionNotificationHits", () => {
           })
         ),
         extractSingleItem: vi.fn(),
+        getDownloaderConfig: async () => createDownloaderConfig(),
         now: () => now
       }
     )

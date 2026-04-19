@@ -1,7 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
-import type { AppSettings, SubscriptionEntry } from "../../../src/lib/shared/types"
-import { DEFAULT_SETTINGS } from "../../../src/lib/settings/defaults"
+import type { SubscriptionEntry } from "../../../src/lib/shared/types"
+import type { SubscriptionPolicyConfig } from "../../../src/lib/subscriptions/policy/types"
+import { DEFAULT_SUBSCRIPTION_POLICY_CONFIG } from "../../../src/lib/subscriptions/policy/defaults"
 import {
   clearPendingSubscriptionNotifications,
   executeSubscriptionScan,
@@ -11,10 +12,10 @@ import { listSubscriptions } from "../../../src/lib/subscriptions/catalog-reposi
 import { resetSubscriptionDb, subscriptionDb } from "../../../src/lib/subscriptions/db"
 import type { SubscriptionCandidate } from "../../../src/lib/subscriptions/types"
 
-function createAppSettings(overrides: Partial<AppSettings> = {}): AppSettings {
+function createSubscriptionPolicy(overrides: Partial<SubscriptionPolicyConfig> = {}): SubscriptionPolicyConfig {
   return {
-    ...DEFAULT_SETTINGS,
-    subscriptionsEnabled: true,
+    ...DEFAULT_SUBSCRIPTION_POLICY_CONFIG,
+    enabled: true,
     notificationsEnabled: true,
     ...overrides
   }
@@ -70,7 +71,7 @@ describe("background subscriptions bridge", () => {
     const saveSettings = vi.fn()
 
     await upsertSubscriptionDefinition(createSubscription(), {
-      getSettings: async () => createAppSettings(),
+      getSettings: async () => createSubscriptionPolicy(),
       saveSettings
     })
 
@@ -84,7 +85,7 @@ describe("background subscriptions bridge", () => {
     const createNotification = vi.fn(async () => undefined)
 
     await upsertSubscriptionDefinition(createSubscription(), {
-      getSettings: async () => createAppSettings()
+      getSettings: async () => createSubscriptionPolicy()
     })
     await subscriptionDb.subscriptionRuntime.put({
       subscriptionId: "sub-1",
@@ -96,7 +97,7 @@ describe("background subscriptions bridge", () => {
     })
 
     const result = await executeSubscriptionScan({
-      getSettings: async () => createAppSettings({
+      getSubscriptionPolicy: async () => createSubscriptionPolicy({
         notificationsEnabled: true
       }),
       createNotification,

@@ -1,44 +1,19 @@
 import { i18n } from "../../../../lib/i18n"
-import { DEFAULT_SETTINGS } from "../../../../lib/settings"
 import {
   buildSubscriptionDashboardRows,
   buildSubscriptionRuntimeStatusRow,
   type SubscriptionDashboardRow,
   type SubscriptionRuntimeStatusRow
 } from "../../../../lib/subscriptions"
-import type { AppSettings, SubscriptionEntry, SubscriptionRuntimeState } from "../../../../lib/shared/types"
+import type { SubscriptionEntry, SubscriptionRuntimeState } from "../../../../lib/shared/types"
 import { useLiveQuery } from "dexie-react-hooks"
 import { useEffect, useMemo, useState } from "react"
 
 import type { OptionsApi } from "../../OptionsPage"
 
-type SubscriptionSettingsSlice = Pick<
-  AppSettings,
-  | "subscriptionsEnabled"
-  | "pollingIntervalMinutes"
-  | "notificationsEnabled"
-  | "notificationDownloadActionEnabled"
->
-
 export type SubscriptionsWorkbenchStatus = {
   tone: "info" | "success" | "error"
   message: string
-}
-
-const DEFAULT_SUBSCRIPTION_SETTINGS: SubscriptionSettingsSlice = {
-  subscriptionsEnabled: DEFAULT_SETTINGS.subscriptionsEnabled,
-  pollingIntervalMinutes: DEFAULT_SETTINGS.pollingIntervalMinutes,
-  notificationsEnabled: DEFAULT_SETTINGS.notificationsEnabled,
-  notificationDownloadActionEnabled: DEFAULT_SETTINGS.notificationDownloadActionEnabled
-}
-
-function pickSubscriptionSettings(settings: SubscriptionSettingsSlice): SubscriptionSettingsSlice {
-  return {
-    subscriptionsEnabled: settings.subscriptionsEnabled,
-    pollingIntervalMinutes: settings.pollingIntervalMinutes,
-    notificationsEnabled: settings.notificationsEnabled,
-    notificationDownloadActionEnabled: settings.notificationDownloadActionEnabled
-  }
 }
 
 function createInitialRuntimeStatus(): SubscriptionRuntimeStatusRow {
@@ -62,14 +37,11 @@ export function toSubscriptionRuntimeState(
 }
 
 export function useSubscriptionsWorkbench(api: OptionsApi) {
-  const [settings, setSettings] = useState<SubscriptionSettingsSlice>(DEFAULT_SUBSCRIPTION_SETTINGS)
   const [status, setStatus] = useState<SubscriptionsWorkbenchStatus>({
     tone: "info",
     message: i18n.t("options.status.loadingSettings")
   })
-  const [loadingSettings, setLoadingSettings] = useState(true)
-  const [settingsReady, setSettingsReady] = useState(false)
-  const [savingSettings, setSavingSettings] = useState(false)
+  const [loading, setLoading] = useState(true)
   const [mutatingSubscription, setMutatingSubscription] = useState(false)
 
   const runtimeStatus =
@@ -82,14 +54,12 @@ export function useSubscriptionsWorkbench(api: OptionsApi) {
     let active = true
 
     void api
-      .loadAppSettings()
-      .then((loaded) => {
+      .getSubscriptionPolicy()
+      .then(() => {
         if (!active) {
           return
         }
 
-        setSettings(pickSubscriptionSettings(loaded))
-        setSettingsReady(true)
         setStatus({
           tone: "success",
           message: i18n.t("options.status.settingsLoaded")
@@ -107,7 +77,7 @@ export function useSubscriptionsWorkbench(api: OptionsApi) {
       })
       .finally(() => {
         if (active) {
-          setLoadingSettings(false)
+          setLoading(false)
         }
       })
 
@@ -115,34 +85,6 @@ export function useSubscriptionsWorkbench(api: OptionsApi) {
       active = false
     }
   }, [api])
-
-  const saveGlobalSettings = async () => {
-    if (!settingsReady) {
-      return
-    }
-
-    setSavingSettings(true)
-    setStatus({
-      tone: "info",
-      message: i18n.t("options.status.savingSettings")
-    })
-
-    try {
-      const saved = await api.saveAppSettings(settings)
-      setSettings(pickSubscriptionSettings(saved))
-      setStatus({
-        tone: "success",
-        message: i18n.t("options.status.settingsSaved")
-      })
-    } catch (error: unknown) {
-      setStatus({
-        tone: "error",
-        message: error instanceof Error ? error.message : i18n.t("options.status.saveFailed")
-      })
-    } finally {
-      setSavingSettings(false)
-    }
-  }
 
   const mutateSubscription = async (
     run: () => Promise<void>,
@@ -191,16 +133,11 @@ export function useSubscriptionsWorkbench(api: OptionsApi) {
   )
 
   return {
-    settings,
-    setSettings,
     status,
-    loadingSettings,
-    settingsReady,
-    savingSettings,
+    loading,
     mutatingSubscription,
     runtimeStatus,
     subscriptionRows,
-    saveGlobalSettings,
     upsertSubscription,
     deleteSubscription,
     summary

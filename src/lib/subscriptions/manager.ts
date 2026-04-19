@@ -1,5 +1,6 @@
-import type { AppSettings, SubscriptionEntry } from "../shared/types"
+import type { SubscriptionEntry } from "../shared/types"
 import type { SourceConfig } from "../sources/config/types"
+import type { SubscriptionPolicyConfig } from "./policy/types"
 
 import {
   deleteSubscription,
@@ -27,7 +28,7 @@ export type SubscriptionManagerScanResult = ScanSubscriptionsResult
 export class SubscriptionManager {
   constructor(
     private readonly input: {
-      appSettings: AppSettings
+      subscriptionPolicy: SubscriptionPolicyConfig
       sourceConfig: SourceConfig
       now?: () => string
     }
@@ -36,13 +37,13 @@ export class SubscriptionManager {
   async scan(
     dependencies: Omit<
       ScanSubscriptionsDependencies,
-      "appSettings" | "sourceConfig" | "subscriptions" | "now"
+      "subscriptionPolicy" | "sourceConfig" | "subscriptions" | "now"
     > = {}
   ): Promise<SubscriptionManagerScanResult> {
     const subscriptions = await listSubscriptions()
 
     return scanSubscriptions({
-      appSettings: this.input.appSettings,
+      subscriptionPolicy: this.input.subscriptionPolicy,
       sourceConfig: this.input.sourceConfig,
       subscriptions,
       now: this.input.now,
@@ -56,7 +57,7 @@ export class SubscriptionManager {
   ): Promise<SubscriptionManagerDownloadResult> {
     return downloadSubscriptionNotificationHits(
       {
-        appSettings: this.input.appSettings,
+        subscriptionPolicy: this.input.subscriptionPolicy,
         roundId: request.roundId
       },
       {

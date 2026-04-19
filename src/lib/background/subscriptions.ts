@@ -9,9 +9,12 @@ import type {
 } from "../shared/types"
 import type { SourceConfig } from "../sources/config/types"
 import type { ExtractionContext } from "../sources/types"
+import type { SubscriptionPolicyConfig } from "../subscriptions/policy/types"
+import type { DownloaderConfig } from "../downloader/config/types"
 import { getSettings } from "../settings"
 import { getSourceConfig } from "../sources/config"
 import { getBatchExecutionConfig } from "../batch-config/storage"
+import { getDownloaderConfig } from "../downloader/config/storage"
 import { extractSingleItem } from "../sources/extraction"
 import {
   buildSubscriptionRoundNotification,
@@ -19,6 +22,7 @@ import {
   clearNotificationRounds,
   deleteSubscription,
   ensureSubscriptionAlarm,
+  getSubscriptionPolicyConfig,
   listNotificationRounds,
   replaceSubscriptionCatalog,
   SubscriptionManager,
@@ -39,7 +43,7 @@ export type ExecuteSubscriptionScanDependencies = Omit<
   ScanSubscriptionsDependencies,
   "appSettings" | "sourceConfig" | "subscriptions"
 > & {
-  getSettings?: () => Promise<AppSettings>
+  getSubscriptionPolicy?: () => Promise<SubscriptionPolicyConfig>
   getSourceConfig?: () => Promise<SourceConfig>
   createNotification?: (
     notificationId: string,
@@ -48,7 +52,7 @@ export type ExecuteSubscriptionScanDependencies = Omit<
 }
 
 export type ReconcileSubscriptionAlarmDependencies = {
-  getSettings?: () => Promise<AppSettings>
+  getSubscriptionPolicy?: () => Promise<SubscriptionPolicyConfig>
   alarms?: SubscriptionAlarmApi
 }
 
@@ -58,9 +62,10 @@ export type SubscriptionCatalogCommandDependencies = {
 }
 
 export type DownloadSubscriptionHitsDependencies = {
-  getSettings?: () => Promise<AppSettings>
+  getSubscriptionPolicy?: () => Promise<SubscriptionPolicyConfig>
   getSourceConfig?: () => Promise<SourceConfig>
-  getDownloader?: (settings: AppSettings) => DownloaderAdapter
+  getDownloader?: (config: DownloaderConfig) => DownloaderAdapter
+  getDownloaderConfig?: () => Promise<DownloaderConfig>
   fetchTorrentForUpload?: (torrentUrl: string) => Promise<DownloaderTorrentFile>
   extractSingleItem?: (item: BatchItem, context: ExtractionContext) => Promise<ExtractionResult>
   now?: () => string
@@ -74,10 +79,10 @@ export async function executeSubscriptionScan(
   dependencies: ExecuteSubscriptionScanDependencies = {}
 ): Promise<ScanSubscriptionsResult> {
   return enqueueSubscriptionMutation(async () => {
-    const appSettings = await (dependencies.getSettings ?? getSettings)()
+    const subscriptionPolicy = await (dependencies.getSubscriptionPolicy ?? getSubscriptionPolicyConfig)()
     const sourceConfig = await (dependencies.getSourceConfig ?? getSourceConfig)()
     const manager = new SubscriptionManager({
-      appSettings,
+      subscriptionPolicy,
       sourceConfig,
       now: dependencies.now
     })
@@ -85,7 +90,7 @@ export async function executeSubscriptionScan(
       scanCandidatesFromSource: dependencies.scanCandidatesFromSource
     })
 
-    if (result.notificationRound && canCreateSubscriptionNotifications(appSettings)) {
+    if (result.notificationRound && canCreateSubscriptionNotifications(subscriptionPolicy)) {
       const hitCount = result.notificationRound.hits.length
       const notification = buildSubscriptionRoundNotification(
         result.notificationRound,
@@ -142,11 +147,11 @@ export async function clearPendingSubscriptionNotifications(
 export async function reconcileSubscriptionAlarm(
   dependencies: ReconcileSubscriptionAlarmDependencies = {}
 ): Promise<void> {
-  const getSettingsImpl = dependencies.getSettings ?? getSettings
+  const getSubscriptionPolicyImpl = dependencies.getSubscriptionPolicy ?? getSubscriptionPolicyConfig
   const alarms = dependencies.alarms ?? getBrowser().alarms
-  const settings = await getSettingsImpl()
+  const policy = await getSubscriptionPolicyImpl()
 
-  await ensureSubscriptionAlarm(settings, alarms)
+  await ensureSubscriptionAlarm(policy, alarms)
 }
 
 export async function upsertSubscriptionDefinition(
@@ -181,21 +186,23 @@ export async function downloadSubscriptionHits(
   dependencies: DownloadSubscriptionHitsDependencies = {}
 ): Promise<DownloadSubscriptionHitsResult> {
   return enqueueSubscriptionMutation(async () => {
-    const appSettings = await (dependencies.getSettings ?? getSettings)()
+    const subscriptionPolicy = await (dependencies.getSubscriptionPolicy ?? getSubscriptionPolicyConfig)()
     const sourceConfig = await (dependencies.getSourceConfig ?? getSourceConfig)()
+    const downloaderConfig = await (dependencies.getDownloaderConfig ?? getDownloaderConfig)()
     const manager = new SubscriptionManager({
-      appSettings,
+      subscriptionPolicy,
       sourceConfig
     })
     const getDownloaderImpl =
       dependencies.getDownloader ??
-      ((settings: AppSettings) => getDownloaderAdapter(settings.currentDownloaderId))
+      ((config: DownloaderConfig) => getDownloaderAdapter(config.activeId))
 
     return manager.downloadFromNotification(request, {
-      downloader: getDownloaderImpl(appSettings),
+      downloader: getDownloaderImpl(downloaderConfig),
       fetchTorrentForUpload:
         dependencies.fetchTorrentForUpload ?? defaultFetchTorrentForUpload,
       extractSingleItem: dependencies.extractSingleItem ?? defaultExtractSingleItem,
+      getDownloaderConfig: dependencies.getDownloaderConfig ?? getDownloaderConfig,
       now: dependencies.now
     })
   })

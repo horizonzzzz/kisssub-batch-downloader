@@ -3,6 +3,7 @@ import type { OptionsApi } from "../../components/options/OptionsPage"
 import type { DownloaderConfig } from "../../lib/downloader/config/types"
 import type { BatchExecutionConfig } from "../../lib/batch-config/types"
 import type { BatchUiPreferences } from "../../lib/batch-preferences/types"
+import type { SubscriptionPolicyConfig } from "../../lib/subscriptions/policy/types"
 import { sendRuntimeRequest } from "../../lib/shared/messages"
 
 export const optionsApi: OptionsApi = {
@@ -45,6 +46,26 @@ export const optionsApi: OptionsApi = {
     if (!response.ok) {
       throw new Error(response.error || i18n.t("options.status.saveFailed"))
     }
+  },
+  async getSubscriptionPolicy() {
+    const response = await sendRuntimeRequest({ type: "GET_SUBSCRIPTION_POLICY" })
+    if (!response.ok) {
+      throw new Error(response.error || i18n.t("options.status.loadFailed"))
+    }
+
+    return response.config
+  },
+  async saveSubscriptionPolicy(config: SubscriptionPolicyConfig) {
+    const response = await sendRuntimeRequest({
+      type: "SAVE_SUBSCRIPTION_POLICY",
+      config
+    })
+
+    if (!response.ok) {
+      throw new Error(response.error || i18n.t("options.status.saveFailed"))
+    }
+
+    return response.config
   },
   async testConnection(config: DownloaderConfig) {
     const response = await sendRuntimeRequest({

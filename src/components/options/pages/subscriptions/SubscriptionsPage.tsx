@@ -30,6 +30,7 @@ import {
   toSubscriptionRuntimeState,
   useSubscriptionsWorkbench
 } from "./use-subscriptions-workbench"
+import { useSubscriptionPolicyWorkbench } from "./use-subscription-policy-workbench"
 
 type SubscriptionsPageProps = {
   api: OptionsApi
@@ -37,20 +38,22 @@ type SubscriptionsPageProps = {
 
 export function SubscriptionsPage({ api }: SubscriptionsPageProps) {
   const {
-    settings,
-    setSettings,
     status,
-    loadingSettings,
-    settingsReady,
-    savingSettings,
+    loading,
     mutatingSubscription,
     runtimeStatus,
     subscriptionRows,
-    saveGlobalSettings,
     upsertSubscription,
     deleteSubscription,
     summary
   } = useSubscriptionsWorkbench(api)
+  const {
+    policy,
+    setPolicy,
+    loading: policyLoading,
+    saving: policySaving,
+    savePolicy
+  } = useSubscriptionPolicyWorkbench(api)
   const [editingSubscriptionId, setEditingSubscriptionId] = useState<string | null>(null)
   const [creatingSubscription, setCreatingSubscription] = useState(false)
   const [pendingDeleteSubscriptionId, setPendingDeleteSubscriptionId] = useState<string | null>(null)
@@ -95,43 +98,43 @@ export function SubscriptionsPage({ api }: SubscriptionsPageProps) {
       </div>
 
       <SubscriptionsGlobalCard
-        subscriptionsEnabled={settings.subscriptionsEnabled}
-        pollingIntervalMinutes={settings.pollingIntervalMinutes}
-        notificationsEnabled={settings.notificationsEnabled}
-        notificationDownloadActionEnabled={settings.notificationDownloadActionEnabled}
+        subscriptionsEnabled={policy.enabled}
+        pollingIntervalMinutes={policy.pollingIntervalMinutes}
+        notificationsEnabled={policy.notificationsEnabled}
+        notificationDownloadActionEnabled={policy.notificationDownloadActionEnabled}
         configuredCount={summary.configuredCount}
         enabledCount={summary.enabledCount}
         scannedCount={summary.scannedCount}
         errorCount={summary.errorCount}
         recentHitCount={summary.recentHitCount}
         lastSchedulerRunAt={runtimeStatus.lastSchedulerRunAt}
-        loading={loadingSettings || !settingsReady}
-        saving={savingSettings}
+        loading={loading || policyLoading}
+        saving={policySaving}
         onSubscriptionsEnabledChange={(enabled) =>
-          setSettings((current) => ({
+          setPolicy((current) => ({
             ...current,
-            subscriptionsEnabled: enabled
+            enabled: enabled
           }))
         }
         onPollingIntervalMinutesChange={(minutes) =>
-          setSettings((current) => ({
+          setPolicy((current) => ({
             ...current,
-            pollingIntervalMinutes: Number.isFinite(minutes) ? minutes : 0
+            pollingIntervalMinutes: Number.isFinite(minutes) ? minutes : 30
           }))
         }
         onNotificationsEnabledChange={(enabled) =>
-          setSettings((current) => ({
+          setPolicy((current) => ({
             ...current,
             notificationsEnabled: enabled
           }))
         }
         onNotificationDownloadActionEnabledChange={(enabled) =>
-          setSettings((current) => ({
+          setPolicy((current) => ({
             ...current,
             notificationDownloadActionEnabled: enabled
           }))
         }
-        onSave={() => void saveGlobalSettings()}
+        onSave={() => void savePolicy()}
       />
 
       <section className="space-y-4" data-testid="subscriptions-list">
@@ -147,7 +150,7 @@ export function SubscriptionsPage({ api }: SubscriptionsPageProps) {
 
           <Button
             type="button"
-            disabled={loadingSettings || mutatingSubscription}
+            disabled={loading || mutatingSubscription}
             onClick={() => {
               setEditingSubscriptionId(null)
               setCreatingSubscription(true)
@@ -186,7 +189,7 @@ export function SubscriptionsPage({ api }: SubscriptionsPageProps) {
               <div className="flex justify-center">
                 <Button
                   type="button"
-                  disabled={loadingSettings || mutatingSubscription}
+                  disabled={loading || mutatingSubscription}
                   onClick={() => {
                     setEditingSubscriptionId(null)
                     setCreatingSubscription(true)

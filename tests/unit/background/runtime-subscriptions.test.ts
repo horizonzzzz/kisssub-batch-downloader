@@ -2,7 +2,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 import { fakeBrowser } from "wxt/testing/fake-browser"
 
 import { DEFAULT_SETTINGS } from "../../../src/lib/settings/defaults"
+import { DEFAULT_SUBSCRIPTION_POLICY_CONFIG } from "../../../src/lib/subscriptions/policy/defaults"
 import type { AppSettings } from "../../../src/lib/shared/types"
+import type { SubscriptionPolicyConfig } from "../../../src/lib/subscriptions/policy/types"
 
 type AlarmListener = Parameters<typeof fakeBrowser.alarms.onAlarm.addListener>[0]
 type RuntimeInstalledListener = Parameters<typeof fakeBrowser.runtime.onInstalled.addListener>[0]
@@ -20,6 +22,7 @@ const {
   downloadSubscriptionHitsMock,
   executeSubscriptionScanMock,
   getSettingsMock,
+  getSubscriptionPolicyConfigMock,
   notifySupportedSourceTabsOfFilterChangeMock,
   reconcileSubscriptionAlarmMock,
   saveSettingsMock,
@@ -31,6 +34,7 @@ const {
   downloadSubscriptionHitsMock: vi.fn(),
   executeSubscriptionScanMock: vi.fn(),
   getSettingsMock: vi.fn(),
+  getSubscriptionPolicyConfigMock: vi.fn(),
   notifySupportedSourceTabsOfFilterChangeMock: vi.fn(),
   reconcileSubscriptionAlarmMock: vi.fn(),
   saveSettingsMock: vi.fn(),
@@ -80,6 +84,12 @@ vi.mock("../../../src/lib/settings", async () => {
   }
 })
 
+vi.mock("../../../src/lib/subscriptions/policy/storage", () => ({
+  ensureSubscriptionPolicyConfig: vi.fn(),
+  getSubscriptionPolicyConfig: getSubscriptionPolicyConfigMock,
+  saveSubscriptionPolicyConfig: vi.fn()
+}))
+
 function createAppSettings(overrides: Partial<AppSettings> = {}): AppSettings {
   return {
     ...DEFAULT_SETTINGS,
@@ -91,6 +101,13 @@ function createAppSettings(overrides: Partial<AppSettings> = {}): AppSettings {
         password: "secret"
       }
     },
+    ...overrides
+  }
+}
+
+function createSubscriptionPolicy(overrides: Partial<SubscriptionPolicyConfig> = {}): SubscriptionPolicyConfig {
+  return {
+    ...DEFAULT_SUBSCRIPTION_POLICY_CONFIG,
     ...overrides
   }
 }
@@ -153,6 +170,11 @@ describe("background runtime subscription boundary", () => {
     resetContentScriptReadyRegistry()
     getSettingsMock.mockResolvedValue(createAppSettings({
       subscriptionsEnabled: true,
+      notificationsEnabled: true,
+      notificationDownloadActionEnabled: true
+    }))
+    getSubscriptionPolicyConfigMock.mockResolvedValue(createSubscriptionPolicy({
+      enabled: true,
       notificationsEnabled: true,
       notificationDownloadActionEnabled: true
     }))
@@ -456,8 +478,8 @@ describe("background runtime subscription boundary", () => {
   })
 
   it("does not download hits from notification clicks when the click action toggle is disabled", async () => {
-    getSettingsMock.mockResolvedValue(
-      createAppSettings({
+    getSubscriptionPolicyConfigMock.mockResolvedValue(
+      createSubscriptionPolicy({
         notificationDownloadActionEnabled: false
       })
     )
@@ -467,14 +489,14 @@ describe("background runtime subscription boundary", () => {
     listener?.("subscription-round:20260414093000000")
     await Promise.resolve()
 
-    expect(getSettingsMock).toHaveBeenCalledTimes(1)
+    expect(getSubscriptionPolicyConfigMock).toHaveBeenCalledTimes(1)
     expect(downloadSubscriptionHitsMock).not.toHaveBeenCalled()
   })
 
   it("does not download hits from notification clicks when subscriptions are globally disabled", async () => {
-    getSettingsMock.mockResolvedValue(
-      createAppSettings({
-        subscriptionsEnabled: false
+    getSubscriptionPolicyConfigMock.mockResolvedValue(
+      createSubscriptionPolicy({
+        enabled: false
       })
     )
     downloadSubscriptionHitsMock.mockResolvedValue(undefined)
@@ -483,14 +505,14 @@ describe("background runtime subscription boundary", () => {
     listener?.("subscription-round:20260414093000000")
     await Promise.resolve()
 
-    expect(getSettingsMock).toHaveBeenCalledTimes(1)
+    expect(getSubscriptionPolicyConfigMock).toHaveBeenCalledTimes(1)
     expect(downloadSubscriptionHitsMock).not.toHaveBeenCalled()
     expect(fakeBrowser.permissions.request).not.toHaveBeenCalled()
   })
 
   it("does not download hits from notification clicks when notifications are globally disabled", async () => {
-    getSettingsMock.mockResolvedValue(
-      createAppSettings({
+    getSubscriptionPolicyConfigMock.mockResolvedValue(
+      createSubscriptionPolicy({
         notificationsEnabled: false
       })
     )
@@ -500,7 +522,7 @@ describe("background runtime subscription boundary", () => {
     listener?.("subscription-round:20260414093000000")
     await Promise.resolve()
 
-    expect(getSettingsMock).toHaveBeenCalledTimes(1)
+    expect(getSubscriptionPolicyConfigMock).toHaveBeenCalledTimes(1)
     expect(downloadSubscriptionHitsMock).not.toHaveBeenCalled()
     expect(fakeBrowser.permissions.request).not.toHaveBeenCalled()
   })
