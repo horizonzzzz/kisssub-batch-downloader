@@ -69,6 +69,53 @@ describe("background runtime filter handlers", () => {
     })
   })
 
+  it("calls notifySupportedSourceTabsOfFilterChange after saving filter config", async () => {
+    // Set up tabs mock to return a supported source tab (kisssub)
+    queryTabsMock.mockImplementationOnce(async () => [
+      {
+        id: 123,
+        url: "https://kisssub.org/",
+        active: true
+      }
+    ])
+
+    const { registerBackgroundRuntime } = await import(
+      "../../../src/entrypoints/background/runtime"
+    )
+    registerBackgroundRuntime()
+
+    const listener = onMessageAddListener.mock.calls[0]?.[0]
+    const sendResponse = vi.fn()
+
+    listener?.(
+      {
+        type: "SAVE_FILTER_CONFIG",
+        config: {
+          rules: []
+        }
+      },
+      {},
+      sendResponse
+    )
+
+    // Wait for save to complete
+    await vi.waitFor(() => {
+      expect(sendResponse).toHaveBeenCalledWith({
+        ok: true,
+        config: {
+          rules: []
+        }
+      })
+    })
+
+    // Verify notification was sent to the supported tab
+    await vi.waitFor(() => {
+      expect(sendMessageMock).toHaveBeenCalledWith(123, {
+        type: "ANIME_BT_FILTERS_UPDATED_EVENT"
+      })
+    })
+  })
+
   it("retrieves filter config from dedicated storage", async () => {
     await fakeBrowser.storage.local.set({
       filter_config: {

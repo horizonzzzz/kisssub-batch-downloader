@@ -6,8 +6,11 @@ import type { OptionsApi } from "../../OptionsPage"
 
 export function useFilterWorkbench(api: OptionsApi) {
   const [config, setConfig] = useState<FilterConfig>({ rules: [] })
-  const [status, setStatus] = useState({
-    tone: "info" as const,
+  const [status, setStatus] = useState<{
+    tone: "info" | "success" | "warning" | "error"
+    message: string
+  }>({
+    tone: "info",
     message: i18n.t("options.status.loadingSettings")
   })
   const [loading, setLoading] = useState(true)
