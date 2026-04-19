@@ -1,9 +1,7 @@
 import { i18n } from "../i18n"
 import type { DownloaderAdapter, DownloaderTorrentFile } from "../downloader"
-import { appSettingsToDownloaderConfig } from "../downloader/config/storage"
 import type { DownloaderConfig } from "../downloader/config/types"
 import type { TaskHistoryItem, TaskHistoryRecord } from "../history/types"
-import type { AppSettings } from "../shared/types"
 
 export type RetryRequest = {
   recordId: string
@@ -17,7 +15,7 @@ export type RetryResult = {
 }
 
 export type RetryDependencies = {
-  getSettings: () => Promise<AppSettings>
+  getDownloaderConfig: () => Promise<DownloaderConfig>
   getHistoryRecord: (recordId: string) => Promise<TaskHistoryRecord | null>
   updateHistoryRecord: (record: TaskHistoryRecord) => Promise<void>
   getDownloader: (config: DownloaderConfig) => DownloaderAdapter
@@ -97,8 +95,7 @@ export async function retryFailedItems(
     }
   }
 
-  const settings = await deps.getSettings()
-  const downloaderConfig = appSettingsToDownloaderConfig(settings)
+  const downloaderConfig = await deps.getDownloaderConfig()
   const downloader = deps.getDownloader(downloaderConfig)
   const urlItems: { item: TaskHistoryItem; url: string }[] = []
   const torrentFileItems: { item: TaskHistoryItem; url: string }[] = []
@@ -197,7 +194,7 @@ export async function retryFailedItems(
   const updatedRecord: TaskHistoryRecord = {
     ...record,
     items: updatedItems,
-    lastRetriedDownloaderId: settings.currentDownloaderId,
+    lastRetriedDownloaderId: downloaderConfig.activeId,
     stats,
     status
   }

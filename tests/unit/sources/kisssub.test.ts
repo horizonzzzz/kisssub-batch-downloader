@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
-import { DEFAULT_SETTINGS } from "../../../src/lib/settings"
+import { DEFAULT_BATCH_EXECUTION_CONFIG } from "../../../src/lib/batch-config/defaults"
 import { DEFAULT_SOURCE_CONFIG } from "../../../src/lib/sources/config/defaults"
 import { kisssubSourceAdapter, parseKisssubDetailSnapshot } from "../../../src/lib/sources/kisssub"
 import type { ExtractionContext } from "../../../src/lib/sources/types"
@@ -18,9 +18,9 @@ vi.mock("../../../src/lib/sources/detail-tab", () => ({
 function buildTestExtractionContext(overrides: Partial<ExtractionContext> = {}): ExtractionContext {
   return {
     execution: {
-      retryCount: DEFAULT_SETTINGS.retryCount,
-      injectTimeoutMs: DEFAULT_SETTINGS.injectTimeoutMs,
-      domSettleMs: DEFAULT_SETTINGS.domSettleMs
+      retryCount: DEFAULT_BATCH_EXECUTION_CONFIG.retryCount,
+      injectTimeoutMs: DEFAULT_BATCH_EXECUTION_CONFIG.injectTimeoutMs,
+      domSettleMs: DEFAULT_BATCH_EXECUTION_CONFIG.domSettleMs
     },
     source: {
       kisssub: {

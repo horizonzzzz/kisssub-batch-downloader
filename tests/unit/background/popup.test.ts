@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest"
 
-import { DEFAULT_SETTINGS } from "../../../src/lib/settings/defaults"
+import { DEFAULT_DOWNLOADER_CONFIG } from "../../../src/lib/downloader/config/defaults"
 import { DEFAULT_SOURCE_CONFIG } from "../../../src/lib/sources/config/defaults"
 import {
   buildPopupState,
@@ -10,17 +10,21 @@ import {
   setSourceEnabledForPopup
 } from "../../../src/lib/background/popup"
 import { SOURCE_IDS } from "../../../src/lib/sources/catalog"
-import type { AppSettings } from "../../../src/lib/shared/types"
+import type { DownloaderConfig } from "../../../src/lib/downloader/config/types"
 import type { SourceConfig } from "../../../src/lib/sources/config/types"
 
-function createSettings(overrides: Partial<AppSettings> = {}): AppSettings {
+function createDownloaderConfig(overrides: Partial<DownloaderConfig> = {}): DownloaderConfig {
   return {
-    ...DEFAULT_SETTINGS,
-    sourceDeliveryModes: {
-      ...DEFAULT_SETTINGS.sourceDeliveryModes
-    },
-    enabledSources: {
-      ...DEFAULT_SETTINGS.enabledSources
+    ...DEFAULT_DOWNLOADER_CONFIG,
+    profiles: {
+      qbittorrent: {
+        ...DEFAULT_DOWNLOADER_CONFIG.profiles.qbittorrent,
+        ...(overrides.profiles?.qbittorrent ?? {})
+      },
+      transmission: {
+        ...DEFAULT_DOWNLOADER_CONFIG.profiles.transmission,
+        ...(overrides.profiles?.transmission ?? {})
+      }
     },
     ...overrides
   }
@@ -35,14 +39,14 @@ function createSourceConfig(overrides: Partial<SourceConfig> = {}): SourceConfig
 
 describe("popup background helpers", () => {
   it("builds popup state from settings, active tab URL, site metadata, and version info", async () => {
-    const settings = createSettings({
-      downloaders: {
-        ...DEFAULT_SETTINGS.downloaders,
+    const downloaderConfig = createDownloaderConfig({
+      profiles: {
         qbittorrent: {
-          ...DEFAULT_SETTINGS.downloaders.qbittorrent,
+          ...DEFAULT_DOWNLOADER_CONFIG.profiles.qbittorrent,
           username: "admin",
           password: "secret"
-        }
+        },
+        transmission: DEFAULT_DOWNLOADER_CONFIG.profiles.transmission
       }
     })
     const sourceConfig = createSourceConfig({
@@ -54,7 +58,7 @@ describe("popup background helpers", () => {
 
     const state = await buildPopupState({
       getSourceConfig: async () => sourceConfig,
-      getSettings: async () => settings,
+      getDownloaderConfig: async () => downloaderConfig,
       getActiveTabContext: async () => ({
         id: 17,
         url: "https://acg.rip/"
@@ -86,7 +90,7 @@ describe("popup background helpers", () => {
   it("treats www.acg.rip list pages as supported active tabs", async () => {
     const state = await buildPopupState({
       getSourceConfig: async () => createSourceConfig(),
-      getSettings: async () => createSettings(),
+      getDownloaderConfig: async () => createDownloaderConfig(),
       getActiveTabContext: async () => ({
         id: 23,
         url: "https://www.acg.rip/"
@@ -108,15 +112,15 @@ describe("popup background helpers", () => {
   it("keeps unsupported pages idle even when downloader credentials are explicitly changed", async () => {
     const state = await buildPopupState({
       getSourceConfig: async () => createSourceConfig(),
-      getSettings: async () =>
-        createSettings({
-          downloaders: {
-            ...DEFAULT_SETTINGS.downloaders,
+      getDownloaderConfig: async () =>
+        createDownloaderConfig({
+          profiles: {
             qbittorrent: {
               baseUrl: "http://127.0.0.1:17474",
               username: "",
               password: ""
-            }
+            },
+            transmission: DEFAULT_DOWNLOADER_CONFIG.profiles.transmission
           }
         }),
       getActiveTabContext: async () => ({
@@ -133,7 +137,7 @@ describe("popup background helpers", () => {
   it("marks supported and enabled active tabs as requiring a downloader connection check even with the default placeholder config", async () => {
     const state = await buildPopupState({
       getSourceConfig: async () => createSourceConfig(),
-      getSettings: async () => createSettings(),
+      getDownloaderConfig: async () => createDownloaderConfig(),
       getActiveTabContext: async () => ({
         id: 19,
         url: "https://kisssub.org/"
@@ -155,7 +159,7 @@ describe("popup background helpers", () => {
   it("treats null or malformed active-tab URLs as unsupported without throwing", async () => {
     const nullUrlState = await buildPopupState({
       getSourceConfig: async () => createSourceConfig(),
-      getSettings: async () => createSettings(),
+      getDownloaderConfig: async () => createDownloaderConfig(),
       getActiveTabContext: async () => ({
         id: null,
         url: null
@@ -165,7 +169,7 @@ describe("popup background helpers", () => {
     })
     const malformedUrlState = await buildPopupState({
       getSourceConfig: async () => createSourceConfig(),
-      getSettings: async () => createSettings(),
+      getDownloaderConfig: async () => createDownloaderConfig(),
       getActiveTabContext: async () => ({
         id: 88,
         url: "not-a-valid-url"

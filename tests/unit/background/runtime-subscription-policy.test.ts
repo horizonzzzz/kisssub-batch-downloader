@@ -1,9 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 import { fakeBrowser } from "wxt/testing/fake-browser"
 
-import { DEFAULT_SETTINGS } from "../../../src/lib/settings/defaults"
-import type { AppSettings } from "../../../src/lib/shared/types"
-
 type RuntimeMessageListener = Parameters<typeof fakeBrowser.runtime.onMessage.addListener>[0]
 
 const {
@@ -41,32 +38,6 @@ vi.mock("../../../src/lib/subscriptions/policy/storage", () => ({
   getSubscriptionPolicyConfig: getSubscriptionPolicyConfigMock,
   saveSubscriptionPolicyConfig: saveSubscriptionPolicyConfigMock
 }))
-
-vi.mock("../../../src/lib/settings", async () => {
-  const actual = await vi.importActual<typeof import("../../../src/lib/settings")>(
-    "../../../src/lib/settings"
-  )
-  return {
-    ...actual,
-    getSettings: vi.fn(async () => createAppSettings()),
-    saveSettings: vi.fn(async (settings: Partial<AppSettings>) => createAppSettings(settings))
-  }
-})
-
-function createAppSettings(overrides: Partial<AppSettings> = {}): AppSettings {
-  return {
-    ...DEFAULT_SETTINGS,
-    downloaders: {
-      ...DEFAULT_SETTINGS.downloaders,
-      qbittorrent: {
-        baseUrl: "http://127.0.0.1:17474",
-        username: "admin",
-        password: "secret"
-      }
-    },
-    ...overrides
-  }
-}
 
 function installBrowserSpies() {
   vi.spyOn(fakeBrowser.alarms.onAlarm, "addListener").mockImplementation(vi.fn())

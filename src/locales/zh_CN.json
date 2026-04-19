@@ -296,7 +296,16 @@
         "0": "统一的站点配置页集中管理 4 个受支持站点的启用状态和专属参数。",
         "1": "禁用站点后不会注入批量下载 UI，后台批处理也会同步拒绝该站点请求。",
         "2": "源站概览保留为独立页面，方便查看站点简介与快速访问。"
-      }
+      },
+      "downloaderTitle": "当前下载器",
+      "downloaderName": "名称",
+      "downloaderBaseUrl": "地址",
+      "subscriptionsTitle": "订阅",
+      "subscriptionsEnabled": "后台轮询",
+      "enabled": "已启用",
+      "disabled": "已禁用",
+      "configuredSubscriptionCount": "已配置",
+      "enabledSubscriptionCount": "已启用"
     },
     "history": {
       "loading": "加载中...",

@@ -10,7 +10,6 @@ import type { SourceConfig } from "../sources/config/types"
 import type { ExtractionContext } from "../sources/types"
 import type { SubscriptionPolicyConfig } from "../subscriptions/policy/types"
 import type { DownloaderConfig } from "../downloader/config/types"
-import { getSettings } from "../settings"
 import { getSourceConfig } from "../sources/config"
 import { getBatchExecutionConfig } from "../batch-config/storage"
 import { getDownloaderConfig } from "../downloader/config/storage"
@@ -56,8 +55,7 @@ export type ReconcileSubscriptionAlarmDependencies = {
 }
 
 export type SubscriptionCatalogCommandDependencies = {
-  getSettings?: () => Promise<SubscriptionPolicyConfig>
-  saveSettings?: (settings: Partial<SubscriptionPolicyConfig>) => Promise<SubscriptionPolicyConfig>
+  // No dependencies needed for catalog commands - they just use direct DB operations
 }
 
 export type DownloadSubscriptionHitsDependencies = {

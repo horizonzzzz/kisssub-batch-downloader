@@ -15,6 +15,13 @@ function migrateFromLegacySettings(legacy: LegacyAppSettings): BatchUiPreference
   }
 }
 
+export function normalizeSavePath(savePath: string | undefined): string {
+  if (!savePath) {
+    return ""
+  }
+  return String(savePath).trim()
+}
+
 export async function getBatchUiPreferences(): Promise<BatchUiPreferences> {
   const extensionBrowser = getBrowser()
   const stored = await extensionBrowser.storage.local.get([

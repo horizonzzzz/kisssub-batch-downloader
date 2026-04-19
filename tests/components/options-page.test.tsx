@@ -17,6 +17,18 @@ import {
 const permissionsContainsMock = vi.fn()
 const permissionsRequestMock = vi.fn()
 
+const sendRuntimeRequestMock = vi.hoisted(() => vi.fn())
+
+vi.mock("../../src/lib/shared/messages", async () => {
+  const actual = await vi.importActual<typeof import("../../src/lib/shared/messages")>(
+    "../../src/lib/shared/messages"
+  )
+  return {
+    ...actual,
+    sendRuntimeRequest: sendRuntimeRequestMock
+  }
+})
+
 const settings = {
   currentDownloaderId: "qbittorrent",
   downloaders: {
@@ -236,6 +248,35 @@ describe("OptionsPage", () => {
     window.location.hash = ""
     permissionsContainsMock.mockResolvedValue(true)
     permissionsRequestMock.mockResolvedValue(true)
+    sendRuntimeRequestMock.mockImplementation((request: { type: string }) => {
+      if (request.type === "GET_OVERVIEW_STATE") {
+        return Promise.resolve({
+          ok: true,
+          state: {
+            downloaderName: "qBittorrent",
+            downloaderBaseUrl: "http://127.0.0.1:17474",
+            subscriptionsEnabled: false,
+            configuredSubscriptionCount: 0,
+            enabledSubscriptionCount: 0
+          }
+        })
+      }
+      if (request.type === "GET_HISTORY") {
+        return Promise.resolve({
+          ok: true,
+          records: []
+        })
+      }
+      if (request.type === "GET_HISTORY_PAGE_CONTEXT") {
+        return Promise.resolve({
+          ok: true,
+          context: {
+            downloaderConfig: downloaderConfig
+          }
+        })
+      }
+      return Promise.resolve({ ok: true })
+    })
     const runtimeBrowser = (globalThis as typeof globalThis & {
       browser: {
         permissions: {

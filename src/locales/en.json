@@ -296,7 +296,16 @@
         "0": "A unified site settings page manages enablement and site-specific parameters for all four supported sources.",
         "1": "Disabled sites stop injecting the batch UI, and background batch processing rejects requests from them as well.",
         "2": "The overview stays as a separate page so you can review site summaries and jump to them quickly."
-      }
+      },
+      "downloaderTitle": "Current downloader",
+      "downloaderName": "Name",
+      "downloaderBaseUrl": "Base URL",
+      "subscriptionsTitle": "Subscriptions",
+      "subscriptionsEnabled": "Background polling",
+      "enabled": "Enabled",
+      "disabled": "Disabled",
+      "configuredSubscriptionCount": "Configured",
+      "enabledSubscriptionCount": "Enabled"
     },
     "history": {
       "loading": "Loading...",

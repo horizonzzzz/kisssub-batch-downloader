@@ -2,8 +2,8 @@ import { beforeEach, describe, expect, it, vi, type Mock } from "vitest"
 import { retryFailedItems, type RetryDependencies, type RetryRequest } from "../../../src/lib/background/retry"
 import type { DownloaderAdapter, DownloaderTorrentFile } from "../../../src/lib/downloader"
 import type { TaskHistoryItem, TaskHistoryRecord } from "../../../src/lib/history/types"
-import { DEFAULT_SETTINGS } from "../../../src/lib/settings/defaults"
-import type { AppSettings } from "../../../src/lib/shared/types"
+import { DEFAULT_DOWNLOADER_CONFIG } from "../../../src/lib/downloader/config/defaults"
+import type { DownloaderConfig } from "../../../src/lib/downloader/config/types"
 
 type RetryTestDeps = RetryDependencies & {
   downloader: DownloaderAdapter
@@ -93,6 +93,23 @@ function createSuccessItem(id: string, title: string): TaskHistoryItem {
   }
 }
 
+function createDownloaderConfig(overrides: Partial<DownloaderConfig> = {}): DownloaderConfig {
+  return {
+    ...DEFAULT_DOWNLOADER_CONFIG,
+    profiles: {
+      qbittorrent: {
+        ...DEFAULT_DOWNLOADER_CONFIG.profiles.qbittorrent,
+        ...(overrides.profiles?.qbittorrent ?? {})
+      },
+      transmission: {
+        ...DEFAULT_DOWNLOADER_CONFIG.profiles.transmission,
+        ...(overrides.profiles?.transmission ?? {})
+      }
+    },
+    ...overrides
+  }
+}
+
 function createMockDeps(
   overrides?: Partial<RetryDependencies>
 ): RetryTestDeps {
@@ -111,17 +128,15 @@ function createMockDeps(
   } satisfies DownloaderAdapter
 
   return {
-    getSettings: vi.fn(async () => ({
-      ...DEFAULT_SETTINGS,
-      downloaders: {
-        ...DEFAULT_SETTINGS.downloaders,
+    getDownloaderConfig: vi.fn(async () => createDownloaderConfig({
+      profiles: {
         qbittorrent: {
           baseUrl: "http://localhost:8080",
           username: "admin",
           password: "password"
-        }
-      },
-      filters: []
+        },
+        transmission: DEFAULT_DOWNLOADER_CONFIG.profiles.transmission
+      }
     })),
     getHistoryRecord: vi.fn(async () => null),
     updateHistoryRecord: vi.fn(async () => {}),
@@ -249,13 +264,12 @@ describe("retryFailedItems", () => {
         originalDownloaderId: "qbittorrent" as const
       }
       deps.getHistoryRecord = vi.fn(async () => record)
-      deps.getSettings = vi.fn(async () => ({
-        ...DEFAULT_SETTINGS,
-        currentDownloaderId: "transmission" as const,
-        downloaders: {
-          ...DEFAULT_SETTINGS.downloaders
-        },
-        filters: []
+      deps.getDownloaderConfig = vi.fn(async () => createDownloaderConfig({
+        activeId: "transmission" as const,
+        profiles: {
+          qbittorrent: DEFAULT_DOWNLOADER_CONFIG.profiles.qbittorrent,
+          transmission: DEFAULT_DOWNLOADER_CONFIG.profiles.transmission
+        }
       }))
 
       const result = await retryFailedItems({ recordId: "batch-1" }, deps)
@@ -272,35 +286,6 @@ describe("retryFailedItems", () => {
       )
       const record = createMockRecord("batch-1", [failedItem])
       deps.getHistoryRecord = vi.fn(async () => record)
-      const filteredSettings: AppSettings = {
-        ...DEFAULT_SETTINGS,
-        downloaders: {
-          ...DEFAULT_SETTINGS.downloaders,
-          qbittorrent: {
-            baseUrl: "http://localhost:8080",
-            username: "admin",
-            password: "password"
-          }
-        },
-        filters: [
-          {
-            id: "filter-subgroup",
-            name: "仅保留爱恋",
-            enabled: true,
-            sourceIds: ["kisssub", "dongmanhuayuan", "acgrip", "bangumimoe"],
-            must: [
-              {
-                id: "condition-subgroup",
-                field: "subgroup",
-                operator: "contains",
-                value: "爱恋字幕社"
-              }
-            ],
-            any: []
-          }
-        ]
-      }
-      deps.getSettings = vi.fn(async () => filteredSettings)
 
       const result = await retryFailedItems({ recordId: "batch-1" }, deps)
 
@@ -326,35 +311,6 @@ describe("retryFailedItems", () => {
       )
       const record = createMockRecord("batch-1", [failedItem])
       deps.getHistoryRecord = vi.fn(async () => record)
-      const includeSettings: AppSettings = {
-        ...DEFAULT_SETTINGS,
-        downloaders: {
-          ...DEFAULT_SETTINGS.downloaders,
-          qbittorrent: {
-            baseUrl: "http://localhost:8080",
-            username: "admin",
-            password: "password"
-          }
-        },
-        filters: [
-          {
-            id: "filter-include",
-            name: "仅保留喵萌",
-            enabled: true,
-            sourceIds: ["kisssub", "dongmanhuayuan", "acgrip", "bangumimoe"],
-            must: [
-              {
-                id: "condition-subgroup",
-                field: "subgroup",
-                operator: "contains",
-                value: "喵萌奶茶屋"
-              }
-            ],
-            any: []
-          }
-        ]
-      }
-      deps.getSettings = vi.fn(async () => includeSettings)
 
       const result = await retryFailedItems({ recordId: "batch-1" }, deps)
 

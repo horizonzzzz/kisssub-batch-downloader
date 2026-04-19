@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
-import { DEFAULT_SETTINGS } from "../../../src/lib/settings"
+import { DEFAULT_BATCH_EXECUTION_CONFIG } from "../../../src/lib/batch-config/defaults"
 import {
   dongmanhuayuanSourceAdapter,
   parseDongmanhuayuanDetailSnapshot
@@ -18,15 +18,15 @@ vi.mock("../../../src/lib/sources/detail-tab", () => ({
 function buildTestExtractionContext(overrides: Partial<ExtractionContext> = {}): ExtractionContext {
   return {
     execution: {
-      retryCount: DEFAULT_SETTINGS.retryCount,
-      injectTimeoutMs: DEFAULT_SETTINGS.injectTimeoutMs,
-      domSettleMs: DEFAULT_SETTINGS.domSettleMs
+      retryCount: DEFAULT_BATCH_EXECUTION_CONFIG.retryCount,
+      injectTimeoutMs: DEFAULT_BATCH_EXECUTION_CONFIG.injectTimeoutMs,
+      domSettleMs: DEFAULT_BATCH_EXECUTION_CONFIG.domSettleMs
     },
     source: {
       kisssub: {
         script: {
-          url: DEFAULT_SETTINGS.remoteScriptUrl,
-          revision: DEFAULT_SETTINGS.remoteScriptRevision
+          url: "",
+          revision: ""
         }
       }
     },
@@ -134,8 +134,8 @@ describe("dongmanhuayuanSourceAdapter", () => {
         buildTestExtractionContext({
           execution: {
             retryCount: 0,
-            injectTimeoutMs: DEFAULT_SETTINGS.injectTimeoutMs,
-            domSettleMs: DEFAULT_SETTINGS.domSettleMs
+            injectTimeoutMs: DEFAULT_BATCH_EXECUTION_CONFIG.injectTimeoutMs,
+            domSettleMs: DEFAULT_BATCH_EXECUTION_CONFIG.domSettleMs
           }
         })
       )
@@ -177,8 +177,8 @@ describe("dongmanhuayuanSourceAdapter", () => {
         buildTestExtractionContext({
           execution: {
             retryCount: 0,
-            injectTimeoutMs: DEFAULT_SETTINGS.injectTimeoutMs,
-            domSettleMs: DEFAULT_SETTINGS.domSettleMs
+            injectTimeoutMs: DEFAULT_BATCH_EXECUTION_CONFIG.injectTimeoutMs,
+            domSettleMs: DEFAULT_BATCH_EXECUTION_CONFIG.domSettleMs
           }
         })
       )
@@ -212,8 +212,8 @@ describe("dongmanhuayuanSourceAdapter", () => {
         buildTestExtractionContext({
           execution: {
             retryCount: 0,
-            injectTimeoutMs: DEFAULT_SETTINGS.injectTimeoutMs,
-            domSettleMs: DEFAULT_SETTINGS.domSettleMs
+            injectTimeoutMs: DEFAULT_BATCH_EXECUTION_CONFIG.injectTimeoutMs,
+            domSettleMs: DEFAULT_BATCH_EXECUTION_CONFIG.domSettleMs
           }
         })
       )

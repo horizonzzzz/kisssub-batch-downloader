@@ -16,6 +16,7 @@ import type { BatchExecutionConfig } from "../batch-config/types"
 import type { BatchUiPreferences } from "../batch-preferences/types"
 import type { ContentScriptState } from "../background/queries/content-script-state"
 import type { SubscriptionPolicyConfig } from "../subscriptions/policy/types"
+import type { OverviewState } from "../background/queries/overview-state"
 import { getBrowser } from "./browser"
 
 export const BATCH_EVENT = "ANIME_BT_BATCH_EVENT"
@@ -91,6 +92,7 @@ export type RuntimeRequest =
   | { type: typeof CONTENT_SCRIPT_READY_EVENT; sourceId: SourceId }
   | { type: "GET_SUBSCRIPTION_POLICY" }
   | { type: "SAVE_SUBSCRIPTION_POLICY"; config: SubscriptionPolicyConfig }
+  | { type: "GET_OVERVIEW_STATE" }
 
 export type RuntimeRequestType = RuntimeRequest["type"]
 
@@ -227,6 +229,11 @@ export type SaveSubscriptionPolicySuccessResponse = {
   config: SubscriptionPolicyConfig
 }
 
+export type GetOverviewStateSuccessResponse = {
+  ok: true
+  state: OverviewState
+}
+
 export type RuntimeSuccessResponseMap = {
   GET_HISTORY: GetHistorySuccessResponse
   CLEAR_HISTORY: ClearHistorySuccessResponse
@@ -255,6 +262,7 @@ export type RuntimeSuccessResponseMap = {
   [CONTENT_SCRIPT_READY_EVENT]: ContentScriptReadySuccessResponse
   GET_SUBSCRIPTION_POLICY: GetSubscriptionPolicySuccessResponse
   SAVE_SUBSCRIPTION_POLICY: SaveSubscriptionPolicySuccessResponse
+  GET_OVERVIEW_STATE: GetOverviewStateSuccessResponse
 }
 
 export type RuntimeSuccessResponseFor<TType extends RuntimeRequestType> =
@@ -291,6 +299,7 @@ export type SaveBatchUiPreferencesResponse = RuntimeResponseFor<"SAVE_BATCH_UI_P
 export type GetContentScriptStateResponse = RuntimeResponseFor<"GET_CONTENT_SCRIPT_STATE">
 export type GetSubscriptionPolicyResponse = RuntimeResponseFor<"GET_SUBSCRIPTION_POLICY">
 export type SaveSubscriptionPolicyResponse = RuntimeResponseFor<"SAVE_SUBSCRIPTION_POLICY">
+export type GetOverviewStateResponse = RuntimeResponseFor<"GET_OVERVIEW_STATE">
 export type RuntimeResponse = RuntimeResponseFor<RuntimeRequestType>
 
 export function createRuntimeSuccessResponse<TType extends RuntimeRequestType>(

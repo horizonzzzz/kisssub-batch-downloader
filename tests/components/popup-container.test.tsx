@@ -2,7 +2,6 @@ import { render, screen, waitFor } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
-import { DEFAULT_SETTINGS } from "../../src/lib/settings/defaults"
 import type { RuntimeRequest, RuntimeResponse } from "../../src/lib/shared/messages"
 import type { PopupStateViewModel } from "../../src/lib/shared/popup"
 

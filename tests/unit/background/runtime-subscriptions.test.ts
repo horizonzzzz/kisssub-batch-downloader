@@ -1,9 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 import { fakeBrowser } from "wxt/testing/fake-browser"
 
-import { DEFAULT_SETTINGS } from "../../../src/lib/settings/defaults"
 import { DEFAULT_SUBSCRIPTION_POLICY_CONFIG } from "../../../src/lib/subscriptions/policy/defaults"
-import type { AppSettings } from "../../../src/lib/shared/types"
 import type { SubscriptionPolicyConfig } from "../../../src/lib/subscriptions/policy/types"
 
 type AlarmListener = Parameters<typeof fakeBrowser.alarms.onAlarm.addListener>[0]
@@ -21,11 +19,9 @@ const {
   deleteSubscriptionDefinitionMock,
   downloadSubscriptionHitsMock,
   executeSubscriptionScanMock,
-  getSettingsMock,
   getSubscriptionPolicyConfigMock,
   notifySupportedSourceTabsOfFilterChangeMock,
   reconcileSubscriptionAlarmMock,
-  saveSettingsMock,
   testDownloaderConnectionMock,
   upsertSubscriptionDefinitionMock
 } = vi.hoisted(() => ({
@@ -33,11 +29,9 @@ const {
   deleteSubscriptionDefinitionMock: vi.fn(),
   downloadSubscriptionHitsMock: vi.fn(),
   executeSubscriptionScanMock: vi.fn(),
-  getSettingsMock: vi.fn(),
   getSubscriptionPolicyConfigMock: vi.fn(),
   notifySupportedSourceTabsOfFilterChangeMock: vi.fn(),
   reconcileSubscriptionAlarmMock: vi.fn(),
-  saveSettingsMock: vi.fn(),
   testDownloaderConnectionMock: vi.fn(),
   upsertSubscriptionDefinitionMock: vi.fn()
 }))
@@ -73,37 +67,11 @@ vi.mock("../../../src/lib/background", async () => {
   }
 })
 
-vi.mock("../../../src/lib/settings", async () => {
-  const actual = await vi.importActual<typeof import("../../../src/lib/settings")>(
-    "../../../src/lib/settings"
-  )
-  return {
-    ...actual,
-    getSettings: getSettingsMock,
-    saveSettings: saveSettingsMock
-  }
-})
-
 vi.mock("../../../src/lib/subscriptions/policy/storage", () => ({
   ensureSubscriptionPolicyConfig: vi.fn(),
   getSubscriptionPolicyConfig: getSubscriptionPolicyConfigMock,
   saveSubscriptionPolicyConfig: vi.fn()
 }))
-
-function createAppSettings(overrides: Partial<AppSettings> = {}): AppSettings {
-  return {
-    ...DEFAULT_SETTINGS,
-    downloaders: {
-      ...DEFAULT_SETTINGS.downloaders,
-      qbittorrent: {
-        baseUrl: "http://127.0.0.1:17474",
-        username: "admin",
-        password: "secret"
-      }
-    },
-    ...overrides
-  }
-}
 
 function createSubscriptionPolicy(overrides: Partial<SubscriptionPolicyConfig> = {}): SubscriptionPolicyConfig {
   return {
@@ -168,19 +136,11 @@ describe("background runtime subscription boundary", () => {
     vi.clearAllMocks()
     const { resetContentScriptReadyRegistry } = await import("../../../src/lib/subscriptions/content-ready")
     resetContentScriptReadyRegistry()
-    getSettingsMock.mockResolvedValue(createAppSettings({
-      subscriptionsEnabled: true,
-      notificationsEnabled: true,
-      notificationDownloadActionEnabled: true
-    }))
     getSubscriptionPolicyConfigMock.mockResolvedValue(createSubscriptionPolicy({
       enabled: true,
       notificationsEnabled: true,
       notificationDownloadActionEnabled: true
     }))
-    saveSettingsMock.mockImplementation(async (settings) =>
-      createAppSettings(settings as Partial<AppSettings>)
-    )
     testDownloaderConnectionMock.mockResolvedValue({
       downloaderId: "qbittorrent",
       displayName: "qBittorrent",

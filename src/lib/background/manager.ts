@@ -1,5 +1,5 @@
 import { decideFilterAction } from "../filter-rules"
-import { normalizeSavePath } from "../settings"
+import { normalizeSavePath } from "../batch-preferences/storage"
 import { getSourceConfig } from "../sources/config"
 import { getDisabledSources } from "../sources/config/selectors"
 import { getDownloaderConfig } from "../downloader/config/storage"

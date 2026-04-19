@@ -4,7 +4,7 @@ import { getSourceAdapterForPage } from "../sources"
 import { getLocalizedSiteConfigMeta } from "../sources/site-meta"
 import { getSourceConfig, saveSourceConfig } from "../sources/config"
 import { resolveSourceEnabled } from "../sources/config/selectors"
-import { getSettings } from "../settings"
+import { getDownloaderConfig } from "../downloader/config/storage"
 import {
   FILTERS_UPDATED_EVENT,
   SOURCE_ENABLED_CHANGE_EVENT,
@@ -19,12 +19,13 @@ import {
   type PopupDownloaderConnectionStatus,
   type PopupStateViewModel
 } from "../shared/popup"
-import type { AppSettings, SourceId } from "../shared/types"
+import type { SourceId } from "../shared/types"
 import type { SourceConfig } from "../sources/config/types"
+import type { DownloaderConfig } from "../downloader/config/types"
 
 type BuildPopupStateDependencies = {
   getSourceConfig: () => Promise<SourceConfig>
-  getSettings: () => Promise<AppSettings>
+  getDownloaderConfig: () => Promise<DownloaderConfig>
   getActiveTabContext: () => Promise<{ id: number | null; url: string | null }>
   getExtensionVersion: () => string
   isBatchRunningInTab: (tabId: number) => boolean
@@ -60,7 +61,7 @@ type NotifySupportedSourceTabsOfFilterChangeDependencies = {
 
 const DEFAULT_BUILD_POPUP_STATE_DEPENDENCIES: BuildPopupStateDependencies = {
   getSourceConfig,
-  getSettings,
+  getDownloaderConfig,
   getActiveTabContext: queryActiveTabContext,
   getExtensionVersion: () => packageJson.version,
   isBatchRunningInTab: () => false
@@ -128,13 +129,13 @@ export async function buildPopupState(
   dependencies: BuildPopupStateDependencies = DEFAULT_BUILD_POPUP_STATE_DEPENDENCIES
 ): Promise<PopupStateViewModel> {
   const sourceConfig = await dependencies.getSourceConfig()
-  const settings = await dependencies.getSettings()
+  const downloaderConfig = await dependencies.getDownloaderConfig()
   const activeTab = await dependencies.getActiveTabContext()
   const activeSourceId = resolveActiveSourceId(activeTab.url)
   const activeTabEnabled = activeSourceId ? resolveSourceEnabled(activeSourceId, sourceConfig) : false
   const activeTabBatchRunning =
     typeof activeTab.id === "number" ? dependencies.isBatchRunningInTab(activeTab.id) : false
-  const currentDownloader = getDownloaderMeta(settings.currentDownloaderId)
+  const currentDownloader = getDownloaderMeta(downloaderConfig.activeId)
 
   return {
     downloaderConnectionStatus: resolvePopupDownloaderConnectionStatus(

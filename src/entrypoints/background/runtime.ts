@@ -39,6 +39,7 @@ import {
 } from "../../lib/downloader/config/storage"
 import { getHistoryPageContext } from "../../lib/background/queries/history-context"
 import { buildContentScriptState } from "../../lib/background/queries/content-script-state"
+import { getOverviewState } from "../../lib/background/queries/overview-state"
 import { SOURCE_IDS } from "../../lib/sources/catalog"
 import {
   getBatchExecutionConfig,
@@ -72,7 +73,6 @@ import {
   saveSubscriptionPolicyConfig,
   type SubscriptionPolicyConfig
 } from "../../lib/subscriptions"
-import { getSettings } from "../../lib/settings"
 
 import iconColor from "../../assets/icon.png"
 import iconGrayscale from "../../assets/icon-grayscale.png"
@@ -295,7 +295,7 @@ export function registerBackgroundRuntime() {
               createRuntimeSuccessResponse("GET_POPUP_STATE", {
                 state: await buildPopupState({
                   getSourceConfig,
-                  getSettings,
+                  getDownloaderConfig,
                   getActiveTabContext: queryCurrentActiveTabContext,
                   getExtensionVersion: () => extensionBrowser.runtime.getManifest().version,
                   isBatchRunningInTab: (tabId) => batchDownloadManager.activeJobs.has(tabId)
@@ -393,7 +393,7 @@ export function registerBackgroundRuntime() {
               const result = await retryFailedItems(
                 { recordId: runtimeMessage.recordId, itemIds: runtimeMessage.itemIds },
                 {
-                  getSettings,
+                  getDownloaderConfig,
                   getHistoryRecord,
                   updateHistoryRecord,
                   getDownloader: (config) => getDownloaderAdapter(config.activeId),
@@ -433,6 +433,11 @@ export function registerBackgroundRuntime() {
               })
             }
             sendResponse(createRuntimeSuccessResponse("SAVE_SUBSCRIPTION_POLICY", { config: savedConfig }))
+            return
+          }
+          case "GET_OVERVIEW_STATE": {
+            const state = await getOverviewState()
+            sendResponse(createRuntimeSuccessResponse("GET_OVERVIEW_STATE", { state }))
             return
           }
           default:
