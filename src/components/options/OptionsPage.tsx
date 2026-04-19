@@ -16,6 +16,7 @@ import type {
   SubscriptionEntry,
   TestDownloaderConnectionResult
 } from "../../lib/shared/types"
+import type { FilterConfig } from "../../lib/filter-rules/types"
 import {
   DEFAULT_OPTIONS_ROUTE,
   getOptionsRoutes,
@@ -41,6 +42,8 @@ export type SettingsFormApi = {
 export type OptionsApi = SettingsFormApi & {
   upsertSubscription: (subscription: SubscriptionEntry) => Promise<void>
   deleteSubscription: (subscriptionId: string) => Promise<void>
+  getFilterConfig: () => Promise<FilterConfig>
+  saveFilterConfig: (config: FilterConfig) => Promise<FilterConfig>
 }
 
 type OptionsPageProps = {

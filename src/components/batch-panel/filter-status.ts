@@ -1,11 +1,11 @@
 import { i18n } from "../../lib/i18n"
 import {
   deriveEffectiveFilterSummary,
+  summarizeFilterConditions,
   type EffectiveFilterSummary,
   type EffectiveFilterSummaryItem
 } from "../../lib/filter-rules"
 import type { FilterEntry, SourceId } from "../../lib/shared/types"
-import { summarizeConditionList } from "../options/pages/filters/filter-workbench"
 import type { BatchPanelFilterStatus } from "./types"
 
 function buildFilterSummaryText(summary: EffectiveFilterSummary) {
@@ -34,7 +34,7 @@ function createFilterStatusItem(
     id: filter.id,
     name: filter.name,
     summary: matchedFilter
-      ? summarizeConditionList([...matchedFilter.must, ...matchedFilter.any])
+      ? summarizeFilterConditions([...matchedFilter.must, ...matchedFilter.any])
       : i18n.t("batch.filter.unsetSummary")
   }
 }

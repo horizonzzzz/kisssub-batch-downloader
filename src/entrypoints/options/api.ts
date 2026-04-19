@@ -54,5 +54,25 @@ export const optionsApi: OptionsApi = {
     }
 
     return response.result
+  },
+  async getFilterConfig() {
+    const response = await sendRuntimeRequest({ type: "GET_FILTER_CONFIG" })
+    if (!response.ok) {
+      throw new Error(response.error || i18n.t("options.status.loadFailed"))
+    }
+
+    return response.config
+  },
+  async saveFilterConfig(config) {
+    const response = await sendRuntimeRequest({
+      type: "SAVE_FILTER_CONFIG",
+      config
+    })
+
+    if (!response.ok) {
+      throw new Error(response.error || i18n.t("options.status.saveFailed"))
+    }
+
+    return response.config
   }
 }

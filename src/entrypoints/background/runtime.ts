@@ -25,6 +25,11 @@ import {
   updateHistoryRecord
 } from "../../lib/history/storage"
 import { ensureSettings, getSettings, saveSettings } from "../../lib/settings"
+import {
+  ensureFilterConfig,
+  getFilterConfig,
+  saveFilterConfig
+} from "../../lib/filter-rules"
 import { SOURCE_IDS } from "../../lib/sources/catalog"
 import {
   BATCH_EVENT,
@@ -194,6 +199,22 @@ export function registerBackgroundRuntime() {
             sendResponse(
               createRuntimeSuccessResponse("TEST_DOWNLOADER_CONNECTION", {
                 result: await testDownloaderConnection(runtimeMessage.settings ?? null)
+              })
+            )
+            return
+          case "GET_FILTER_CONFIG":
+            sendResponse(
+              createRuntimeSuccessResponse("GET_FILTER_CONFIG", {
+                config: await getFilterConfig()
+              })
+            )
+            return
+          case "SAVE_FILTER_CONFIG":
+            const savedFilterConfig = await saveFilterConfig(runtimeMessage.config)
+            await notifySupportedSourceTabsOfFilterChange()
+            sendResponse(
+              createRuntimeSuccessResponse("SAVE_FILTER_CONFIG", {
+                config: savedFilterConfig
               })
             )
             return

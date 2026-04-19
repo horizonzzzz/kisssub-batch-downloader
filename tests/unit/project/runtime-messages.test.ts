@@ -125,4 +125,25 @@ describe("runtime message helpers", () => {
   it("uses a dedicated source-enablement event channel name", () => {
     expect(SOURCE_ENABLED_CHANGE_EVENT).toBe("ANIME_BT_SOURCE_ENABLED_CHANGE_EVENT")
   })
+
+  it("supports filter-config runtime requests", async () => {
+    runtimeSendMessage.mockResolvedValue({
+      ok: true,
+      config: { rules: [] }
+    })
+
+    await sendRuntimeRequest({ type: "GET_FILTER_CONFIG" })
+    await sendRuntimeRequest({
+      type: "SAVE_FILTER_CONFIG",
+      config: { rules: [] }
+    })
+
+    expect(runtimeSendMessage).toHaveBeenNthCalledWith(1, {
+      type: "GET_FILTER_CONFIG"
+    })
+    expect(runtimeSendMessage).toHaveBeenNthCalledWith(2, {
+      type: "SAVE_FILTER_CONFIG",
+      config: { rules: [] }
+    })
+  })
 })

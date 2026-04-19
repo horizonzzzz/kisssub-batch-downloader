@@ -9,6 +9,7 @@ import type {
 import type { TaskHistoryRecord } from "../history/types"
 import type { PopupOptionsRoute, PopupStateViewModel } from "./popup"
 import type { SourceSubscriptionScanCandidate } from "../sources/types"
+import type { FilterConfig } from "../filter-rules/types"
 import { getBrowser } from "./browser"
 
 export const BATCH_EVENT = "ANIME_BT_BATCH_EVENT"
@@ -64,6 +65,8 @@ export type RuntimeRequest =
   | { type: "GET_APP_SETTINGS" }
   | { type: "SAVE_APP_SETTINGS"; settings?: Partial<AppSettings> }
   | { type: "TEST_DOWNLOADER_CONNECTION"; settings?: Partial<AppSettings> | null }
+  | { type: "GET_FILTER_CONFIG" }
+  | { type: "SAVE_FILTER_CONFIG"; config: FilterConfig }
   | { type: "GET_POPUP_STATE" }
   | { type: "SET_SOURCE_ENABLED"; sourceId: SourceId; enabled: boolean }
   | { type: "OPEN_OPTIONS_PAGE"; route?: PopupOptionsRoute }
@@ -147,6 +150,16 @@ export type ContentScriptReadySuccessResponse = {
   ok: true
 }
 
+export type GetFilterConfigSuccessResponse = {
+  ok: true
+  config: FilterConfig
+}
+
+export type SaveFilterConfigSuccessResponse = {
+  ok: true
+  config: FilterConfig
+}
+
 export type RuntimeSuccessResponseMap = {
   GET_HISTORY: GetHistorySuccessResponse
   CLEAR_HISTORY: ClearHistorySuccessResponse
@@ -155,6 +168,8 @@ export type RuntimeSuccessResponseMap = {
   GET_APP_SETTINGS: GetAppSettingsSuccessResponse
   SAVE_APP_SETTINGS: SaveAppSettingsSuccessResponse
   TEST_DOWNLOADER_CONNECTION: TestDownloaderConnectionSuccessResponse
+  GET_FILTER_CONFIG: GetFilterConfigSuccessResponse
+  SAVE_FILTER_CONFIG: SaveFilterConfigSuccessResponse
   GET_POPUP_STATE: GetPopupStateSuccessResponse
   SET_SOURCE_ENABLED: SetSourceEnabledSuccessResponse
   OPEN_OPTIONS_PAGE: OpenOptionsPageSuccessResponse
@@ -187,6 +202,8 @@ export type UpsertSubscriptionResponse = RuntimeResponseFor<"UPSERT_SUBSCRIPTION
 export type DeleteSubscriptionResponse = RuntimeResponseFor<"DELETE_SUBSCRIPTION">
 export type ScanSubscriptionListResponse = RuntimeResponseFor<"SCAN_SUBSCRIPTION_LIST">
 export type ContentScriptReadyResponse = RuntimeResponseFor<typeof CONTENT_SCRIPT_READY_EVENT>
+export type GetFilterConfigResponse = RuntimeResponseFor<"GET_FILTER_CONFIG">
+export type SaveFilterConfigResponse = RuntimeResponseFor<"SAVE_FILTER_CONFIG">
 export type RuntimeResponse = RuntimeResponseFor<RuntimeRequestType>
 
 export function createRuntimeSuccessResponse<TType extends RuntimeRequestType>(
