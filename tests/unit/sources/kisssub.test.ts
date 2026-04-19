@@ -1,7 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import { DEFAULT_SETTINGS } from "../../../src/lib/settings"
+import { DEFAULT_SOURCE_CONFIG } from "../../../src/lib/sources/config/defaults"
 import { kisssubSourceAdapter, parseKisssubDetailSnapshot } from "../../../src/lib/sources/kisssub"
+import type { ExtractionContext } from "../../../src/lib/sources/types"
 
 const { reloadDetailTab, withDetailTab } = vi.hoisted(() => ({
   withDetailTab: vi.fn(),
@@ -12,6 +14,22 @@ vi.mock("../../../src/lib/sources/detail-tab", () => ({
   withDetailTab,
   reloadDetailTab
 }))
+
+function buildTestExtractionContext(overrides: Partial<ExtractionContext> = {}): ExtractionContext {
+  return {
+    execution: {
+      retryCount: DEFAULT_SETTINGS.retryCount,
+      injectTimeoutMs: DEFAULT_SETTINGS.injectTimeoutMs,
+      domSettleMs: DEFAULT_SETTINGS.domSettleMs
+    },
+    source: {
+      kisssub: {
+        script: DEFAULT_SOURCE_CONFIG.kisssub.script
+      }
+    },
+    ...overrides
+  }
+}
 
 describe("parseKisssubDetailSnapshot", () => {
   it("returns the extracted magnet or torrent URLs when the detail page exposes them", () => {
@@ -108,12 +126,13 @@ describe("kisssubSourceAdapter detail title fallback", () => {
           detailUrl: "https://www.kisssub.org/show-deadbeef.html",
           title: "placeholder"
         },
-        {
-          ...DEFAULT_SETTINGS,
-          retryCount: 0,
-          injectTimeoutMs: 10,
-          domSettleMs: 0
-        }
+        buildTestExtractionContext({
+          execution: {
+            retryCount: 0,
+            injectTimeoutMs: 10,
+            domSettleMs: 0
+          }
+        })
       )
     ).resolves.toMatchObject({
       title: "[SweetSub][刹那之花]"
@@ -145,12 +164,13 @@ describe("kisssubSourceAdapter detail title fallback", () => {
           detailUrl: "https://www.kisssub.org/show-deadbeef.html",
           title: "placeholder"
         },
-        {
-          ...DEFAULT_SETTINGS,
-          retryCount: 0,
-          injectTimeoutMs: 10,
-          domSettleMs: 0
-        }
+        buildTestExtractionContext({
+          execution: {
+            retryCount: 0,
+            injectTimeoutMs: 10,
+            domSettleMs: 0
+          }
+        })
       )
     ).resolves.toMatchObject({
       title: "[爱恋字幕社][示例资源]"
@@ -183,12 +203,13 @@ describe("kisssubSourceAdapter detail title fallback", () => {
           detailUrl: "https://www.kisssub.org/show-deadbeef.html",
           title: "placeholder"
         },
-        {
-          ...DEFAULT_SETTINGS,
-          retryCount: 0,
-          injectTimeoutMs: 10,
-          domSettleMs: 0
-        }
+        buildTestExtractionContext({
+          execution: {
+            retryCount: 0,
+            injectTimeoutMs: 10,
+            domSettleMs: 0
+          }
+        })
       )
     ).resolves.toMatchObject({
       title: "[爱恋字幕社][示例资源]"

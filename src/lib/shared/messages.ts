@@ -13,6 +13,9 @@ import type { FilterConfig } from "../filter-rules/types"
 import type { SourceConfig } from "../sources/config/types"
 import type { DownloaderConfig } from "../downloader/config/types"
 import type { HistoryPageContext } from "../background/queries/history-context"
+import type { BatchExecutionConfig } from "../batch-config/types"
+import type { BatchUiPreferences } from "../batch-preferences/types"
+import type { ContentScriptState } from "../background/queries/content-script-state"
 import { getBrowser } from "./browser"
 
 export const BATCH_EVENT = "ANIME_BT_BATCH_EVENT"
@@ -75,6 +78,11 @@ export type RuntimeRequest =
   | { type: "SAVE_FILTER_CONFIG"; config: FilterConfig }
   | { type: "GET_SOURCE_CONFIG" }
   | { type: "SAVE_SOURCE_CONFIG"; config: SourceConfig }
+  | { type: "GET_BATCH_EXECUTION_CONFIG" }
+  | { type: "SAVE_BATCH_EXECUTION_CONFIG"; config: Partial<BatchExecutionConfig> }
+  | { type: "GET_BATCH_UI_PREFERENCES" }
+  | { type: "SAVE_BATCH_UI_PREFERENCES"; preferences: Partial<BatchUiPreferences> }
+  | { type: "GET_CONTENT_SCRIPT_STATE"; sourceId: SourceId }
   | { type: "GET_POPUP_STATE" }
   | { type: "SET_SOURCE_ENABLED"; sourceId: SourceId; enabled: boolean }
   | { type: "OPEN_OPTIONS_PAGE"; route?: PopupOptionsRoute }
@@ -194,6 +202,31 @@ export type GetHistoryPageContextSuccessResponse = {
   context: HistoryPageContext
 }
 
+export type GetBatchExecutionConfigSuccessResponse = {
+  ok: true
+  config: BatchExecutionConfig
+}
+
+export type SaveBatchExecutionConfigSuccessResponse = {
+  ok: true
+  config: BatchExecutionConfig
+}
+
+export type GetBatchUiPreferencesSuccessResponse = {
+  ok: true
+  preferences: BatchUiPreferences
+}
+
+export type SaveBatchUiPreferencesSuccessResponse = {
+  ok: true
+  preferences: BatchUiPreferences
+}
+
+export type GetContentScriptStateSuccessResponse = {
+  ok: true
+  state: ContentScriptState
+}
+
 export type RuntimeSuccessResponseMap = {
   GET_HISTORY: GetHistorySuccessResponse
   CLEAR_HISTORY: ClearHistorySuccessResponse
@@ -209,6 +242,11 @@ export type RuntimeSuccessResponseMap = {
   GET_DOWNLOADER_CONFIG: GetDownloaderConfigSuccessResponse
   SAVE_DOWNLOADER_CONFIG: SaveDownloaderConfigSuccessResponse
   GET_HISTORY_PAGE_CONTEXT: GetHistoryPageContextSuccessResponse
+  GET_BATCH_EXECUTION_CONFIG: GetBatchExecutionConfigSuccessResponse
+  SAVE_BATCH_EXECUTION_CONFIG: SaveBatchExecutionConfigSuccessResponse
+  GET_BATCH_UI_PREFERENCES: GetBatchUiPreferencesSuccessResponse
+  SAVE_BATCH_UI_PREFERENCES: SaveBatchUiPreferencesSuccessResponse
+  GET_CONTENT_SCRIPT_STATE: GetContentScriptStateSuccessResponse
   GET_POPUP_STATE: GetPopupStateSuccessResponse
   SET_SOURCE_ENABLED: SetSourceEnabledSuccessResponse
   OPEN_OPTIONS_PAGE: OpenOptionsPageSuccessResponse
@@ -248,6 +286,11 @@ export type SaveSourceConfigResponse = RuntimeResponseFor<"SAVE_SOURCE_CONFIG">
 export type GetDownloaderConfigResponse = RuntimeResponseFor<"GET_DOWNLOADER_CONFIG">
 export type SaveDownloaderConfigResponse = RuntimeResponseFor<"SAVE_DOWNLOADER_CONFIG">
 export type GetHistoryPageContextResponse = RuntimeResponseFor<"GET_HISTORY_PAGE_CONTEXT">
+export type GetBatchExecutionConfigResponse = RuntimeResponseFor<"GET_BATCH_EXECUTION_CONFIG">
+export type SaveBatchExecutionConfigResponse = RuntimeResponseFor<"SAVE_BATCH_EXECUTION_CONFIG">
+export type GetBatchUiPreferencesResponse = RuntimeResponseFor<"GET_BATCH_UI_PREFERENCES">
+export type SaveBatchUiPreferencesResponse = RuntimeResponseFor<"SAVE_BATCH_UI_PREFERENCES">
+export type GetContentScriptStateResponse = RuntimeResponseFor<"GET_CONTENT_SCRIPT_STATE">
 export type RuntimeResponse = RuntimeResponseFor<RuntimeRequestType>
 
 export function createRuntimeSuccessResponse<TType extends RuntimeRequestType>(

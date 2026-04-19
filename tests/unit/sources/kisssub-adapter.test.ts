@@ -1,7 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import { DEFAULT_SETTINGS } from "../../../src/lib/settings"
+import { DEFAULT_SOURCE_CONFIG } from "../../../src/lib/sources/config/defaults"
 import { kisssubSourceAdapter } from "../../../src/lib/sources/kisssub"
+import type { ExtractionContext } from "../../../src/lib/sources/types"
 
 const { reloadDetailTab, withDetailTab } = vi.hoisted(() => ({
   withDetailTab: vi.fn(),
@@ -12,6 +14,22 @@ vi.mock("../../../src/lib/sources/detail-tab", () => ({
   withDetailTab,
   reloadDetailTab
 }))
+
+function buildTestExtractionContext(overrides: Partial<ExtractionContext> = {}): ExtractionContext {
+  return {
+    execution: {
+      retryCount: DEFAULT_SETTINGS.retryCount,
+      injectTimeoutMs: DEFAULT_SETTINGS.injectTimeoutMs,
+      domSettleMs: DEFAULT_SETTINGS.domSettleMs
+    },
+    source: {
+      kisssub: {
+        script: DEFAULT_SOURCE_CONFIG.kisssub.script
+      }
+    },
+    ...overrides
+  }
+}
 
 describe("kisssubSourceAdapter", () => {
   beforeEach(() => {
@@ -71,11 +89,13 @@ describe("kisssubSourceAdapter", () => {
           detailUrl: "https://www.kisssub.org/show-deadbeef.html",
           title: "Episode 01"
         },
-        {
-          ...DEFAULT_SETTINGS,
-          retryCount: 0,
-          injectTimeoutMs: 3000
-        }
+        buildTestExtractionContext({
+          execution: {
+            retryCount: 0,
+            injectTimeoutMs: 3000,
+            domSettleMs: DEFAULT_SETTINGS.domSettleMs
+          }
+        })
       )
     ).resolves.toEqual({
       ok: true,
@@ -104,10 +124,13 @@ describe("kisssubSourceAdapter", () => {
           detailUrl: "https://www.kisssub.org/show-feedface.html",
           title: "Episode 02"
         },
-        {
-          ...DEFAULT_SETTINGS,
-          retryCount: 2
-        }
+        buildTestExtractionContext({
+          execution: {
+            retryCount: 2,
+            injectTimeoutMs: DEFAULT_SETTINGS.injectTimeoutMs,
+            domSettleMs: DEFAULT_SETTINGS.domSettleMs
+          }
+        })
       )
     ).resolves.toEqual({
       ok: false,
@@ -166,11 +189,13 @@ describe("kisssubSourceAdapter", () => {
           detailUrl: "https://www.kisssub.org/show-cafebabe.html",
           title: "Episode 03"
         },
-        {
-          ...DEFAULT_SETTINGS,
-          retryCount: 0,
-          injectTimeoutMs: 3000
-        }
+        buildTestExtractionContext({
+          execution: {
+            retryCount: 0,
+            injectTimeoutMs: 3000,
+            domSettleMs: DEFAULT_SETTINGS.domSettleMs
+          }
+        })
       )
     ).resolves.toEqual({
       ok: true,

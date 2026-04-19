@@ -2,9 +2,9 @@ import { extractMagnetHash, normalizeTitle } from "../download-preparation"
 import { getBrowser } from "../shared/browser"
 import { DEFAULT_SOURCE_DELIVERY_MODES, getSupportedDeliveryModes } from "./delivery"
 import { matchesSourceHost } from "./matching"
-import type { AppSettings, BatchItem, ExtractionResult } from "../shared/types"
+import type { BatchItem, ExtractionResult } from "../shared/types"
 import { withDetailTab } from "./detail-tab"
-import type { SourceAdapter } from "./types"
+import type { ExtractionContext, SourceAdapter } from "./types"
 
 const ENTRY_SELECTOR = 'a[href*="/detail/"][href$=".html"]'
 
@@ -79,14 +79,14 @@ export const dongmanhuayuanSourceAdapter: SourceAdapter = {
       title
     }
   },
-  async extractSingleItem(item, settings) {
+  async extractSingleItem(item, context) {
     let lastFailure = "Unknown extraction error."
 
-    for (let attempt = 0; attempt <= settings.retryCount; attempt += 1) {
+    for (let attempt = 0; attempt <= context.execution.retryCount; attempt += 1) {
       try {
         const snapshot = await withDetailTab(
           item.detailUrl,
-          Math.max(settings.injectTimeoutMs, 10000),
+          Math.max(context.execution.injectTimeoutMs, 10000),
           async (tabId) => executeExtraction(tabId)
         )
 

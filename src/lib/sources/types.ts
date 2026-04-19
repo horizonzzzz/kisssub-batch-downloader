@@ -5,6 +5,7 @@ import type {
   ExtractionResult,
   SourceId
 } from "../shared/types"
+import type { KisssubScriptConfig } from "./config/types"
 
 export type SourceSubscriptionScanCandidate = {
   sourceId: SourceId
@@ -19,6 +20,19 @@ export type SourceSubscriptionListScanSupport = {
   listPageUrl: string
 }
 
+export type ExtractionContext = {
+  execution: {
+    retryCount: number
+    injectTimeoutMs: number
+    domSettleMs: number
+  }
+  source: {
+    kisssub: {
+      script: KisssubScriptConfig
+    }
+  }
+}
+
 export type SourceAdapter = {
   id: SourceId
   displayName: string
@@ -28,6 +42,6 @@ export type SourceAdapter = {
   matchesDetailUrl: (url: URL) => boolean
   getDetailAnchors: (root: ParentNode, pageUrl: URL) => HTMLAnchorElement[]
   getBatchItemFromAnchor: (anchor: HTMLAnchorElement, pageUrl: URL) => BatchItem | null
-  extractSingleItem: (item: BatchItem, settings: AppSettings) => Promise<ExtractionResult>
+  extractSingleItem: (item: BatchItem, context: ExtractionContext) => Promise<ExtractionResult>
   subscriptionListScan?: SourceSubscriptionListScanSupport
 }

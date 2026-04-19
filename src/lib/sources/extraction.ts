@@ -1,5 +1,24 @@
 import { getSourceAdapterById } from "."
 import type { AppSettings, BatchItem, ExtractionResult } from "../shared/types"
+import type { ExtractionContext } from "./types"
+
+export function buildExtractionContext(settings: AppSettings): ExtractionContext {
+  return {
+    execution: {
+      retryCount: settings.retryCount,
+      injectTimeoutMs: settings.injectTimeoutMs,
+      domSettleMs: settings.domSettleMs
+    },
+    source: {
+      kisssub: {
+        script: {
+          url: settings.remoteScriptUrl,
+          revision: settings.remoteScriptRevision
+        }
+      }
+    }
+  }
+}
 
 export async function extractSingleItem(
   item: BatchItem,
@@ -18,5 +37,6 @@ export async function extractSingleItem(
     }
   }
 
-  return adapter.extractSingleItem(item, settings)
+  const context = buildExtractionContext(settings)
+  return adapter.extractSingleItem(item, context)
 }

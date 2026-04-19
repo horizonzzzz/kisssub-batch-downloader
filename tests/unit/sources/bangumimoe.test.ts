@@ -5,6 +5,7 @@ import {
   bangumiMoeSourceAdapter,
   parseBangumiMoeDetailSnapshot
 } from "../../../src/lib/sources/bangumimoe"
+import type { ExtractionContext } from "../../../src/lib/sources/types"
 
 const { withDetailTab } = vi.hoisted(() => ({
   withDetailTab: vi.fn()
@@ -13,6 +14,25 @@ const { withDetailTab } = vi.hoisted(() => ({
 vi.mock("../../../src/lib/sources/detail-tab", () => ({
   withDetailTab
 }))
+
+function buildTestExtractionContext(overrides: Partial<ExtractionContext> = {}): ExtractionContext {
+  return {
+    execution: {
+      retryCount: DEFAULT_SETTINGS.retryCount,
+      injectTimeoutMs: DEFAULT_SETTINGS.injectTimeoutMs,
+      domSettleMs: DEFAULT_SETTINGS.domSettleMs
+    },
+    source: {
+      kisssub: {
+        script: {
+          url: DEFAULT_SETTINGS.remoteScriptUrl,
+          revision: DEFAULT_SETTINGS.remoteScriptRevision
+        }
+      }
+    },
+    ...overrides
+  }
+}
 
 describe("parseBangumiMoeDetailSnapshot", () => {
   it("returns both magnet and torrent download urls exposed by the detail dialog", () => {
@@ -143,10 +163,13 @@ describe("bangumiMoeSourceAdapter", () => {
           detailUrl: "https://bangumi.moe/torrent/69c28b1384f11a93b5ff76a6",
           title: "[ANi] Episode 01"
         },
-        {
-          ...DEFAULT_SETTINGS,
-          retryCount: 0
-        }
+        buildTestExtractionContext({
+          execution: {
+            retryCount: 0,
+            injectTimeoutMs: DEFAULT_SETTINGS.injectTimeoutMs,
+            domSettleMs: DEFAULT_SETTINGS.domSettleMs
+          }
+        })
       )
     ).resolves.toEqual({
       ok: true,
@@ -210,11 +233,13 @@ describe("bangumiMoeSourceAdapter", () => {
           detailUrl: "https://bangumi.moe/torrent/69cb76e484f11a93b5a327ff",
           title: "[爱恋字幕社][示例资源]"
         },
-        {
-          ...DEFAULT_SETTINGS,
-          retryCount: 0,
-          domSettleMs: 0
-        }
+        buildTestExtractionContext({
+          execution: {
+            retryCount: 0,
+            injectTimeoutMs: DEFAULT_SETTINGS.injectTimeoutMs,
+            domSettleMs: 0
+          }
+        })
       )
     ).resolves.toMatchObject({
       title: "[爱恋字幕社][示例资源]",

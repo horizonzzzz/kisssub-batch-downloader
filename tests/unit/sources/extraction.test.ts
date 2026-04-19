@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
+import { DEFAULT_SETTINGS } from "../../../src/lib/settings"
+
 const getSourceAdapterById = vi.fn()
 
 vi.mock("../../../src/lib/sources", () => ({
@@ -50,8 +52,8 @@ describe("extractSingleItem", () => {
       extractSingleItem: extract
     })
 
-    const { extractSingleItem } = await import("../../../src/lib/sources/extraction")
-    const settings = { retryCount: 1 } as never
+    const { extractSingleItem, buildExtractionContext } = await import("../../../src/lib/sources/extraction")
+    const settings = { ...DEFAULT_SETTINGS, retryCount: 1 } as never
     const item = {
       sourceId: "kisssub" as const,
       detailUrl: "https://www.kisssub.org/show-deadbeef.html",
@@ -62,6 +64,6 @@ describe("extractSingleItem", () => {
       ok: true,
       hash: "deadbeef"
     })
-    expect(extract).toHaveBeenCalledWith(item, settings)
+    expect(extract).toHaveBeenCalledWith(item, buildExtractionContext(settings))
   })
 })

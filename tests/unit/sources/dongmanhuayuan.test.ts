@@ -5,6 +5,7 @@ import {
   dongmanhuayuanSourceAdapter,
   parseDongmanhuayuanDetailSnapshot
 } from "../../../src/lib/sources/dongmanhuayuan"
+import type { ExtractionContext } from "../../../src/lib/sources/types"
 
 const { withDetailTab } = vi.hoisted(() => ({
   withDetailTab: vi.fn()
@@ -13,6 +14,25 @@ const { withDetailTab } = vi.hoisted(() => ({
 vi.mock("../../../src/lib/sources/detail-tab", () => ({
   withDetailTab
 }))
+
+function buildTestExtractionContext(overrides: Partial<ExtractionContext> = {}): ExtractionContext {
+  return {
+    execution: {
+      retryCount: DEFAULT_SETTINGS.retryCount,
+      injectTimeoutMs: DEFAULT_SETTINGS.injectTimeoutMs,
+      domSettleMs: DEFAULT_SETTINGS.domSettleMs
+    },
+    source: {
+      kisssub: {
+        script: {
+          url: DEFAULT_SETTINGS.remoteScriptUrl,
+          revision: DEFAULT_SETTINGS.remoteScriptRevision
+        }
+      }
+    },
+    ...overrides
+  }
+}
 
 describe("parseDongmanhuayuanDetailSnapshot", () => {
   it("prefers the first usable magnet link and derives the hash from it", () => {
@@ -111,10 +131,13 @@ describe("dongmanhuayuanSourceAdapter", () => {
           detailUrl: "https://www.dongmanhuayuan.com/detail/TEST12.html",
           title: "placeholder"
         },
-        {
-          ...DEFAULT_SETTINGS,
-          retryCount: 0
-        }
+        buildTestExtractionContext({
+          execution: {
+            retryCount: 0,
+            injectTimeoutMs: DEFAULT_SETTINGS.injectTimeoutMs,
+            domSettleMs: DEFAULT_SETTINGS.domSettleMs
+          }
+        })
       )
     ).resolves.toMatchObject({
       title: "[爱恋字幕社][新番][示例标题]",
@@ -151,10 +174,13 @@ describe("dongmanhuayuanSourceAdapter", () => {
           detailUrl: "https://www.dongmanhuayuan.com/detail/TEST12.html",
           title: "placeholder"
         },
-        {
-          ...DEFAULT_SETTINGS,
-          retryCount: 0
-        }
+        buildTestExtractionContext({
+          execution: {
+            retryCount: 0,
+            injectTimeoutMs: DEFAULT_SETTINGS.injectTimeoutMs,
+            domSettleMs: DEFAULT_SETTINGS.domSettleMs
+          }
+        })
       )
     ).resolves.toMatchObject({
       title: "[SweetSub][刹那之花][Momentary Lily][01-14 精校合集]",
@@ -183,10 +209,13 @@ describe("dongmanhuayuanSourceAdapter", () => {
           detailUrl: "https://www.dongmanhuayuan.com/detail/TEST12.html",
           title: "placeholder"
         },
-        {
-          ...DEFAULT_SETTINGS,
-          retryCount: 0
-        }
+        buildTestExtractionContext({
+          execution: {
+            retryCount: 0,
+            injectTimeoutMs: DEFAULT_SETTINGS.injectTimeoutMs,
+            domSettleMs: DEFAULT_SETTINGS.domSettleMs
+          }
+        })
       )
     ).resolves.toMatchObject({
       title: "[爱恋字幕社][新番][示例标题]"

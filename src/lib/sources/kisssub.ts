@@ -2,9 +2,9 @@ import { extractDetailHash, normalizeTitle } from "../download-preparation"
 import { getBrowser } from "../shared/browser"
 import { DEFAULT_SOURCE_DELIVERY_MODES, getSupportedDeliveryModes } from "./delivery"
 import { matchesSourceHost } from "./matching"
-import type { AppSettings, BatchItem, ExtractionResult } from "../shared/types"
+import type { BatchItem, ExtractionResult } from "../shared/types"
 import { reloadDetailTab, withDetailTab } from "./detail-tab"
-import type { SourceAdapter } from "./types"
+import type { ExtractionContext, SourceAdapter } from "./types"
 
 const ENTRY_SELECTOR = 'a[href*="show-"][href$=".html"]'
 const MAIN_EXECUTION_WORLD = "MAIN" as const
@@ -86,17 +86,17 @@ export const kisssubSourceAdapter: SourceAdapter = {
       title
     }
   },
-  async extractSingleItem(item, settings) {
+  async extractSingleItem(item, context) {
     let lastFailure = "Unknown extraction error."
 
-    for (let attempt = 0; attempt <= settings.retryCount; attempt += 1) {
+    for (let attempt = 0; attempt <= context.execution.retryCount; attempt += 1) {
       try {
-        const timeoutMs = Math.max(settings.injectTimeoutMs, 10000)
+        const timeoutMs = Math.max(context.execution.injectTimeoutMs, 10000)
         return await withDetailTab(
           item.detailUrl,
           timeoutMs,
           async (tabId) => {
-            const preparation = await executeExtraction(tabId, settings, "prepare")
+            const preparation = await executeExtraction(tabId, context, "prepare")
 
             if (!needsHelperReload(preparation)) {
               return buildExtractionResult(item, preparation)
@@ -104,7 +104,7 @@ export const kisssubSourceAdapter: SourceAdapter = {
 
             await reloadDetailTab(tabId, timeoutMs)
 
-            return buildExtractionResult(item, await executeExtraction(tabId, settings, "extract"))
+            return buildExtractionResult(item, await executeExtraction(tabId, context, "extract"))
           }
         )
       } catch (error: unknown) {
@@ -148,7 +148,7 @@ export function parseKisssubDetailSnapshot(
 
 async function executeExtraction(
   tabId: number,
-  settings: AppSettings,
+  context: ExtractionContext,
   mode: "prepare" | "extract"
 ) {
   const execution = await getBrowser().scripting.executeScript({
@@ -157,10 +157,10 @@ async function executeExtraction(
     func: kisssubDetailExtractionScript,
     args: [
       {
-        remoteScriptUrl: settings.remoteScriptUrl,
-        remoteScriptRevision: settings.remoteScriptRevision,
-        injectTimeoutMs: settings.injectTimeoutMs,
-        domSettleMs: settings.domSettleMs,
+        remoteScriptUrl: context.source.kisssub.script.url,
+        remoteScriptRevision: context.source.kisssub.script.revision,
+        injectTimeoutMs: context.execution.injectTimeoutMs,
+        domSettleMs: context.execution.domSettleMs,
         mode
       }
     ]

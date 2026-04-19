@@ -40,7 +40,16 @@ import {
   saveDownloaderConfig
 } from "../../lib/downloader/config/storage"
 import { getHistoryPageContext } from "../../lib/background/queries/history-context"
+import { buildContentScriptState } from "../../lib/background/queries/content-script-state"
 import { SOURCE_IDS } from "../../lib/sources/catalog"
+import {
+  getBatchExecutionConfig,
+  saveBatchExecutionConfig
+} from "../../lib/batch-config/storage"
+import {
+  getBatchUiPreferences,
+  saveBatchUiPreferences
+} from "../../lib/batch-preferences/storage"
 import {
   BATCH_EVENT,
   CONTENT_SCRIPT_READY_EVENT,
@@ -263,6 +272,49 @@ export function registerBackgroundRuntime() {
             sendResponse(
               createRuntimeSuccessResponse("GET_HISTORY_PAGE_CONTEXT", {
                 context: await getHistoryPageContext()
+              })
+            )
+            return
+          case "GET_BATCH_EXECUTION_CONFIG":
+            sendResponse(
+              createRuntimeSuccessResponse("GET_BATCH_EXECUTION_CONFIG", {
+                config: await getBatchExecutionConfig()
+              })
+            )
+            return
+          case "SAVE_BATCH_EXECUTION_CONFIG":
+            const savedBatchExecutionConfig = await saveBatchExecutionConfig(runtimeMessage.config)
+            sendResponse(
+              createRuntimeSuccessResponse("SAVE_BATCH_EXECUTION_CONFIG", {
+                config: savedBatchExecutionConfig
+              })
+            )
+            return
+          case "GET_BATCH_UI_PREFERENCES":
+            sendResponse(
+              createRuntimeSuccessResponse("GET_BATCH_UI_PREFERENCES", {
+                preferences: await getBatchUiPreferences()
+              })
+            )
+            return
+          case "SAVE_BATCH_UI_PREFERENCES":
+            const savedBatchUiPreferences = await saveBatchUiPreferences(runtimeMessage.preferences)
+            sendResponse(
+              createRuntimeSuccessResponse("SAVE_BATCH_UI_PREFERENCES", {
+                preferences: savedBatchUiPreferences
+              })
+            )
+            return
+          case "GET_CONTENT_SCRIPT_STATE":
+            if (!isValidSourceId(runtimeMessage.sourceId)) {
+              sendResponse(createRuntimeErrorResponse("Invalid sourceId for GET_CONTENT_SCRIPT_STATE"))
+              return
+            }
+            sendResponse(
+              createRuntimeSuccessResponse("GET_CONTENT_SCRIPT_STATE", {
+                state: await buildContentScriptState({
+                  sourceId: runtimeMessage.sourceId
+                })
               })
             )
             return

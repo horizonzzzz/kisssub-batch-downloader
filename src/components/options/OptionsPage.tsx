@@ -19,6 +19,8 @@ import type {
 import type { FilterConfig } from "../../lib/filter-rules/types"
 import type { SourceConfig } from "../../lib/sources/config/types"
 import type { DownloaderConfig } from "../../lib/downloader/config/types"
+import type { BatchExecutionConfig } from "../../lib/batch-config/types"
+import type { BatchUiPreferences } from "../../lib/batch-preferences/types"
 import {
   DEFAULT_OPTIONS_ROUTE,
   getOptionsRoutes,
@@ -50,6 +52,10 @@ export type OptionsApi = SettingsFormApi & {
   saveSourceConfig: (config: SourceConfig) => Promise<SourceConfig>
   getDownloaderConfig: () => Promise<DownloaderConfig>
   saveDownloaderConfig: (config: DownloaderConfig) => Promise<DownloaderConfig>
+  getBatchExecutionConfig: () => Promise<BatchExecutionConfig>
+  saveBatchExecutionConfig: (config: Partial<BatchExecutionConfig>) => Promise<BatchExecutionConfig>
+  getBatchUiPreferences: () => Promise<BatchUiPreferences>
+  saveBatchUiPreferences: (preferences: Partial<BatchUiPreferences>) => Promise<BatchUiPreferences>
 }
 
 type OptionsPageProps = {

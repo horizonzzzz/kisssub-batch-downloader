@@ -1,6 +1,8 @@
 import { i18n } from "../../lib/i18n"
 import type { OptionsApi } from "../../components/options/OptionsPage"
 import type { DownloaderConfig } from "../../lib/downloader/config/types"
+import type { BatchExecutionConfig } from "../../lib/batch-config/types"
+import type { BatchUiPreferences } from "../../lib/batch-preferences/types"
 import { sendRuntimeRequest } from "../../lib/shared/messages"
 
 export const optionsApi: OptionsApi = {
@@ -115,5 +117,45 @@ export const optionsApi: OptionsApi = {
     }
 
     return response.config
+  },
+  async getBatchExecutionConfig() {
+    const response = await sendRuntimeRequest({ type: "GET_BATCH_EXECUTION_CONFIG" })
+    if (!response.ok) {
+      throw new Error(response.error || i18n.t("options.status.loadFailed"))
+    }
+
+    return response.config
+  },
+  async saveBatchExecutionConfig(config: Partial<BatchExecutionConfig>) {
+    const response = await sendRuntimeRequest({
+      type: "SAVE_BATCH_EXECUTION_CONFIG",
+      config
+    })
+
+    if (!response.ok) {
+      throw new Error(response.error || i18n.t("options.status.saveFailed"))
+    }
+
+    return response.config
+  },
+  async getBatchUiPreferences() {
+    const response = await sendRuntimeRequest({ type: "GET_BATCH_UI_PREFERENCES" })
+    if (!response.ok) {
+      throw new Error(response.error || i18n.t("options.status.loadFailed"))
+    }
+
+    return response.preferences
+  },
+  async saveBatchUiPreferences(preferences: Partial<BatchUiPreferences>) {
+    const response = await sendRuntimeRequest({
+      type: "SAVE_BATCH_UI_PREFERENCES",
+      preferences
+    })
+
+    if (!response.ok) {
+      throw new Error(response.error || i18n.t("options.status.saveFailed"))
+    }
+
+    return response.preferences
   }
 }
