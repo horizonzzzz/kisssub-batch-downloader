@@ -82,8 +82,7 @@ describe("source config storage", () => {
     expect(saved.bangumimoe.deliveryMode).toBe("torrent-url")
   })
 
-  it("migrates legacy app_settings to source_config on first access", async () => {
-    // Set up legacy app_settings with custom values
+  it("ignores legacy app_settings and hydrates default source config", async () => {
     await fakeBrowser.storage.local.set({
       app_settings: {
         enabledSources: {
@@ -102,19 +101,10 @@ describe("source config storage", () => {
       }
     })
 
-    // First access should migrate
     const config = await getSourceConfig()
 
-    expect(config.kisssub.enabled).toBe(false)
-    expect(config.kisssub.deliveryMode).toBe("torrent-file")
-    expect(config.kisssub.script.url).toBe("//custom.acgscript.com/script/miobt/test.js?20260419")
-    expect(config.kisssub.script.revision).toBe("custom-rev")
-    expect(config.dongmanhuayuan.enabled).toBe(true)
-    expect(config.acgrip.enabled).toBe(false)
-    expect(config.acgrip.deliveryMode).toBe("torrent-url")
-    expect(config.bangumimoe.enabled).toBe(true)
+    expect(config).toEqual(DEFAULT_SOURCE_CONFIG)
 
-    // Verify migrated config is persisted
     const stored = await fakeBrowser.storage.local.get("source_config")
     expect(stored.source_config).toEqual(config)
   })
@@ -166,28 +156,17 @@ describe("source config storage", () => {
     expect(config.kisssub.script.revision).toBe("new-rev")
   })
 
-  it("falls back to defaults for missing legacy fields", async () => {
-    // Set up legacy app_settings with partial data
+  it("still hydrates defaults when only legacy app_settings is present", async () => {
     await fakeBrowser.storage.local.set({
       app_settings: {
         enabledSources: {
           kisssub: false
         }
-        // Missing sourceDeliveryModes, remoteScriptUrl, remoteScriptRevision
       }
     })
 
     const config = await getSourceConfig()
 
-    // kisssub.enabled should be migrated
-    expect(config.kisssub.enabled).toBe(false)
-    // Other kisssub fields should use defaults
-    expect(config.kisssub.deliveryMode).toBe("magnet")
-    expect(config.kisssub.script.url).toBe("//1.acgscript.com/script/miobt/4.js?3")
-    expect(config.kisssub.script.revision).toBe("20181120.2")
-    // Other sources should use defaults
-    expect(config.dongmanhuayuan.enabled).toBe(true)
-    expect(config.acgrip.enabled).toBe(true)
-    expect(config.bangumimoe.enabled).toBe(true)
+    expect(config).toEqual(DEFAULT_SOURCE_CONFIG)
   })
 })

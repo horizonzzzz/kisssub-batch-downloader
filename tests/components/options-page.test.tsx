@@ -393,6 +393,21 @@ describe("OptionsPage", () => {
     expect(screen.getByText("当前下载器：Transmission")).toBeInTheDocument()
   })
 
+  it("shows the persisted current downloader when opening a non-general route directly", async () => {
+    const api = createOptionsApi({
+      getDownloaderConfig: vi.fn().mockResolvedValue({
+        ...downloaderConfig,
+        activeId: "transmission"
+      })
+    })
+
+    window.location.hash = "#/sites"
+    render(<OptionsPage api={api} />)
+
+    expect(await screen.findByRole("heading", { name: "站点配置" })).toBeInTheDocument()
+    expect(screen.getByText("当前下载器：Transmission")).toBeInTheDocument()
+  })
+
   it(
     "switches between the sites and overview views from the sidebar",
     async () => {

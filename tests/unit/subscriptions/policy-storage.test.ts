@@ -94,7 +94,7 @@ describe("subscription policy storage", () => {
     expect(config.notificationsEnabled).toBe(false)
   })
 
-  it("migrates legacy app_settings to subscription_policy_config on first access", async () => {
+  it("ignores legacy app_settings and hydrates defaults on first access", async () => {
     await fakeBrowser.storage.local.set({
       app_settings: {
         subscriptionsEnabled: true,
@@ -106,10 +106,7 @@ describe("subscription policy storage", () => {
 
     const config = await getSubscriptionPolicyConfig()
 
-    expect(config.enabled).toBe(true)
-    expect(config.pollingIntervalMinutes).toBe(45)
-    expect(config.notificationsEnabled).toBe(false)
-    expect(config.notificationDownloadActionEnabled).toBe(true)
+    expect(config).toEqual(DEFAULT_SUBSCRIPTION_POLICY_CONFIG)
 
     const stored = await fakeBrowser.storage.local.get("subscription_policy_config")
     expect(stored.subscription_policy_config).toEqual(config)

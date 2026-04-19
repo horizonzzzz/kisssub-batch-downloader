@@ -62,6 +62,8 @@ export function ExtractionCadenceSection({
               <Input
                 id="concurrency"
                 type="number"
+                min={1}
+                max={5}
                 value={config.concurrency}
                 onChange={(e) => onConfigChange({
                   ...config,
@@ -75,6 +77,8 @@ export function ExtractionCadenceSection({
               <Input
                 id="retryCount"
                 type="number"
+                min={0}
+                max={5}
                 value={config.retryCount}
                 onChange={(e) => onConfigChange({
                   ...config,

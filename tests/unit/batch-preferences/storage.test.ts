@@ -47,7 +47,7 @@ describe("batch ui preferences storage", () => {
     expect(reRead).toEqual(saved)
   })
 
-  it("migrates from legacy app_settings lastSavePath field", async () => {
+  it("ignores legacy app_settings lastSavePath field and hydrates defaults", async () => {
     await fakeBrowser.storage.local.set({
       app_settings: {
         lastSavePath: "C:\\Users\\Test\\Downloads"
@@ -56,9 +56,8 @@ describe("batch ui preferences storage", () => {
 
     const preferences = await getBatchUiPreferences()
 
-    expect(preferences.lastSavePath).toBe("C:\\Users\\Test\\Downloads")
+    expect(preferences).toEqual(DEFAULT_BATCH_UI_PREFERENCES)
 
-    // Verify the migrated preferences is persisted for future reads
     const stored = await fakeBrowser.storage.local.get("batch_ui_preferences")
     expect(stored.batch_ui_preferences).toEqual(preferences)
   })
@@ -80,16 +79,15 @@ describe("batch ui preferences storage", () => {
     expect(preferences.lastSavePath).toBe("D:\\NewPath")
   })
 
-  it("returns empty string when lastSavePath is missing in legacy", async () => {
-    // Set up legacy app_settings without lastSavePath
+  it("still hydrates defaults when only legacy app_settings is present", async () => {
     await fakeBrowser.storage.local.set({
       app_settings: {
-        concurrency: 3 // Other fields, no lastSavePath
+        concurrency: 3
       }
     })
 
     const preferences = await getBatchUiPreferences()
 
-    expect(preferences.lastSavePath).toBe("")
+    expect(preferences).toEqual(DEFAULT_BATCH_UI_PREFERENCES)
   })
 })

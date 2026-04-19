@@ -4,17 +4,6 @@ import type { BatchUiPreferences } from "./types"
 
 const BATCH_UI_PREFERENCES_STORAGE_KEY = "batch_ui_preferences"
 
-type LegacyAppSettings = {
-  lastSavePath?: string
-}
-
-function migrateFromLegacySettings(legacy: LegacyAppSettings): BatchUiPreferences {
-  const trimmedPath = String(legacy.lastSavePath ?? "").trim()
-  return {
-    lastSavePath: trimmedPath || DEFAULT_BATCH_UI_PREFERENCES.lastSavePath
-  }
-}
-
 export function normalizeSavePath(savePath: string | undefined): string {
   if (!savePath) {
     return ""
@@ -24,12 +13,8 @@ export function normalizeSavePath(savePath: string | undefined): string {
 
 export async function getBatchUiPreferences(): Promise<BatchUiPreferences> {
   const extensionBrowser = getBrowser()
-  const stored = await extensionBrowser.storage.local.get([
-    BATCH_UI_PREFERENCES_STORAGE_KEY,
-    "app_settings"
-  ])
+  const stored = await extensionBrowser.storage.local.get(BATCH_UI_PREFERENCES_STORAGE_KEY)
 
-  // If batch_ui_preferences exists, use it directly
   if (stored[BATCH_UI_PREFERENCES_STORAGE_KEY]) {
     try {
       return {
@@ -45,23 +30,10 @@ export async function getBatchUiPreferences(): Promise<BatchUiPreferences> {
     }
   }
 
-  // Migration: read from legacy app_settings fields
-  try {
-    const legacySettings = (stored["app_settings"] as LegacyAppSettings | undefined) ?? {}
-    const migratedPreferences = migrateFromLegacySettings(legacySettings)
-
-    // Persist migrated preferences for future reads
-    await extensionBrowser.storage.local.set({
-      [BATCH_UI_PREFERENCES_STORAGE_KEY]: migratedPreferences
-    })
-
-    return migratedPreferences
-  } catch {
-    await extensionBrowser.storage.local.set({
-      [BATCH_UI_PREFERENCES_STORAGE_KEY]: DEFAULT_BATCH_UI_PREFERENCES
-    })
-    return DEFAULT_BATCH_UI_PREFERENCES
-  }
+  await extensionBrowser.storage.local.set({
+    [BATCH_UI_PREFERENCES_STORAGE_KEY]: DEFAULT_BATCH_UI_PREFERENCES
+  })
+  return DEFAULT_BATCH_UI_PREFERENCES
 }
 
 export async function saveBatchUiPreferences(

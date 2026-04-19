@@ -47,6 +47,22 @@ describe("batch execution config storage", () => {
     })
   })
 
+  it("preserves values inside the pre-refactor execution bounds", async () => {
+    const saved = await saveBatchExecutionConfig({
+      concurrency: 4,
+      retryCount: 8,
+      injectTimeoutMs: 4000,
+      domSettleMs: 8000
+    })
+
+    expect(saved).toEqual({
+      concurrency: 4,
+      retryCount: 5,
+      injectTimeoutMs: 4000,
+      domSettleMs: 8000
+    })
+  })
+
   it("persists execution config changes to dedicated storage key", async () => {
     const saved = await saveBatchExecutionConfig({
       concurrency: 2,
@@ -68,7 +84,7 @@ describe("batch execution config storage", () => {
     expect(reRead).toEqual(saved)
   })
 
-  it("migrates from legacy app_settings execution fields", async () => {
+  it("ignores legacy app_settings execution fields and hydrates defaults", async () => {
     await fakeBrowser.storage.local.set({
       app_settings: {
         concurrency: 5,
@@ -80,12 +96,8 @@ describe("batch execution config storage", () => {
 
     const config = await getBatchExecutionConfig()
 
-    expect(config.concurrency).toBe(5)
-    expect(config.retryCount).toBe(2)
-    expect(config.injectTimeoutMs).toBe(30000)
-    expect(config.domSettleMs).toBe(2000)
+    expect(config).toEqual(DEFAULT_BATCH_EXECUTION_CONFIG)
 
-    // Verify the migrated config is persisted for future reads
     const stored = await fakeBrowser.storage.local.get("batch_execution_config")
     expect(stored.batch_execution_config).toEqual(config)
   })
@@ -116,22 +128,15 @@ describe("batch execution config storage", () => {
     expect(config.domSettleMs).toBe(300)
   })
 
-  it("falls back to defaults for missing legacy fields", async () => {
-    // Set up legacy app_settings with partial data
+  it("still hydrates defaults when only legacy app_settings is present", async () => {
     await fakeBrowser.storage.local.set({
       app_settings: {
         concurrency: 4
-        // Missing retryCount, injectTimeoutMs, domSettleMs
       }
     })
 
     const config = await getBatchExecutionConfig()
 
-    // concurrency should be migrated
-    expect(config.concurrency).toBe(4)
-    // Other fields should use defaults
-    expect(config.retryCount).toBe(3)
-    expect(config.injectTimeoutMs).toBe(15000)
-    expect(config.domSettleMs).toBe(1200)
+    expect(config).toEqual(DEFAULT_BATCH_EXECUTION_CONFIG)
   })
 })

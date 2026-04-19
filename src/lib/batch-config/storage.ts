@@ -5,30 +5,10 @@ import type { BatchExecutionConfig } from "./types"
 
 const BATCH_EXECUTION_CONFIG_STORAGE_KEY = "batch_execution_config"
 
-type LegacyAppSettings = {
-  concurrency?: number
-  injectTimeoutMs?: number
-  domSettleMs?: number
-  retryCount?: number
-}
-
-function migrateFromLegacySettings(legacy: LegacyAppSettings): BatchExecutionConfig {
-  return batchExecutionConfigSchema.parse({
-    concurrency: legacy.concurrency ?? DEFAULT_BATCH_EXECUTION_CONFIG.concurrency,
-    retryCount: legacy.retryCount ?? DEFAULT_BATCH_EXECUTION_CONFIG.retryCount,
-    injectTimeoutMs: legacy.injectTimeoutMs ?? DEFAULT_BATCH_EXECUTION_CONFIG.injectTimeoutMs,
-    domSettleMs: legacy.domSettleMs ?? DEFAULT_BATCH_EXECUTION_CONFIG.domSettleMs
-  })
-}
-
 export async function getBatchExecutionConfig(): Promise<BatchExecutionConfig> {
   const extensionBrowser = getBrowser()
-  const stored = await extensionBrowser.storage.local.get([
-    BATCH_EXECUTION_CONFIG_STORAGE_KEY,
-    "app_settings"
-  ])
+  const stored = await extensionBrowser.storage.local.get(BATCH_EXECUTION_CONFIG_STORAGE_KEY)
 
-  // If batch_execution_config exists, use it directly
   if (stored[BATCH_EXECUTION_CONFIG_STORAGE_KEY]) {
     try {
       return batchExecutionConfigSchema.parse(stored[BATCH_EXECUTION_CONFIG_STORAGE_KEY])
@@ -40,23 +20,10 @@ export async function getBatchExecutionConfig(): Promise<BatchExecutionConfig> {
     }
   }
 
-  // Migration: read from legacy app_settings fields
-  try {
-    const legacySettings = (stored["app_settings"] as LegacyAppSettings | undefined) ?? {}
-    const migratedConfig = migrateFromLegacySettings(legacySettings)
-
-    // Persist migrated config for future reads
-    await extensionBrowser.storage.local.set({
-      [BATCH_EXECUTION_CONFIG_STORAGE_KEY]: migratedConfig
-    })
-
-    return batchExecutionConfigSchema.parse(migratedConfig)
-  } catch {
-    await extensionBrowser.storage.local.set({
-      [BATCH_EXECUTION_CONFIG_STORAGE_KEY]: DEFAULT_BATCH_EXECUTION_CONFIG
-    })
-    return DEFAULT_BATCH_EXECUTION_CONFIG
-  }
+  await extensionBrowser.storage.local.set({
+    [BATCH_EXECUTION_CONFIG_STORAGE_KEY]: DEFAULT_BATCH_EXECUTION_CONFIG
+  })
+  return DEFAULT_BATCH_EXECUTION_CONFIG
 }
 
 export async function saveBatchExecutionConfig(

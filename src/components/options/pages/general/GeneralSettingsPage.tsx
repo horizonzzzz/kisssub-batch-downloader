@@ -3,7 +3,6 @@ import { useState, useEffect } from "react"
 import { i18n } from "../../../../lib/i18n"
 import { requestDownloaderPermission } from "../../../../lib/downloader/permissions"
 import { HiOutlineArrowPath } from "react-icons/hi2"
-import { getDownloaderMeta } from "../../../../lib/downloader"
 
 import { Button, Card, Alert } from "../../../ui"
 import { useDownloaderWorkbench } from "./downloader-workbench-context"
@@ -14,14 +13,12 @@ import { ExtractionCadenceSection } from "./ExtractionCadenceSection"
 import { QbCredentialsSection, type ConnectionState } from "./QbCredentialsSection"
 import { TransmissionCredentialsSection } from "./TransmissionCredentialsSection"
 import type { OptionsApi } from "../../OptionsPage"
-import type { DownloaderId } from "../../../../lib/shared/types"
 
 type GeneralSettingsPageProps = {
   api: OptionsApi
-  onActiveDownloaderChange?: (downloaderId: DownloaderId, name: string) => void
 }
 
-export function GeneralSettingsPage({ api, onActiveDownloaderChange }: GeneralSettingsPageProps) {
+export function GeneralSettingsPage({ api }: GeneralSettingsPageProps) {
   const [advancedOpen, setAdvancedOpen] = useState(true)
 
   const downloaderWorkbench = useDownloaderWorkbench()
@@ -40,14 +37,6 @@ export function GeneralSettingsPage({ api, onActiveDownloaderChange }: GeneralSe
     setConnectionMessage("")
     setConnectionVersion("")
   }, [currentDownloaderId])
-
-  // Notify parent when active downloader changes
-  useEffect(() => {
-    if (!downloaderWorkbench.loading && onActiveDownloaderChange) {
-      const downloaderName = getDownloaderMeta(currentDownloaderId).displayName
-      onActiveDownloaderChange(currentDownloaderId, downloaderName)
-    }
-  }, [currentDownloaderId, downloaderWorkbench.loading, onActiveDownloaderChange])
 
   const handleTestConnection = async () => {
     setTesting(true)

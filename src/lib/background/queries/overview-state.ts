@@ -19,7 +19,10 @@ export async function getOverviewState(): Promise<OverviewState> {
 
   // Count subscriptions from Dexie database
   const configuredCount = await subscriptionDb.subscriptions.count()
-  const enabledCount = await subscriptionDb.subscriptions.where("enabled").equals(1).count()
+  const enabledCount = await subscriptionDb.subscriptions
+    .toCollection()
+    .filter((subscription) => subscription.enabled)
+    .count()
 
   return {
     downloaderName: meta.displayName,

@@ -37,7 +37,7 @@ describe("downloader config storage", () => {
     expect(saved.profiles.qbittorrent.username).toBe("admin")
   })
 
-  it("migrates from legacy app_settings downloader fields", async () => {
+  it("ignores legacy app_settings downloader fields and hydrates defaults", async () => {
     await fakeBrowser.storage.local.set({
       app_settings: {
         currentDownloaderId: "transmission",
@@ -58,15 +58,8 @@ describe("downloader config storage", () => {
 
     const config = await getDownloaderConfig()
 
-    expect(config.activeId).toBe("transmission")
-    expect(config.profiles.qbittorrent.baseUrl).toBe("http://192.168.1.100:8080")
-    expect(config.profiles.qbittorrent.username).toBe("qbuser")
-    expect(config.profiles.qbittorrent.password).toBe("qbpass")
-    expect(config.profiles.transmission.baseUrl).toBe("http://192.168.1.100:9091/transmission/rpc")
-    expect(config.profiles.transmission.username).toBe("truser")
-    expect(config.profiles.transmission.password).toBe("trpass")
+    expect(config).toEqual(DEFAULT_DOWNLOADER_CONFIG)
 
-    // Verify the migrated config is persisted for future reads
     const stored = await fakeBrowser.storage.local.get("downloader_config")
     expect(stored.downloader_config).toEqual(config)
   })

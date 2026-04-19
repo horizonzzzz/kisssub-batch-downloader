@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react"
+import { useMemo } from "react"
 
 import { getDownloaderMeta } from "../../lib/downloader"
 import {
@@ -34,7 +34,10 @@ import { HistoryPage } from "./pages/history/HistoryPage"
 import { OverviewPage } from "./pages/overview/OverviewPage"
 import { SitesPage } from "./pages/sites/SitesPage"
 import { SubscriptionsPage } from "./pages/subscriptions/SubscriptionsPage"
-import { DownloaderWorkbenchProvider } from "./pages/general/downloader-workbench-context"
+import {
+  DownloaderWorkbenchProvider,
+  useDownloaderWorkbench
+} from "./pages/general/downloader-workbench-context"
 
 export type OptionsApi = {
   testConnection: (config: DownloaderConfig) => Promise<TestDownloaderConnectionResult>
@@ -59,42 +62,45 @@ type OptionsPageProps = {
 }
 
 function OptionsWorkspace({ api }: OptionsPageProps) {
+  return (
+    <DownloaderWorkbenchProvider api={api}>
+      <OptionsWorkspaceContent api={api} />
+    </DownloaderWorkbenchProvider>
+  )
+}
+
+function OptionsWorkspaceContent({ api }: OptionsPageProps) {
   const location = useLocation()
   const navigate = useNavigate()
+  const downloaderWorkbench = useDownloaderWorkbench()
   const activeMeta = useMemo(
     () => getOptionsRouteMeta(location.pathname),
     [location.pathname]
   )
   const localizedRoutes = useMemo(() => getOptionsRoutes(), [])
-  const [currentDownloaderId, setCurrentDownloaderId] = useState<DownloaderId>("qbittorrent")
-
-  const currentDownloaderName = getDownloaderMeta(currentDownloaderId).displayName
+  const currentDownloaderName = getDownloaderMeta(downloaderWorkbench.config.activeId).displayName
 
   return (
-    <DownloaderWorkbenchProvider api={api}>
-      <div className="min-h-screen bg-zinc-50 text-zinc-900 lg:flex lg:items-start">
-        <OptionsSidebar
-          routes={localizedRoutes}
-          activePath={activeMeta.path}
-          currentDownloaderName={currentDownloaderName}
-          onNavigate={navigate}
-        />
-        <PageShell activeMeta={activeMeta}>
-          <Routes>
-            <Route path="/" element={<Navigate to={DEFAULT_OPTIONS_ROUTE} replace />} />
-            <Route path="/general" element={<GeneralSettingsPage api={api} onActiveDownloaderChange={(id) => {
-              setCurrentDownloaderId(id)
-            }} />} />
-            <Route path="/sites" element={<SitesPage api={api} />} />
-            <Route path="/filters" element={<FiltersPage api={api} />} />
-            <Route path="/subscriptions" element={<SubscriptionsPage api={api} />} />
-            <Route path="/history" element={<HistoryPage />} />
-            <Route path="/overview" element={<OverviewPage />} />
-            <Route path="*" element={<Navigate to={DEFAULT_OPTIONS_ROUTE} replace />} />
-          </Routes>
-        </PageShell>
-      </div>
-    </DownloaderWorkbenchProvider>
+    <div className="min-h-screen bg-zinc-50 text-zinc-900 lg:flex lg:items-start">
+      <OptionsSidebar
+        routes={localizedRoutes}
+        activePath={activeMeta.path}
+        currentDownloaderName={currentDownloaderName}
+        onNavigate={navigate}
+      />
+      <PageShell activeMeta={activeMeta}>
+        <Routes>
+          <Route path="/" element={<Navigate to={DEFAULT_OPTIONS_ROUTE} replace />} />
+          <Route path="/general" element={<GeneralSettingsPage api={api} />} />
+          <Route path="/sites" element={<SitesPage api={api} />} />
+          <Route path="/filters" element={<FiltersPage api={api} />} />
+          <Route path="/subscriptions" element={<SubscriptionsPage api={api} />} />
+          <Route path="/history" element={<HistoryPage />} />
+          <Route path="/overview" element={<OverviewPage />} />
+          <Route path="*" element={<Navigate to={DEFAULT_OPTIONS_ROUTE} replace />} />
+        </Routes>
+      </PageShell>
+    </div>
   )
 }
 
