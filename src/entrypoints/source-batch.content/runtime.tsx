@@ -115,6 +115,8 @@ export async function startSourceBatchContentScript(ctx: ContentScriptContext) {
   let panelUi: ShadowRootContentScriptUi<Root> | null = null
   let observer: MutationObserver | null = null
   let observerTimer: number | null = null
+  let contentSettingsRefreshInFlight: Promise<void> | null = null
+  let contentSettingsRefreshQueued = false
 
   ctx.onInvalidated(() => {
     disconnectObserver()
@@ -133,7 +135,7 @@ export async function startSourceBatchContentScript(ctx: ContentScriptContext) {
       matchedPageSource = matchedSource
       registerRuntimeMessageListener()
       notifyContentScriptReady(matchedSource.id)
-      await synchronizeContentSettings()
+      await requestContentSettingsRefresh()
     } catch (error) {
       console.error("[Anime BT Batch] Failed to bootstrap content script.", error)
     }
@@ -395,10 +397,33 @@ export async function startSourceBatchContentScript(ctx: ContentScriptContext) {
     }
 
     try {
-      await synchronizeContentSettings()
+      await requestContentSettingsRefresh()
     } catch (error) {
       console.error("[Anime BT Batch] Failed to refresh content settings.", error)
     }
+  }
+
+  function requestContentSettingsRefresh(): Promise<void> {
+    if (contentSettingsRefreshInFlight) {
+      contentSettingsRefreshQueued = true
+      return contentSettingsRefreshInFlight
+    }
+
+    const refreshPromise = (async () => {
+      do {
+        contentSettingsRefreshQueued = false
+        await synchronizeContentSettings()
+      } while (contentSettingsRefreshQueued)
+    })()
+
+    const trackedRefreshPromise = refreshPromise.finally(() => {
+      if (contentSettingsRefreshInFlight === trackedRefreshPromise) {
+        contentSettingsRefreshInFlight = null
+      }
+    })
+
+    contentSettingsRefreshInFlight = trackedRefreshPromise
+    return trackedRefreshPromise
   }
 
   async function handleScanSubscriptionList(

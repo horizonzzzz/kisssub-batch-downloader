@@ -173,6 +173,24 @@ function installBrowserSpies() {
   })
 }
 
+function createDeferred<T>() {
+  let resolve!: (value: T | PromiseLike<T>) => void
+  const promise = new Promise<T>((nextResolve) => {
+    resolve = nextResolve
+  })
+
+  return {
+    promise,
+    resolve
+  }
+}
+
+async function flushMicrotasks(times = 3) {
+  for (let index = 0; index < times; index += 1) {
+    await Promise.resolve()
+  }
+}
+
 function createTestContext() {
   return {
     onInvalidated: vi.fn(() => () => undefined),
@@ -899,6 +917,122 @@ describe("content script runtime", () => {
     })
 
     expect(getLatestPanelProps().statusText).toBe(statusBeforeDisable)
+  })
+
+  it("serializes rapid content-settings refreshes and applies the latest source state last", async () => {
+    const anchorCell = document.createElement("td")
+    const anchor = document.createElement("a")
+    anchor.href = "https://acg.rip/t/5"
+    anchor.textContent = "Episode 05"
+    anchorCell.appendChild(anchor)
+    document.body.appendChild(anchorCell)
+
+    const source = {
+      id: "acgrip",
+      displayName: "ACG.RIP"
+    }
+    const item = {
+      sourceId: "acgrip",
+      title: "Episode 05",
+      detailUrl: "https://acg.rip/t/5"
+    }
+    const disabledState = createDeferred<{
+      ok: true
+      state: {
+        enabled: false
+        filters: []
+        lastSavePath: string
+      }
+    }>()
+    const enabledState = createDeferred<{
+      ok: true
+      state: {
+        enabled: true
+        filters: []
+        lastSavePath: string
+      }
+    }>()
+
+    getSourceAdapterForLocation.mockReturnValueOnce(source)
+    getDetailAnchors.mockReturnValue([anchor])
+    getBatchItemFromAnchor.mockReturnValue(item)
+    getAnchorMountTarget.mockReturnValue(anchorCell)
+    runtimeSendMessage.mockImplementation(({ type }) => {
+      if (type === "GET_CONTENT_SCRIPT_STATE") {
+        const callCount = runtimeSendMessage.mock.calls.filter(
+          (call) => call[0]?.type === "GET_CONTENT_SCRIPT_STATE"
+        ).length
+
+        if (callCount === 1) {
+          return Promise.resolve({
+            ok: true,
+            state: {
+              enabled: true,
+              filters: [],
+              lastSavePath: ""
+            }
+          })
+        }
+
+        if (callCount === 2) {
+          return disabledState.promise
+        }
+
+        if (callCount === 3) {
+          return enabledState.promise
+        }
+      }
+
+      return Promise.resolve({ ok: true })
+    })
+
+    const { startSourceBatchContentScript } = await import("../../../src/entrypoints/source-batch.content/runtime")
+    await startSourceBatchContentScript(createTestContext() as never)
+
+    await vi.waitFor(() => {
+      expect(createRoot).toHaveBeenCalledTimes(2)
+    })
+
+    const listener = runtimeAddListener.mock.calls[0]?.[0]
+    expect(listener).toBeTypeOf("function")
+
+    listener?.({
+      type: "ANIME_BT_CONTENT_SETTINGS_CHANGED_EVENT"
+    })
+    listener?.({
+      type: "ANIME_BT_CONTENT_SETTINGS_CHANGED_EVENT"
+    })
+
+    await flushMicrotasks()
+
+    expect(runtimeSendMessage.mock.calls.filter((call) => call[0]?.type === "GET_CONTENT_SCRIPT_STATE")).toHaveLength(2)
+
+    disabledState.resolve({
+      ok: true,
+      state: {
+        enabled: false,
+        filters: [],
+        lastSavePath: ""
+      }
+    })
+
+    await vi.waitFor(() => {
+      expect(runtimeSendMessage.mock.calls.filter((call) => call[0]?.type === "GET_CONTENT_SCRIPT_STATE")).toHaveLength(3)
+    })
+
+    enabledState.resolve({
+      ok: true,
+      state: {
+        enabled: true,
+        filters: [],
+        lastSavePath: ""
+      }
+    })
+
+    await vi.waitFor(() => {
+      expect(document.querySelector("[data-anime-bt-batch-panel-root='1']")).not.toBeNull()
+      expect(document.querySelector("[data-anime-bt-batch-checkbox-root='1']")).not.toBeNull()
+    })
   })
 
   it("responds to SCAN_SUBSCRIPTION_LIST with sendResponse", async () => {
