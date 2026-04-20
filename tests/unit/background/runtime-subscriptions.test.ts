@@ -253,7 +253,6 @@ describe("background runtime subscription boundary", () => {
         must: [],
         any: []
       },
-      deliveryMode: "direct-only",
       createdAt: "2026-04-14T09:30:00.000Z",
       baselineCreatedAt: "2026-04-14T09:30:00.000Z"
     }
