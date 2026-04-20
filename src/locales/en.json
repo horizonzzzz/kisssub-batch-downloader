@@ -546,7 +546,6 @@
       },
       "card": {
         "sourceScope": "Source scope",
-        "deliveryMode": "Delivery mode",
         "titleQuery": "Title query",
         "subgroupQuery": "Subgroup query",
         "mustConditions": "Advanced must conditions",
@@ -557,10 +556,6 @@
         "lastMatchedAt": "Latest match",
         "lastError": "Recent error",
         "recentHits": "Recent hits"
-      },
-      "deliveryMode": {
-        "directOnly": "Reuse direct links only",
-        "allowDetailExtraction": "Allow detail-page extraction fallback"
       },
       "dialog": {
         "addTitle": "Add subscription",
@@ -579,7 +574,6 @@
         "sourceDescription": "Choose which supported sites this subscription should scan.",
         "sourceCount": "$1 site(s) selected",
         "sourceHint": "ACG.RIP and Bangumi.moe currently support background list scanning. At least one site must remain selected.",
-        "deliveryModeLabel": "Delivery mode",
         "mustDescription": "Optional advanced conditions that must all match.",
         "mustEmpty": "No advanced must conditions yet.",
         "addMust": "Add must condition",

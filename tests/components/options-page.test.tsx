@@ -172,7 +172,6 @@ async function seedSubscriptionFixture() {
     multiSiteModeEnabled: false,
     titleQuery: "Medalist",
     subgroupQuery: "LoliHouse",
-    deliveryMode: "direct-only",
     advanced: {
       must: [],
       any: []
@@ -681,7 +680,7 @@ describe("OptionsPage", () => {
   })
 
   it(
-    "manages Bangumi.moe subscription delivery mode without using app-settings save payload",
+    "manages Bangumi.moe subscription without a delivery mode selector",
     async () => {
       const user = userEvent.setup()
       const api = createOptionsApi()
@@ -697,13 +696,20 @@ describe("OptionsPage", () => {
       await user.type(screen.getByLabelText("订阅名称"), "Bangumi Medalist")
       await user.type(screen.getByLabelText("标题关键词"), "Medalist")
       await user.click(screen.getByTestId("subscription-source-tag-bangumimoe"))
+
+      expect(screen.queryByLabelText("获取方式")).not.toBeInTheDocument()
+
       await user.click(screen.getByRole("button", { name: "保存订阅" }))
 
       expect(api.upsertSubscription).toHaveBeenCalledWith(
         expect.objectContaining({
           name: "Bangumi Medalist",
-          sourceIds: ["bangumimoe"],
-          deliveryMode: "allow-detail-extraction"
+          sourceIds: ["bangumimoe"]
+        })
+      )
+      expect(api.upsertSubscription).not.toHaveBeenCalledWith(
+        expect.objectContaining({
+          deliveryMode: expect.anything()
         })
       )
     },

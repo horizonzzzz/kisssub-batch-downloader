@@ -322,24 +322,21 @@ async function prepareSubscriptionHit(
     return classifyExtractionResult(hit.sourceId, preparedResult, sourceConfig, seenHashes, seenUrls)
   }
 
-  if (subscription?.deliveryMode !== "allow-detail-extraction") {
-    return {
-      ok: false,
-      title: hit.title,
-      detailUrl: hit.detailUrl,
-      hash: "",
-      magnetUrl: "",
-      torrentUrl: "",
-      failureReason: "No direct download link retained for this hit.",
-      status: "failed",
-      deliveryMode: "",
-      submitUrl: "",
-      message: "No direct download link retained for this hit."
-    }
+  // Task 4 will implement automatic hidden detail extraction.
+  // For now, hits without direct links will fail.
+  return {
+    ok: false,
+    title: hit.title,
+    detailUrl: hit.detailUrl,
+    hash: "",
+    magnetUrl: "",
+    torrentUrl: "",
+    failureReason: "No direct download link retained for this hit.",
+    status: "failed",
+    deliveryMode: "",
+    submitUrl: "",
+    message: "No direct download link retained for this hit."
   }
-
-  const extractedResult = await extractSingleItem(batchItem, context)
-  return classifyExtractionResult(hit.sourceId, extractedResult, sourceConfig, seenHashes, seenUrls)
 }
 
 async function submitPreparedHits(

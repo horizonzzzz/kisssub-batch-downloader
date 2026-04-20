@@ -171,8 +171,7 @@ function toTrackingDefinition(subscription: SubscriptionEntry): SubscriptionTrac
     advanced: {
       must: subscription.advanced.must.map(normalizeConditionForComparison),
       any: subscription.advanced.any.map(normalizeConditionForComparison)
-    },
-    deliveryMode: subscription.deliveryMode
+    }
   }
 }
 
