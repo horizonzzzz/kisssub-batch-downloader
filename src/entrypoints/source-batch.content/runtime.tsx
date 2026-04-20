@@ -13,12 +13,8 @@ import { i18n } from "../../lib/i18n"
 import {
   BATCH_EVENT,
   CONTENT_SETTINGS_CHANGED_EVENT,
-  CONTENT_SCRIPT_READY_EVENT,
-  SCAN_SUBSCRIPTION_LIST_REQUEST,
   sendRuntimeRequest,
-  type ContentRuntimeMessage,
-  type ScanSubscriptionListMessage,
-  type ScanSubscriptionListResultMessage
+  type ContentRuntimeMessage
 } from "../../lib/shared/messages"
 import {
   getAnchorMountTarget,
@@ -27,7 +23,6 @@ import {
   getEnabledSourceAdapterForLocation,
   getSourceAdapterForLocation
 } from "../../lib/content/page"
-import { getPageSubscriptionScanner } from "../../lib/content/subscription-scan"
 import { buildSelectableBatchItem, type SelectableBatchItem } from "../../lib/content/filter-selection"
 import { getBrowser, getExtensionUrl } from "../../lib/shared/browser"
 import { getLocalizedSiteConfigMeta } from "../../lib/sources/site-meta"
@@ -134,7 +129,6 @@ export async function startSourceBatchContentScript(ctx: ContentScriptContext) {
 
       matchedPageSource = matchedSource
       registerRuntimeMessageListener()
-      notifyContentScriptReady(matchedSource.id)
       await requestContentSettingsRefresh()
     } catch (error) {
       console.error("[Anime BT Batch] Failed to bootstrap content script.", error)
@@ -149,9 +143,9 @@ export async function startSourceBatchContentScript(ctx: ContentScriptContext) {
     const extensionBrowser = getBrowser()
 
     const listener = (
-      message: ContentRuntimeMessage | ScanSubscriptionListMessage,
+      message: ContentRuntimeMessage,
       _sender: unknown,
-      sendResponse: (response: ScanSubscriptionListResultMessage) => void
+      _sendResponse: unknown
     ) => {
       if (!message) {
         return
@@ -166,21 +160,6 @@ export async function startSourceBatchContentScript(ctx: ContentScriptContext) {
         void handleContentSettingsChanged()
         return
       }
-
-      if (message.type === SCAN_SUBSCRIPTION_LIST_REQUEST) {
-        void handleScanSubscriptionList(message)
-          .then((response) => {
-            sendResponse(response)
-          })
-          .catch((error) => {
-            sendResponse({
-              ok: false,
-              error: error instanceof Error ? error.message : String(error)
-            })
-          })
-
-        return true
-      }
     }
 
     extensionBrowser.runtime.onMessage.addListener(listener)
@@ -191,17 +170,27 @@ export async function startSourceBatchContentScript(ctx: ContentScriptContext) {
     runtimeListenerRegistered = true
   }
 
-  function notifyContentScriptReady(sourceId: SourceAdapter["id"]) {
-    // Fire and forget. The background runtime records this as state; the content
-    // script should not block scanner registration or settings hydration on it.
-    void getBrowser()
-      .runtime.sendMessage({
-        type: CONTENT_SCRIPT_READY_EVENT,
-        sourceId
-      })
-      .catch(() => {
-        // Ignore transient background unavailability.
-      })
+  async function requestContentSettingsRefresh(): Promise<void> {
+    if (contentSettingsRefreshInFlight) {
+      contentSettingsRefreshQueued = true
+      return contentSettingsRefreshInFlight
+    }
+
+    const refreshPromise = (async () => {
+      do {
+        contentSettingsRefreshQueued = false
+        await synchronizeContentSettings()
+      } while (contentSettingsRefreshQueued)
+    })()
+
+    const trackedRefreshPromise = refreshPromise.finally(() => {
+      if (contentSettingsRefreshInFlight === trackedRefreshPromise) {
+        contentSettingsRefreshInFlight = null
+      }
+    })
+
+    contentSettingsRefreshInFlight = trackedRefreshPromise
+    return trackedRefreshPromise
   }
 
   async function loadContentScriptState(sourceId: SourceAdapter["id"]): Promise<ContentScriptState> {
@@ -400,62 +389,6 @@ export async function startSourceBatchContentScript(ctx: ContentScriptContext) {
       await requestContentSettingsRefresh()
     } catch (error) {
       console.error("[Anime BT Batch] Failed to refresh content settings.", error)
-    }
-  }
-
-  function requestContentSettingsRefresh(): Promise<void> {
-    if (contentSettingsRefreshInFlight) {
-      contentSettingsRefreshQueued = true
-      return contentSettingsRefreshInFlight
-    }
-
-    const refreshPromise = (async () => {
-      do {
-        contentSettingsRefreshQueued = false
-        await synchronizeContentSettings()
-      } while (contentSettingsRefreshQueued)
-    })()
-
-    const trackedRefreshPromise = refreshPromise.finally(() => {
-      if (contentSettingsRefreshInFlight === trackedRefreshPromise) {
-        contentSettingsRefreshInFlight = null
-      }
-    })
-
-    contentSettingsRefreshInFlight = trackedRefreshPromise
-    return trackedRefreshPromise
-  }
-
-  async function handleScanSubscriptionList(
-    message: ScanSubscriptionListMessage
-  ): Promise<ScanSubscriptionListResultMessage> {
-    if (!matchedPageSource || matchedPageSource.id !== message.sourceId) {
-      return {
-        ok: false,
-        error: "The current page does not match the requested source."
-      }
-    }
-
-    const scanner = getPageSubscriptionScanner(message.sourceId)
-    if (!scanner) {
-      return {
-        ok: false,
-        error: `Subscription scanning is not implemented for source: ${message.sourceId}`
-      }
-    }
-
-    try {
-      const candidates = await scanner.scan()
-      return {
-        ok: true,
-        candidates
-      }
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "Unknown scan error"
-      return {
-        ok: false,
-        error: errorMessage
-      }
     }
   }
 

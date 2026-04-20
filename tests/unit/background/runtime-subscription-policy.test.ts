@@ -71,8 +71,6 @@ describe("background runtime subscription policy handlers", () => {
     vi.resetModules()
     vi.restoreAllMocks()
     vi.clearAllMocks()
-    const { resetContentScriptReadyRegistry } = await import("../../../src/lib/subscriptions/content-ready")
-    resetContentScriptReadyRegistry()
     getSubscriptionPolicyConfigMock.mockResolvedValue({
       enabled: false,
       pollingIntervalMinutes: 30,

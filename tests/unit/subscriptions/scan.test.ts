@@ -1,20 +1,17 @@
-import { afterEach, beforeEach, describe, expect, expectTypeOf, it, vi } from "vitest"
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
-import type { SubscriptionEntry, DeliveryMode } from "../../../src/lib/shared/types"
+import type { SubscriptionEntry } from "../../../src/lib/shared/types"
 import type { SourceConfig } from "../../../src/lib/sources/config/types"
-import type { ScanSubscriptionListResultMessage } from "../../../src/lib/shared/messages"
 import type { SubscriptionPolicyConfig } from "../../../src/lib/subscriptions/policy/types"
 import { DEFAULT_SUBSCRIPTION_POLICY_CONFIG } from "../../../src/lib/subscriptions/policy/defaults"
 import { DEFAULT_SOURCE_CONFIG } from "../../../src/lib/sources/config/defaults"
 import { upsertSubscription } from "../../../src/lib/subscriptions/catalog-repository"
-import { markContentScriptReady, resetContentScriptReadyRegistry } from "../../../src/lib/subscriptions/content-ready"
 import { resetSubscriptionDb, subscriptionDb } from "../../../src/lib/subscriptions/db"
 import { RECENT_HIT_RETENTION_CAP } from "../../../src/lib/subscriptions/retention"
 import { scanSubscriptions } from "../../../src/lib/subscriptions/scan"
 import { scanSubscriptionCandidatesFromSource } from "../../../src/lib/subscriptions/source-scan"
 import type { SubscriptionCandidate } from "../../../src/lib/subscriptions/types"
 import type { SourceSubscriptionScanCandidate } from "../../../src/lib/sources/types"
-import { SCAN_SUBSCRIPTION_LIST_REQUEST } from "../../../src/lib/shared/messages"
 
 function createSubscriptionPolicy(overrides: Partial<SubscriptionPolicyConfig> = {}): SubscriptionPolicyConfig {
   return {
@@ -88,27 +85,10 @@ function createStoredHit(index: number) {
 describe("scanSubscriptions", () => {
   beforeEach(async () => {
     await resetSubscriptionDb()
-    resetContentScriptReadyRegistry()
   })
 
   afterEach(async () => {
     await resetSubscriptionDb()
-    resetContentScriptReadyRegistry()
-  })
-
-  it("defines the typed response protocol for content script subscription scan results", () => {
-    // Protocol type contract: content runtime returns typed success/error responses
-    // with normalized candidate data instead of raw executeScript results
-    expectTypeOf<ScanSubscriptionListResultMessage>().toMatchTypeOf<
-      | {
-          ok: true
-          candidates: SourceSubscriptionScanCandidate[]
-        }
-      | {
-          ok: false
-          error: string
-        }
-    >()
   })
 
   it("records first-scan fingerprints without emitting notification hits", async () => {
@@ -320,5 +300,16 @@ describe("background fetcher registry", () => {
     ).resolves.toEqual([])
 
     expect(fetchImpl).not.toHaveBeenCalled()
+  })
+
+  it("does not require content-script ready state or tab messaging for subscription scans", async () => {
+    const fetchImpl = vi.fn(async () =>
+      new Response(
+        `<table><tr><td><a href="/t/100">[LoliHouse] Medalist - 01 [1080p]</a></td><td><a href="/t/100.torrent">Torrent</a></td></tr></table>`,
+        { status: 200 }
+      )
+    )
+
+    await expect(scanSubscriptionCandidatesFromSource("acgrip", { fetchImpl })).resolves.toHaveLength(1)
   })
 })
