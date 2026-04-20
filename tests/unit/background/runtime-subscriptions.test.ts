@@ -131,8 +131,6 @@ describe("background runtime subscription boundary", () => {
     vi.resetModules()
     vi.restoreAllMocks()
     vi.clearAllMocks()
-    const { resetContentScriptReadyRegistry } = await import("../../../src/lib/subscriptions/content-ready")
-    resetContentScriptReadyRegistry()
     getSubscriptionPolicyConfigMock.mockResolvedValue(createSubscriptionPolicy({
       enabled: true,
       notificationsEnabled: true,
@@ -149,33 +147,23 @@ describe("background runtime subscription boundary", () => {
     registerBackgroundRuntime()
   })
 
-  it("acknowledges CONTENT_SCRIPT_READY and records the ready state for the sender tab", async () => {
-    const { waitForContentScriptReadySignal } = await import("../../../src/lib/subscriptions/content-ready")
-    const { CONTENT_SCRIPT_READY_EVENT } = await import("../../../src/lib/shared/messages")
+  it("does not acknowledge the legacy content-script-ready subscription message", async () => {
     const listener = onMessageAddListener.mock.calls[0]?.[0]
     const sendResponse = vi.fn()
 
-    const keepsPortOpen = listener?.(
+    listener?.(
       {
-        type: CONTENT_SCRIPT_READY_EVENT,
+        type: "ANIME_BT_CONTENT_SCRIPT_READY" as never,
         sourceId: "acgrip"
       },
       {
-        tab: {
-          id: 12
-        }
+        tab: { id: 12 }
       },
       sendResponse
     )
 
-    expect(keepsPortOpen).toBe(true)
-    await vi.waitFor(() => {
-      expect(sendResponse).toHaveBeenCalledTimes(1)
-    })
-    expect(sendResponse).toHaveBeenCalledWith({
-      ok: true
-    })
-    await expect(waitForContentScriptReadySignal(12, "acgrip", 10)).resolves.toBeUndefined()
+    await Promise.resolve()
+    expect(sendResponse).not.toHaveBeenCalledWith({ ok: true })
   })
 
   it("supports TEST_DOWNLOADER_CONNECTION runtime messages", async () => {
@@ -406,6 +394,19 @@ describe("background runtime subscription boundary", () => {
           message: "downloader offline"
         })
       )
+    })
+  })
+
+  it("still downloads notification hits after permission prompts when extraction is needed", async () => {
+    downloadSubscriptionHitsMock.mockResolvedValue(undefined)
+    const listener = onClickedAddListener.mock.calls[0]?.[0]
+
+    listener?.("subscription-round:20260414093000000")
+
+    await vi.waitFor(() => {
+      expect(downloadSubscriptionHitsMock).toHaveBeenCalledWith({
+        roundId: "subscription-round:20260414093000000"
+      })
     })
   })
 })

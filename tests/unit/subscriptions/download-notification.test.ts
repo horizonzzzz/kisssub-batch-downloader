@@ -267,4 +267,148 @@ describe("downloadSubscriptionNotificationHits", () => {
       })
     ])
   })
+
+  it("extracts a hidden detail page when a notification hit has no stored direct links", async () => {
+    const now = "2026-04-14T09:30:00.000Z"
+
+    await subscriptionDb.subscriptions.put(createSubscription({
+      sourceIds: ["bangumimoe"]
+    }))
+    await subscriptionDb.notificationRounds.put({
+      id: "subscription-round:20260414093000000",
+      createdAt: now,
+      hits: [createHit({
+        magnetUrl: "",
+        torrentUrl: "",
+        detailUrl: "https://bangumi.moe/torrent/100"
+      })]
+    })
+
+    const extractSingleItem = vi.fn(async () => ({
+      ok: true,
+      title: "[LoliHouse] Medalist - 01 [1080p]",
+      detailUrl: "https://bangumi.moe/torrent/100",
+      hash: "100",
+      magnetUrl: "magnet:?xt=urn:btih:AAA111",
+      torrentUrl: "",
+      failureReason: ""
+    }))
+
+    const downloader: DownloaderAdapter = {
+      id: "qbittorrent",
+      displayName: "qBittorrent",
+      authenticate: vi.fn(async () => undefined),
+      addUrls: vi.fn(async () => ({
+        entries: [{ url: "magnet:?xt=urn:btih:AAA111", status: "submitted" as const }]
+      })),
+      addTorrentFiles: vi.fn(async () => undefined),
+      testConnection: vi.fn(async () => ({
+        baseUrl: "http://localhost:8080",
+        version: "5.0.0"
+      }))
+    }
+
+    const result = await downloadSubscriptionNotificationHits(
+      {
+        subscriptionPolicy: createSubscriptionPolicy(),
+        sourceConfig: createSourceConfig(),
+        roundId: "subscription-round:20260414093000000"
+      },
+      {
+        downloader,
+        fetchTorrentForUpload: vi.fn(),
+        extractSingleItem,
+        getDownloaderConfig: async () => createDownloaderConfig(),
+        now: () => now
+      }
+    )
+
+    expect(result.submittedCount).toBe(1)
+    expect(extractSingleItem).toHaveBeenCalledWith(
+      expect.objectContaining({
+        sourceId: "bangumimoe",
+        detailUrl: "https://bangumi.moe/torrent/100"
+      }),
+      expect.any(Object)
+    )
+  })
+
+  it("marks the hit as failed when hidden detail extraction still returns no usable download link", async () => {
+    const now = "2026-04-14T09:30:00.000Z"
+
+    await subscriptionDb.subscriptions.put(createSubscription({
+      sourceIds: ["bangumimoe"]
+    }))
+    await subscriptionDb.subscriptionRuntime.put({
+      subscriptionId: "sub-1",
+      lastScanAt: now,
+      lastMatchedAt: now,
+      lastError: "",
+      seenFingerprints: ["fp-1"],
+      recentHits: [createHit({
+        magnetUrl: "",
+        torrentUrl: "",
+        detailUrl: "https://bangumi.moe/torrent/100"
+      })]
+    })
+    await subscriptionDb.notificationRounds.put({
+      id: "subscription-round:20260414093000000",
+      createdAt: now,
+      hits: [createHit({
+        magnetUrl: "",
+        torrentUrl: "",
+        detailUrl: "https://bangumi.moe/torrent/100"
+      })]
+    })
+
+    const extractSingleItem = vi.fn(async () => ({
+      ok: false,
+      title: "[LoliHouse] Medalist - 01 [1080p]",
+      detailUrl: "https://bangumi.moe/torrent/100",
+      hash: "100",
+      magnetUrl: "",
+      torrentUrl: "",
+      failureReason: "The detail page finished loading, but no usable magnet or torrent URL was exposed."
+    }))
+
+    const downloader: DownloaderAdapter = {
+      id: "qbittorrent",
+      displayName: "qBittorrent",
+      authenticate: vi.fn(async () => undefined),
+      addUrls: vi.fn(async () => ({ entries: [] })),
+      addTorrentFiles: vi.fn(async () => undefined),
+      testConnection: vi.fn(async () => ({
+        baseUrl: "http://localhost:8080",
+        version: "5.0.0"
+      }))
+    }
+
+    const result = await downloadSubscriptionNotificationHits(
+      {
+        subscriptionPolicy: createSubscriptionPolicy(),
+        sourceConfig: createSourceConfig(),
+        roundId: "subscription-round:20260414093000000"
+      },
+      {
+        downloader,
+        fetchTorrentForUpload: vi.fn(),
+        extractSingleItem,
+        getDownloaderConfig: async () => createDownloaderConfig(),
+        now: () => now
+      }
+    )
+
+    expect(result.failedCount).toBe(1)
+    expect(await subscriptionDb.notificationRounds.get("subscription-round:20260414093000000")).toEqual(
+      expect.objectContaining({
+        hits: [
+          expect.objectContaining({
+            id: "hit-1",
+            downloadStatus: "failed",
+            downloadedAt: null
+          })
+        ]
+      })
+    )
+  })
 })

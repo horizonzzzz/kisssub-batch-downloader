@@ -42,12 +42,6 @@ export { scanSubscriptions } from "./scan"
 export { scanSubscriptionCandidatesFromSource } from "./source-scan"
 export { getSubscriptionSourceFetcherById } from "./source-fetch"
 export type { SubscriptionSourceFetcher, SubscriptionSourceFetchFunction } from "./source-fetch/types"
-export {
-  clearContentScriptReadyForTab,
-  markContentScriptReady,
-  resetContentScriptReadyRegistry,
-  waitForContentScriptReadySignal
-} from "./content-ready"
 export { ensureSubscriptionAlarm, SUBSCRIPTION_ALARM_NAME } from "./scheduler"
 export { createEmptySubscriptionRuntimeRow } from "./runtime-state"
 export {
