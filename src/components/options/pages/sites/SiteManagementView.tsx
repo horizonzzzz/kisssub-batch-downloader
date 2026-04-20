@@ -2,7 +2,7 @@ import { i18n } from "../../../../lib/i18n"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { HiOutlineArrowPath } from "react-icons/hi2"
 
-import { Button, Card, Alert } from "../../../ui"
+import { Button, Alert } from "../../../ui"
 import { useOptionsPageFooter } from "../../layout/OptionsPageFooter"
 import type { OptionsApi } from "../../OptionsPage"
 import { useSourceConfigWorkbench } from "./use-source-config-workbench"
@@ -11,14 +11,12 @@ import acgripSiteIcon from "../../../../assets/site-icon-acgrip.png"
 import bangumiMoeSiteIcon from "../../../../assets/site-icon-bangumimoe.svg"
 import dongmanhuayuanSiteIcon from "../../../../assets/site-icon-dongmanhuayuan.png"
 import kisssubSiteIcon from "../../../../assets/site-icon-kisssub.png"
-import { SOURCE_IDS } from "../../../../lib/sources/catalog"
 import { getLocalizedSiteConfigMeta } from "../../../../lib/sources/site-meta"
 import type { DeliveryMode, SourceId } from "../../../../lib/shared/types"
 import type { SourceConfig } from "../../../../lib/sources/config/types"
 import { SiteCard } from "./SiteCard"
 import {
   buildSortedSitesFromConfig,
-  countEnabledSitesFromConfig,
   getInitialExpandedSitesFromConfig,
   reconcileExpandedSitesFromConfig
 } from "./site-management"
@@ -64,11 +62,6 @@ export function SiteManagementView({ api }: SiteManagementViewProps) {
   const sortedSites = useMemo(() => {
     if (!config) return []
     return buildSortedSitesFromConfig(config)
-  }, [config])
-
-  const enabledCount = useMemo(() => {
-    if (!config) return 0
-    return countEnabledSitesFromConfig(config)
   }, [config])
   const footerConfig = useMemo(() => {
     if (!config) {
@@ -161,18 +154,6 @@ export function SiteManagementView({ api }: SiteManagementViewProps) {
       <div role="status" aria-live="polite">
         <Alert tone={status.tone} title={status.message} />
       </div>
-
-      <Card>
-        <div className="flex flex-col gap-5 px-6 py-6">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div className="flex flex-wrap gap-3 text-sm text-zinc-600">
-              <div className="rounded-full border border-zinc-200 bg-zinc-50 px-3 py-2">
-                {i18n.t("options.sites.enabledSummary", [enabledCount, SOURCE_IDS.length])}
-              </div>
-            </div>
-          </div>
-        </div>
-      </Card>
 
       <section className="space-y-4">
         <div className="grid gap-4">

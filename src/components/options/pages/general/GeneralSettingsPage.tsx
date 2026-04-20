@@ -10,10 +10,12 @@ import { useBatchExecutionConfigWorkbench } from "./use-batch-execution-workbenc
 import { ConnectionHelpAlert } from "./ConnectionHelpAlert"
 import { DownloaderSelectorSection } from "./DownloaderSelectorSection"
 import { ExtractionCadenceSection } from "./ExtractionCadenceSection"
+import { GeneralDownloaderSummaryCard } from "./GeneralDownloaderSummaryCard"
 import { QbCredentialsSection, type ConnectionState } from "./QbCredentialsSection"
 import { TransmissionCredentialsSection } from "./TransmissionCredentialsSection"
 import { useOptionsPageFooter } from "../../layout/OptionsPageFooter"
 import type { OptionsApi } from "../../OptionsPage"
+import { getDownloaderMeta } from "../../../../lib/downloader"
 
 type GeneralSettingsPageProps = {
   api: OptionsApi
@@ -36,6 +38,8 @@ export function GeneralSettingsPage({ api }: GeneralSettingsPageProps) {
   const [testing, setTesting] = useState(false)
 
   const currentDownloaderId = downloaderWorkbench.config.activeId
+  const currentDownloaderProfile = downloaderWorkbench.config.profiles[currentDownloaderId]
+  const currentDownloaderName = getDownloaderMeta(currentDownloaderId).displayName
 
   // Clear connection state when switching downloaders
   useEffect(() => {
@@ -168,6 +172,11 @@ export function GeneralSettingsPage({ api }: GeneralSettingsPageProps) {
           <Alert tone={statusTone} title={statusMessage} />
         </div>
       ) : null}
+
+      <GeneralDownloaderSummaryCard
+        downloaderName={currentDownloaderName}
+        baseUrl={currentDownloaderProfile.baseUrl}
+      />
 
       <DownloaderSelectorSection
         activeId={downloaderWorkbench.config.activeId}

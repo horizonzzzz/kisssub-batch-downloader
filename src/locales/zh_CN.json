@@ -236,7 +236,13 @@
       "saveDownloader": "保存下载器设置",
       "saveBatchExecution": "保存批量执行设置",
       "saveCombined": "保存基础设置",
-      "saveCombinedFailed": "基础设置中有配置项保存失败，请重试。"
+      "saveCombinedFailed": "基础设置中有配置项保存失败，请重试。",
+      "summary": {
+        "eyebrow": "当前目标",
+        "title": "当前下载器",
+        "nameLabel": "下载器",
+        "baseUrlLabel": "地址"
+      }
     },
     "sites": {
       "badge": {
@@ -247,7 +253,6 @@
       "enableSwitchSuffix": "启用开关",
       "expandConfigSuffix": "展开配置",
       "collapseConfigSuffix": "收起配置",
-      "enabledSummary": "当前已启用 $1 / $2 个站点",
       "saveSites": "保存站点配置",
       "deliveryMode": {
         "magnet": "优先磁力链",
@@ -297,19 +302,10 @@
       "visitSite": "访问站点",
       "capabilitiesTitle": "当前能力",
       "capabilities": {
-        "0": "统一的站点配置页集中管理 4 个受支持站点的启用状态和专属参数。",
-        "1": "禁用站点后不会注入批量下载 UI，后台批处理也会同步拒绝该站点请求。",
-        "2": "源站概览保留为独立页面，方便查看站点简介与快速访问。"
-      },
-      "downloaderTitle": "当前下载器",
-      "downloaderName": "名称",
-      "downloaderBaseUrl": "地址",
-      "subscriptionsTitle": "订阅",
-      "subscriptionsEnabled": "后台轮询",
-      "enabled": "已启用",
-      "disabled": "已禁用",
-      "configuredSubscriptionCount": "已配置",
-      "enabledSubscriptionCount": "已启用"
+        "siteSettings": "统一的站点配置页集中管理 4 个受支持站点的启用状态和专属参数。",
+        "disabledSourceGuards": "禁用站点后不会注入批量下载 UI，后台批处理也会同步拒绝该站点请求。",
+        "standaloneOverview": "源站概览保留为独立页面，方便查看站点简介与快速访问。"
+      }
     },
     "history": {
       "loading": "加载中...",
@@ -497,6 +493,11 @@
       }
     },
     "subscriptions": {
+      "summaryEyebrow": "当前状态",
+      "summaryTitle": "订阅摘要",
+      "summaryPollingLabel": "后台轮询",
+      "summaryConfiguredLabel": "已配置",
+      "summaryEnabledLabel": "已启用",
       "title": "订阅工作台",
       "description": "在与其他设置相同的表单工作区里统一管理后台轮询、通知默认项和可复用订阅查询。",
       "add": "新增订阅",
@@ -636,6 +637,7 @@
     }
   },
   "common": {
+    "unset": "未设置",
     "cancel": "取消",
     "processing": "处理中...",
     "delete": "删除",

@@ -22,6 +22,7 @@ import type { OptionsApi } from "../../OptionsPage"
 import { SubscriptionCard } from "./SubscriptionCard"
 import { SubscriptionEditorDialog } from "./SubscriptionEditorDialog"
 import { SubscriptionsGlobalCard } from "./SubscriptionsGlobalCard"
+import { SubscriptionsSummaryCard } from "./SubscriptionsSummaryCard"
 import {
   createSubscriptionDraft,
   duplicateSubscriptionDraft,
@@ -124,6 +125,12 @@ export function SubscriptionsPage({ api }: SubscriptionsPageProps) {
       <div role="status" aria-live="polite">
         <Alert tone={visibleStatus.tone} title={visibleStatus.message} />
       </div>
+
+      <SubscriptionsSummaryCard
+        subscriptionsEnabled={policy.enabled}
+        configuredCount={summary.configuredCount}
+        enabledCount={summary.enabledCount}
+      />
 
       <SubscriptionsGlobalCard
         subscriptionsEnabled={policy.enabled}

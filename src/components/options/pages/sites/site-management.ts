@@ -26,10 +26,6 @@ export function buildSortedSitesFromConfig(config: SourceConfig): SiteConfigMeta
   })
 }
 
-export function countEnabledSitesFromConfig(config: SourceConfig): number {
-  return getEnabledSources(SOURCE_IDS, config).length
-}
-
 export function getInitialExpandedSitesFromConfig(config: SourceConfig): SourceId[] {
   return SOURCE_IDS.filter((sourceId) => resolveSourceEnabled(sourceId, config))
 }

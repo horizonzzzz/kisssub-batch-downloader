@@ -236,7 +236,13 @@
       "saveDownloader": "Save downloader settings",
       "saveBatchExecution": "Save batch execution settings",
       "saveCombined": "Save basic settings",
-      "saveCombinedFailed": "Some basic settings failed to save. Please try again."
+      "saveCombinedFailed": "Some basic settings failed to save. Please try again.",
+      "summary": {
+        "eyebrow": "Current target",
+        "title": "Current downloader",
+        "nameLabel": "Downloader",
+        "baseUrlLabel": "Base URL"
+      }
     },
     "sites": {
       "badge": {
@@ -247,7 +253,6 @@
       "enableSwitchSuffix": "enable switch",
       "expandConfigSuffix": "expand config",
       "collapseConfigSuffix": "collapse config",
-      "enabledSummary": "$1 / $2 sites enabled",
       "saveSites": "Save site config",
       "deliveryMode": {
         "magnet": "Prefer magnet links",
@@ -297,19 +302,10 @@
       "visitSite": "Visit site",
       "capabilitiesTitle": "Current capabilities",
       "capabilities": {
-        "0": "A unified site settings page manages enablement and site-specific parameters for all four supported sources.",
-        "1": "Disabled sites stop injecting the batch UI, and background batch processing rejects requests from them as well.",
-        "2": "The overview stays as a separate page so you can review site summaries and jump to them quickly."
-      },
-      "downloaderTitle": "Current downloader",
-      "downloaderName": "Name",
-      "downloaderBaseUrl": "Base URL",
-      "subscriptionsTitle": "Subscriptions",
-      "subscriptionsEnabled": "Background polling",
-      "enabled": "Enabled",
-      "disabled": "Disabled",
-      "configuredSubscriptionCount": "Configured",
-      "enabledSubscriptionCount": "Enabled"
+        "siteSettings": "A unified site settings page manages enablement and site-specific parameters for all four supported sources.",
+        "disabledSourceGuards": "Disabled sites stop injecting the batch UI, and background batch processing rejects requests from them as well.",
+        "standaloneOverview": "The overview stays as a separate page so you can review site summaries and jump to them quickly."
+      }
     },
     "history": {
       "loading": "Loading...",
@@ -497,6 +493,11 @@
       }
     },
     "subscriptions": {
+      "summaryEyebrow": "Current status",
+      "summaryTitle": "Subscription summary",
+      "summaryPollingLabel": "Background polling",
+      "summaryConfiguredLabel": "Configured",
+      "summaryEnabledLabel": "Enabled",
       "title": "Subscriptions",
       "description": "Configure reusable subscription queries, global polling defaults, and notification behavior in the same form workspace used by the rest of the options page.",
       "add": "Add subscription",
@@ -636,6 +637,7 @@
     }
   },
   "common": {
+    "unset": "Not configured",
     "cancel": "Cancel",
     "processing": "Processing...",
     "delete": "Delete",

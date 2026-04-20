@@ -4,7 +4,6 @@ import { DEFAULT_SOURCE_CONFIG } from "../../../src/lib/sources/config/defaults"
 import type { SourceConfig } from "../../../src/lib/sources/config/types"
 import {
   buildSortedSitesFromConfig,
-  countEnabledSitesFromConfig,
   getInitialExpandedSitesFromConfig,
   reconcileExpandedSitesFromConfig
 } from "../../../src/components/options/pages/sites/site-management"
@@ -46,28 +45,6 @@ describe("site management helpers", () => {
       "kisssub",
       "bangumimoe"
     ])
-  })
-
-  it("counts only enabled sites", () => {
-    const config = createTestSourceConfig({
-      kisssub: {
-        ...DEFAULT_SOURCE_CONFIG.kisssub,
-        enabled: true
-      },
-      dongmanhuayuan: {
-        ...DEFAULT_SOURCE_CONFIG.dongmanhuayuan,
-        enabled: false
-      },
-      acgrip: {
-        ...DEFAULT_SOURCE_CONFIG.acgrip,
-        enabled: true
-      },
-      bangumimoe: {
-        ...DEFAULT_SOURCE_CONFIG.bangumimoe,
-        enabled: false
-      }
-    })
-    expect(countEnabledSitesFromConfig(config)).toBe(2)
   })
 
   it("initially expands every enabled site", () => {

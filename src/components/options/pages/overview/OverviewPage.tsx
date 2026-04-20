@@ -1,11 +1,8 @@
-import { useEffect, useState } from "react"
 import { i18n } from "../../../../lib/i18n"
 import { HiOutlineArrowTopRightOnSquare } from "react-icons/hi2"
 
 import { SOURCE_IDS } from "../../../../lib/sources/catalog"
 import { getLocalizedSiteConfigMeta } from "../../../../lib/sources/site-meta"
-import { sendRuntimeRequest } from "../../../../lib/shared/messages"
-import type { OverviewState } from "../../../../lib/background/queries/overview-state"
 import { Button, Card } from "../../../ui"
 
 const accentClassNames: Record<"default" | "emerald" | "cyan", string> = {
@@ -14,65 +11,15 @@ const accentClassNames: Record<"default" | "emerald" | "cyan", string> = {
   cyan: "bg-cyan-500"
 }
 
+const overviewCapabilityKeys = [
+  "siteSettings",
+  "disabledSourceGuards",
+  "standaloneOverview"
+] as const
+
 export function OverviewPage() {
-  const [overviewState, setOverviewState] = useState<OverviewState | null>(null)
-
-  useEffect(() => {
-    sendRuntimeRequest({ type: "GET_OVERVIEW_STATE" }).then((response) => {
-      if (response.ok) {
-        setOverviewState(response.state)
-      }
-    })
-  }, [])
-
   return (
     <div className="grid gap-5">
-      {overviewState && (
-        <Card className="border-zinc-900 bg-zinc-900 text-white">
-          <div className="grid gap-4 px-6 py-6">
-            <div className="space-y-2">
-              <h2 className="text-lg font-medium text-white">{i18n.t("options.overview.downloaderTitle")}</h2>
-            </div>
-            <div className="grid gap-3 text-sm text-white/76">
-              <div className="flex justify-between">
-                <span>{i18n.t("options.overview.downloaderName")}</span>
-                <span className="text-white">{overviewState.downloaderName}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>{i18n.t("options.overview.downloaderBaseUrl")}</span>
-                <span className="text-white">{overviewState.downloaderBaseUrl}</span>
-              </div>
-            </div>
-          </div>
-        </Card>
-      )}
-
-      {overviewState && (
-        <Card>
-          <div className="grid gap-4 px-6 py-6">
-            <div className="space-y-2">
-              <h2 className="text-lg font-medium text-zinc-900">{i18n.t("options.overview.subscriptionsTitle")}</h2>
-            </div>
-            <div className="grid gap-3 text-sm text-zinc-500">
-              <div className="flex justify-between">
-                <span>{i18n.t("options.overview.subscriptionsEnabled")}</span>
-                <span className={overviewState.subscriptionsEnabled ? "text-emerald-600" : "text-zinc-400"}>
-                  {overviewState.subscriptionsEnabled ? i18n.t("options.overview.enabled") : i18n.t("options.overview.disabled")}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span>{i18n.t("options.overview.configuredSubscriptionCount")}</span>
-                <span className="text-zinc-900">{overviewState.configuredSubscriptionCount}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>{i18n.t("options.overview.enabledSubscriptionCount")}</span>
-                <span className="text-zinc-900">{overviewState.enabledSubscriptionCount}</span>
-              </div>
-            </div>
-          </div>
-        </Card>
-      )}
-
       <div className="grid gap-5 xl:grid-cols-3">
         {SOURCE_IDS.map((sourceId) => {
           const site = getLocalizedSiteConfigMeta(sourceId)
@@ -112,9 +59,9 @@ export function OverviewPage() {
             <h2 className="text-lg font-medium text-white">{i18n.t("options.overview.capabilitiesTitle")}</h2>
           </div>
           <ul className="grid gap-3 pl-5 text-sm leading-6 text-white/76">
-            <li>{i18n.t("options.overview.capabilities.0")}</li>
-            <li>{i18n.t("options.overview.capabilities.1")}</li>
-            <li>{i18n.t("options.overview.capabilities.2")}</li>
+            {overviewCapabilityKeys.map((capabilityKey) => (
+              <li key={capabilityKey}>{i18n.t(`options.overview.capabilities.${capabilityKey}`)}</li>
+            ))}
           </ul>
         </div>
       </Card>

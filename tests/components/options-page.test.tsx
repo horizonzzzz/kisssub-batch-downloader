@@ -394,10 +394,18 @@ describe("OptionsPage", () => {
 
     expect(await screen.findByDisplayValue("http://127.0.0.1:17474")).toBeInTheDocument()
     expect(screen.getByText("当前下载器：qBittorrent")).toBeInTheDocument()
+    expect(within(screen.getByTestId("general-downloader-summary-card")).getAllByText("qBittorrent")).toHaveLength(2)
+    expect(
+      within(screen.getByTestId("general-downloader-summary-card")).getByText("http://127.0.0.1:17474")
+    ).toBeInTheDocument()
 
     await user.click(screen.getByRole("radio", { name: "Transmission" }))
 
     expect(screen.getByText("当前下载器：Transmission")).toBeInTheDocument()
+    expect(within(screen.getByTestId("general-downloader-summary-card")).getAllByText("Transmission")).toHaveLength(2)
+    expect(
+      within(screen.getByTestId("general-downloader-summary-card")).getByText("http://127.0.0.1:9091/transmission/rpc")
+    ).toBeInTheDocument()
   })
 
   it("shows the persisted current downloader when opening a non-general route directly", async () => {
@@ -430,7 +438,7 @@ describe("OptionsPage", () => {
       expect(window.location.hash).toBe("#/sites")
       expect(screen.getByRole("heading", { name: "站点配置" })).toBeInTheDocument()
       expect(screen.getByText("统一管理 4 个站点的启用状态和专属配置。")).toBeInTheDocument()
-      expect(screen.getByText("当前已启用 4 / 4 个站点")).toBeInTheDocument()
+      expect(screen.queryByText("当前已启用 4 / 4 个站点")).not.toBeInTheDocument()
       expect(screen.getByText("Kisssub 爱恋动漫")).toBeInTheDocument()
       expect(screen.getByText("Dongmanhuayuan 动漫花园")).toBeInTheDocument()
       expect(screen.getAllByText("ACG.RIP").length).toBeGreaterThan(0)
@@ -447,6 +455,11 @@ describe("OptionsPage", () => {
       expect(screen.getByText("面向动漫爱好者的BT资源交流站")).toBeInTheDocument()
       expect(screen.getByText("分类清晰、以种子直下为主的ACG站")).toBeInTheDocument()
       expect(screen.getByText("追番日历结合最新种子发布的社区")).toBeInTheDocument()
+      expect(screen.queryByText("http://127.0.0.1:17474")).not.toBeInTheDocument()
+      expect(screen.queryByText("后台轮询")).not.toBeInTheDocument()
+      expect(screen.getByText("统一的站点配置页集中管理 4 个受支持站点的启用状态和专属参数。")).toBeInTheDocument()
+      expect(screen.getByText("禁用站点后不会注入批量下载 UI，后台批处理也会同步拒绝该站点请求。")).toBeInTheDocument()
+      expect(screen.getByText("源站概览保留为独立页面，方便查看站点简介与快速访问。")).toBeInTheDocument()
       expect(screen.queryByTestId("options-page-footer")).not.toBeInTheDocument()
     },
     10000
@@ -459,7 +472,7 @@ describe("OptionsPage", () => {
     const firstRender = render(<OptionsPage api={api} />)
 
     expect(await screen.findByRole("heading", { name: "站点配置" })).toBeInTheDocument()
-    expect(screen.getByText("当前已启用 4 / 4 个站点")).toBeInTheDocument()
+    expect(screen.queryByText("当前已启用 4 / 4 个站点")).not.toBeInTheDocument()
 
     firstRender.unmount()
     window.location.hash = "#/filters"
@@ -478,6 +491,9 @@ describe("OptionsPage", () => {
     expect(await screen.findByRole("heading", { name: "订阅" })).toBeInTheDocument()
     expect(screen.getAllByRole("button", { name: "新增订阅" }).length).toBeGreaterThan(0)
     expect(screen.getByText("还没有订阅规则")).toBeInTheDocument()
+    expect(screen.getByTestId("subscriptions-summary-card")).toBeInTheDocument()
+    expect(within(screen.getByTestId("subscriptions-summary-card")).getByText("已配置 0 条订阅")).toBeInTheDocument()
+    expect(within(screen.getByTestId("subscriptions-summary-card")).getByText("已启用 0 条")).toBeInTheDocument()
 
     thirdRender.unmount()
     window.location.hash = "#/overview"
@@ -485,6 +501,8 @@ describe("OptionsPage", () => {
 
     expect(await screen.findByRole("heading", { name: "源站概览" })).toBeInTheDocument()
     expect(screen.getAllByRole("button", { name: "访问站点" })).toHaveLength(4)
+    expect(screen.queryByText("http://127.0.0.1:17474")).not.toBeInTheDocument()
+    expect(screen.queryByText("后台轮询")).not.toBeInTheDocument()
   })
 
   it(
@@ -1168,7 +1186,9 @@ describe("OptionsPage", () => {
 
       render(<OptionsPage api={api} />)
 
-      expect(await screen.findByRole("status")).toHaveTextContent("设置已加载。")
+      await waitFor(() => {
+        expect(screen.getByRole("status")).toHaveTextContent("设置已加载。")
+      })
 
       await user.click(screen.getByRole("button", { name: "测试连接" }))
 

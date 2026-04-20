@@ -39,7 +39,6 @@ import {
 } from "../../lib/downloader/config/storage"
 import { getHistoryPageContext } from "../../lib/background/queries/history-context"
 import { buildContentScriptState } from "../../lib/background/queries/content-script-state"
-import { getOverviewState } from "../../lib/background/queries/overview-state"
 import { SOURCE_IDS } from "../../lib/sources/catalog"
 import {
   getBatchExecutionConfig,
@@ -446,11 +445,6 @@ export function registerBackgroundRuntime() {
               })
             }
             sendResponse(createRuntimeSuccessResponse("SAVE_SUBSCRIPTION_POLICY", { config: savedConfig }))
-            return
-          }
-          case "GET_OVERVIEW_STATE": {
-            const state = await getOverviewState()
-            sendResponse(createRuntimeSuccessResponse("GET_OVERVIEW_STATE", { state }))
             return
           }
           default:
