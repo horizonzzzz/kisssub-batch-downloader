@@ -12,18 +12,15 @@ import type {
   BatchItem,
   ClassifiedBatchResult,
   ExtractionResult,
-  SubscriptionEntry,
   SubscriptionHitRecord
 } from "../shared/types"
 import type { SourceConfig } from "../sources/config/types"
 import type { ExtractionContext } from "../sources/types"
 import type { SubscriptionPolicyConfig } from "./policy/types"
 import type { SubscriptionHitStoreRow } from "./store-types"
-import { resolveSourceEnabled } from "../sources/config/selectors"
 import { getBatchExecutionConfig } from "../batch-config/storage"
 import { getDownloaderConfig } from "../downloader/config/storage"
 import { buildExtractionContextFromConfigs } from "../background/job-state"
-import { listSubscriptionsByIds } from "./catalog-repository"
 import { subscriptionDb } from "./db"
 import {
   getNotificationRound,
@@ -86,20 +83,7 @@ export async function downloadPreparedSubscriptionHits(
   const batchExecutionConfig = await getBatchExecutionConfig()
   const downloaderConfig = await (dependencies.getDownloaderConfig ?? getDownloaderConfig)()
   const extractionContext = buildExtractionContextFromConfigs(batchExecutionConfig, input.sourceConfig)
-  const subscriptions = await listSubscriptionsByIds([
-    ...new Set(input.hits.map((hit) => hit.subscriptionId))
-  ])
-  const subscriptionById = new Map(
-    subscriptions.map((subscription) => [subscription.id, subscription] as const)
-  )
   const actionableHits = input.hits
-    .filter((hit) =>
-      isSubscriptionHitDownloadable(
-        hit,
-        subscriptionById.get(hit.subscriptionId),
-        input.sourceConfig
-      )
-    )
     .filter((hit) => hit.downloadStatus !== "submitted" && hit.downloadStatus !== "duplicate")
   const attemptedAt = dependencies.now?.() ?? new Date().toISOString()
 
@@ -124,7 +108,6 @@ export async function downloadPreparedSubscriptionHits(
   for (const hit of actionableHits) {
     const classified = await prepareSubscriptionHit(
       hit,
-      subscriptionById.get(hit.subscriptionId),
       input.sourceConfig,
       seenHashes,
       seenUrls,
@@ -253,20 +236,7 @@ export async function downloadSubscriptionNotificationHits(
     return createEmptyDownloadSubscriptionHitsResult()
   }
 
-  const subscriptions = await listSubscriptionsByIds([
-    ...new Set(notificationRound.hits.map((hit) => hit.subscriptionId))
-  ])
-  const subscriptionById = new Map(
-    subscriptions.map((subscription) => [subscription.id, subscription] as const)
-  )
   const actionableHits = notificationRound.hits
-    .filter((hit) =>
-      isSubscriptionHitDownloadable(
-        hit,
-        subscriptionById.get(hit.subscriptionId),
-        input.sourceConfig
-      )
-    )
     .map((hit) => ({ ...hit }))
 
   const result = await downloadPreparedSubscriptionHits(
@@ -338,17 +308,8 @@ async function updateRuntimeRowsForDownloadedHits(
   }
 }
 
-function isSubscriptionHitDownloadable(
-  hit: SubscriptionHitRecord,
-  subscription: SubscriptionEntry | undefined,
-  sourceConfig: SourceConfig
-): boolean {
-  return Boolean(subscription?.enabled) && resolveSourceEnabled(hit.sourceId, sourceConfig)
-}
-
 async function prepareSubscriptionHit(
   hit: SubscriptionHitRecord,
-  subscription: SubscriptionEntry | undefined,
   sourceConfig: SourceConfig,
   seenHashes: Set<string>,
   seenUrls: Set<string>,

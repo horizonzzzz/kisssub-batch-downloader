@@ -1,4 +1,4 @@
-import { listSubscriptions } from "./catalog-repository"
+import { listSubscriptionsIncludingDeleted } from "./catalog-repository"
 import { listSubscriptionHits } from "./hit-repository"
 import { getNotificationRound } from "./notification-round-repository"
 import type { SubscriptionHitStoreRow } from "./store-types"
@@ -24,7 +24,7 @@ export async function buildSubscriptionHitsWorkbenchRows(
   input: SubscriptionHitsWorkbenchInput
 ): Promise<SubscriptionHitsWorkbenchRow[]> {
   const [subscriptions, hits, highlightedHitIds] = await Promise.all([
-    listSubscriptions(),
+    listSubscriptionsIncludingDeleted(),
     listSubscriptionHits(),
     input.roundId ? getSubscriptionHitIdsForRound(input.roundId) : Promise.resolve([])
   ])

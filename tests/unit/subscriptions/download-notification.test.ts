@@ -91,7 +91,7 @@ describe("downloadSubscriptionNotificationHits", () => {
     await resetSubscriptionDb()
   })
 
-  it("prunes disabled subscription hits from rounds without touching app settings", async () => {
+  it("downloads historical hits even when the subscription is disabled", async () => {
     const now = "2026-04-14T09:30:00.000Z"
 
     await subscriptionDb.subscriptions.put(
@@ -115,7 +115,9 @@ describe("downloadSubscriptionNotificationHits", () => {
       id: "qbittorrent",
       displayName: "qBittorrent",
       authenticate: vi.fn(async () => undefined),
-      addUrls: vi.fn(async () => ({ entries: [] })),
+      addUrls: vi.fn(async () => ({
+        entries: [{ url: "magnet:?xt=urn:btih:AAA111", status: "submitted" as const }]
+      })),
       addTorrentFiles: vi.fn(async () => undefined),
       testConnection: vi.fn(async () => ({
         baseUrl: "http://localhost:8080",
@@ -143,10 +145,76 @@ describe("downloadSubscriptionNotificationHits", () => {
       }
     )
 
-    expect(result.totalHits).toBe(0)
-    expect(result.attemptedHits).toBe(0)
-    await expect(listNotificationRounds()).resolves.toEqual([])
-    expect(downloader.authenticate).not.toHaveBeenCalled()
+    expect(result.totalHits).toBe(1)
+    expect(result.attemptedHits).toBe(1)
+    expect(result.submittedCount).toBe(1)
+    expect(downloader.authenticate).toHaveBeenCalledTimes(1)
+  })
+
+  it("downloads historical hits even when the subscription is tombstoned and the source is disabled", async () => {
+    const now = "2026-04-14T09:30:00.000Z"
+
+    await subscriptionDb.subscriptions.put(
+      createSubscription({
+        id: "sub-tombstoned",
+        enabled: false,
+        deletedAt: "2026-04-15T09:30:00.000Z"
+      })
+    )
+    await subscriptionDb.notificationRounds.put({
+      id: "subscription-round:20260414093000000",
+      createdAt: now,
+      hits: [
+        createHit({
+          id: "hit-tombstoned",
+          subscriptionId: "sub-tombstoned"
+        })
+      ]
+    })
+
+    const downloader: DownloaderAdapter = {
+      id: "qbittorrent",
+      displayName: "qBittorrent",
+      authenticate: vi.fn(async () => undefined),
+      addUrls: vi.fn(async () => ({
+        entries: [{ url: "magnet:?xt=urn:btih:AAA111", status: "submitted" as const }]
+      })),
+      addTorrentFiles: vi.fn(async () => undefined),
+      testConnection: vi.fn(async () => ({
+        baseUrl: "http://localhost:8080",
+        version: "5.0.0"
+      }))
+    }
+
+    const result = await downloadSubscriptionNotificationHits(
+      {
+        subscriptionPolicy: createSubscriptionPolicy(),
+        sourceConfig: createSourceConfig({
+          bangumimoe: {
+            ...DEFAULT_SOURCE_CONFIG.bangumimoe,
+            enabled: false
+          }
+        }),
+        roundId: "subscription-round:20260414093000000"
+      },
+      {
+        downloader,
+        fetchTorrentForUpload: vi.fn(
+          async (): Promise<DownloaderTorrentFile> => ({
+            filename: "unused.torrent",
+            blob: new Blob(["torrent"])
+          })
+        ),
+        extractSingleItem: vi.fn(),
+        getDownloaderConfig: async () => createDownloaderConfig(),
+        now: () => now
+      }
+    )
+
+    expect(result.totalHits).toBe(1)
+    expect(result.attemptedHits).toBe(1)
+    expect(result.submittedCount).toBe(1)
+    expect(downloader.authenticate).toHaveBeenCalledTimes(1)
   })
 
   it("prunes pending rounds when subscription notification downloads are globally disabled", async () => {
@@ -407,7 +475,7 @@ describe("downloadSubscriptionNotificationHits", () => {
         hits: [
           expect.objectContaining({
             id: "hit-1",
-            downloadStatus: "failed",
+            downloadStatus: "idle",
             downloadedAt: null
           })
         ]
@@ -469,7 +537,7 @@ describe("downloadSubscriptionNotificationHits", () => {
         hits: [
           expect.objectContaining({
             id: "hit-1",
-            downloadStatus: "failed",
+            downloadStatus: "idle",
             downloadedAt: null
           })
         ]
@@ -534,6 +602,65 @@ describe("downloadPreparedSubscriptionHits", () => {
       ["magnet:?xt=urn:btih:AAA111"],
       undefined
     )
+  })
+
+  it("downloads selected historical hits even when the subscription is disabled, tombstoned, and the source is disabled", async () => {
+    const now = "2026-04-14T09:30:00.000Z"
+
+    await subscriptionDb.subscriptions.put(createSubscription({
+      id: "sub-archived",
+      enabled: false,
+      deletedAt: "2026-04-15T00:00:00.000Z"
+    }))
+    await subscriptionDb.subscriptionHits.put(
+      createHit({
+        id: "hit-archived",
+        subscriptionId: "sub-archived"
+      })
+    )
+
+    const downloader: DownloaderAdapter = {
+      id: "qbittorrent",
+      displayName: "qBittorrent",
+      authenticate: vi.fn(async () => undefined),
+      addUrls: vi.fn(async () => ({
+        entries: [{ url: "magnet:?xt=urn:btih:AAA111", status: "submitted" as const }]
+      })),
+      addTorrentFiles: vi.fn(async () => undefined),
+      testConnection: vi.fn(async () => ({
+        baseUrl: "http://localhost:8080",
+        version: "5.0.0"
+      }))
+    }
+
+    const result = await downloadPreparedSubscriptionHits(
+      {
+        hits: [
+          createHit({
+            id: "hit-archived",
+            subscriptionId: "sub-archived"
+          })
+        ],
+        subscriptionPolicy: createSubscriptionPolicy(),
+        sourceConfig: createSourceConfig({
+          bangumimoe: {
+            ...DEFAULT_SOURCE_CONFIG.bangumimoe,
+            enabled: false
+          }
+        })
+      },
+      {
+        downloader,
+        fetchTorrentForUpload: vi.fn(),
+        extractSingleItem: vi.fn(),
+        getDownloaderConfig: async () => createDownloaderConfig(),
+        now: () => now
+      }
+    )
+
+    expect(result.attemptedHits).toBe(1)
+    expect(result.submittedCount).toBe(1)
+    expect(downloader.authenticate).toHaveBeenCalledTimes(1)
   })
 
   it("skips hits with status submitted or duplicate", async () => {

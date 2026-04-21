@@ -273,6 +273,51 @@ describe("hits-query", () => {
 
       expect(rows.length).toBe(0)
     })
+
+    it("keeps tombstoned subscriptions visible when they still have historical hits", async () => {
+      await seedTestFixture()
+
+      await subscriptionDb.subscriptions.put({
+        id: "sub-3",
+        name: "Archived Kisssub Medalist",
+        enabled: false,
+        sourceIds: ["kisssub"],
+        multiSiteModeEnabled: false,
+        titleQuery: "Medalist",
+        subgroupQuery: "",
+        advanced: {
+          must: [],
+          any: []
+        },
+        createdAt: "2026-04-15T00:00:00.000Z",
+        baselineCreatedAt: "2026-04-15T00:00:00.000Z",
+        deletedAt: "2026-04-16T00:00:00.000Z"
+      })
+
+      await subscriptionDb.subscriptionHits.put({
+        id: "hit-archived",
+        subscriptionId: "sub-3",
+        sourceId: "kisssub",
+        title: "[Archived] Medalist - 01",
+        normalizedTitle: "[archived] medalist - 01",
+        subgroup: "",
+        detailUrl: "https://kisssub.org/show-1",
+        magnetUrl: "magnet:?xt=urn:btih:CCC111",
+        torrentUrl: "",
+        discoveredAt: "2026-04-16T08:00:00.000Z",
+        downloadedAt: null,
+        downloadStatus: "idle",
+        readAt: null,
+        resolvedAt: null
+      })
+
+      const rows = await buildSubscriptionHitsWorkbenchRows(defaultInput)
+      const archivedRow = rows.find((row) => row.subscription.id === "sub-3")
+
+      expect(archivedRow).toBeDefined()
+      expect(archivedRow?.subscription.deletedAt).toBe("2026-04-16T00:00:00.000Z")
+      expect(archivedRow?.hits.map((hit) => hit.id)).toEqual(["hit-archived"])
+    })
   })
 
   describe("getSubscriptionHitIdsForRound", () => {

@@ -259,6 +259,64 @@ describe("background subscriptions bridge", () => {
     )
   })
 
+  it("downloads selected historical hits even when the subscription is disabled and the source is disabled", async () => {
+    const now = "2026-04-14T09:30:00.000Z"
+    const ensureDownloaderPermission = vi.fn(async () => undefined)
+
+    await subscriptionDb.subscriptions.put(createSubscription({
+      sourceIds: ["bangumimoe"],
+      enabled: false,
+      deletedAt: "2026-04-15T09:30:00.000Z"
+    }))
+    await subscriptionDb.subscriptionHits.put(
+      createHit({
+        id: "hit-disabled",
+        subscriptionId: "sub-1",
+        sourceId: "bangumimoe",
+        detailUrl: "https://bangumi.moe/torrent/100"
+      })
+    )
+
+    const downloader = createDownloader()
+    downloader.addUrls = vi.fn(async () => ({
+      entries: [{ url: "magnet:?xt=urn:btih:AAA111", status: "submitted" as const }]
+    }))
+
+    const result = await downloadSubscriptionHitsBySelection(
+      { hitIds: ["hit-disabled"] },
+      {
+        getSubscriptionPolicy: async () => createSubscriptionPolicy(),
+        getSourceConfig: async () => createSourceConfig({
+          bangumimoe: {
+            ...DEFAULT_SOURCE_CONFIG.bangumimoe,
+            enabled: false
+          }
+        }),
+        getDownloaderConfig: async () => createDownloaderConfig(),
+        getDownloader: () => downloader,
+        ensureDownloaderPermission,
+        fetchTorrentForUpload: vi.fn(async (): Promise<DownloaderTorrentFile> => ({
+          filename: "test.torrent",
+          blob: new Blob(["torrent"])
+        })),
+        extractSingleItem: vi.fn(),
+        now: () => now
+      }
+    )
+
+    expect(result.attemptedHits).toBe(1)
+    expect(result.submittedHits).toBe(1)
+    expect(ensureDownloaderPermission).toHaveBeenCalledWith(createDownloaderConfig())
+    expect(downloader.authenticate).toHaveBeenCalledTimes(1)
+    expect(await subscriptionDb.subscriptionHits.get("hit-disabled")).toEqual(
+      expect.objectContaining({
+        downloadStatus: "submitted",
+        downloadedAt: now,
+        resolvedAt: now
+      })
+    )
+  })
+
   it("prunes resolved hits from the originating notification round when selection downloads include round context", async () => {
     const now = "2026-04-14T09:30:00.000Z"
     const ensureDownloaderPermission = vi.fn(async () => undefined)
