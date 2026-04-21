@@ -7,6 +7,7 @@ import {
   listSubscriptionHits,
   listSubscriptionHitsByIds,
   listSubscriptionHitsBySubscriptionId,
+  markSubscriptionHitsViewed,
   upsertSubscriptionHits
 } from "../../../src/lib/subscriptions/hit-repository"
 
@@ -120,5 +121,61 @@ describe("subscription hit repository", () => {
     expect(hits[0]).toEqual(expect.objectContaining({ id: hitId2 })) // 10:00 - newest
     expect(hits[1]).toEqual(expect.objectContaining({ id: hitId3 })) // 09:00 - middle
     expect(hits[2]).toEqual(expect.objectContaining({ id: hitId1 })) // 08:00 - oldest
+  })
+
+  it("marks only the requested hits as viewed", async () => {
+    const viewedAt = "2026-04-21T12:00:00.000Z"
+    const hitId1 = createSubscriptionHitId("sub-view", "fp-1")
+    const hitId2 = createSubscriptionHitId("sub-view", "fp-2")
+
+    await upsertSubscriptionHits([
+      {
+        id: hitId1,
+        subscriptionId: "sub-view",
+        sourceId: "acgrip",
+        title: "[LoliHouse] Medalist - 01 [1080p]",
+        normalizedTitle: "[lolihouse] medalist - 01 [1080p]",
+        subgroup: "LoliHouse",
+        detailUrl: "https://acg.rip/t/100",
+        magnetUrl: "magnet:?xt=urn:btih:AAA111",
+        torrentUrl: "",
+        discoveredAt: "2026-04-21T08:00:00.000Z",
+        downloadedAt: null,
+        downloadStatus: "idle",
+        readAt: null,
+        resolvedAt: null
+      },
+      {
+        id: hitId2,
+        subscriptionId: "sub-view",
+        sourceId: "acgrip",
+        title: "[LoliHouse] Medalist - 02 [1080p]",
+        normalizedTitle: "[lolihouse] medalist - 02 [1080p]",
+        subgroup: "LoliHouse",
+        detailUrl: "https://acg.rip/t/101",
+        magnetUrl: "magnet:?xt=urn:btih:AAA222",
+        torrentUrl: "",
+        discoveredAt: "2026-04-21T09:00:00.000Z",
+        downloadedAt: null,
+        downloadStatus: "idle",
+        readAt: null,
+        resolvedAt: null
+      }
+    ])
+
+    await markSubscriptionHitsViewed([hitId1], viewedAt)
+
+    await expect(getSubscriptionHitById(hitId1)).resolves.toEqual(
+      expect.objectContaining({
+        id: hitId1,
+        readAt: viewedAt
+      })
+    )
+    await expect(getSubscriptionHitById(hitId2)).resolves.toEqual(
+      expect.objectContaining({
+        id: hitId2,
+        readAt: null
+      })
+    )
   })
 })

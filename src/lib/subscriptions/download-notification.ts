@@ -73,6 +73,7 @@ export type DownloadPreparedHitsResult = {
   duplicateCount: number
   failedCount: number
   statuses: SubmissionStatusByHitId
+  updatedHits: SubscriptionHitRecord[]
 }
 
 export async function downloadPreparedSubscriptionHits(
@@ -105,7 +106,8 @@ export async function downloadPreparedSubscriptionHits(
       submittedCount: 0,
       duplicateCount: 0,
       failedCount: 0,
-      statuses: {}
+      statuses: {},
+      updatedHits: []
     }
   }
 
@@ -175,42 +177,51 @@ export async function downloadPreparedSubscriptionHits(
     }
   }
 
-  await persistDownloadStatusesToSubscriptionHits(actionableHits, statuses)
+  const updatedHits = buildUpdatedSubscriptionHits(actionableHits, statuses)
+  await persistUpdatedSubscriptionHits(updatedHits)
+  await updateRuntimeRowsForDownloadedHits(updatedHits)
 
   return {
     attemptedHits: actionableHits.length,
     submittedCount: Object.values(statuses).filter((status) => status.downloadStatus === "submitted").length,
     duplicateCount,
     failedCount,
-    statuses
+    statuses,
+    updatedHits
   }
 }
 
-async function persistDownloadStatusesToSubscriptionHits(
+function buildUpdatedSubscriptionHits(
   hits: SubscriptionHitRecord[],
   statuses: SubmissionStatusByHitId
+): SubscriptionHitRecord[] {
+  if (hits.length === 0) {
+    return []
+  }
+
+  return hits.flatMap((hit) => {
+    const status = statuses[hit.id]
+    if (!status) {
+      return []
+    }
+
+    return [{
+      ...hit,
+      downloadStatus: status.downloadStatus,
+      downloadedAt: status.downloadedAt,
+      resolvedAt: status.downloadedAt
+    }]
+  })
+}
+
+async function persistUpdatedSubscriptionHits(
+  hits: SubscriptionHitRecord[]
 ): Promise<void> {
   if (hits.length === 0) {
     return
   }
 
-  const nextRows: SubscriptionHitStoreRow[] = []
-
-  for (const hit of hits) {
-    const status = statuses[hit.id]
-    if (status) {
-      nextRows.push({
-        ...hit,
-        downloadStatus: status.downloadStatus,
-        downloadedAt: status.downloadedAt,
-        resolvedAt: status.downloadedAt
-      })
-    }
-  }
-
-  if (nextRows.length > 0) {
-    await subscriptionDb.subscriptionHits.bulkPut(nextRows)
-  }
+  await subscriptionDb.subscriptionHits.bulkPut(hits as SubscriptionHitStoreRow[])
 }
 
 export async function downloadSubscriptionNotificationHits(
@@ -264,19 +275,7 @@ export async function downloadSubscriptionNotificationHits(
     dependencies
   )
 
-  const nextHits = actionableHits.map((hit) => {
-    const status = result.statuses[hit.id]
-    return status
-      ? {
-          ...hit,
-          downloadStatus: status.downloadStatus,
-          downloadedAt: status.downloadedAt,
-          resolvedAt: status.downloadedAt
-        }
-      : hit
-  })
-
-  await persistDownloadState(notificationRound.id, nextHits)
+  await persistDownloadState(notificationRound.id, result.updatedHits)
 
   return {
     totalHits: actionableHits.length,
@@ -303,11 +302,8 @@ async function persistDownloadState(
 ): Promise<void> {
   await subscriptionDb.transaction(
     "rw",
-    subscriptionDb.subscriptionRuntime,
     subscriptionDb.notificationRounds,
     async () => {
-      await updateRuntimeRowsForDownloadedHits(hits)
-
       const retainedHits = hits
         .filter((hit) => hit.downloadStatus !== "submitted" && hit.downloadStatus !== "duplicate")
 

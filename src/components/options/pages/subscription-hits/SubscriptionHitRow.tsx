@@ -1,11 +1,15 @@
 import { i18n } from "../../../../lib/i18n"
-import type { SubscriptionHitWorkbenchItem } from "../../../../lib/subscriptions/hits-query"
 import { HiOutlineArrowDownCircle, HiOutlineCheckCircle } from "react-icons/hi2"
 
-import { Button, Input } from "../../../ui"
+import { Button } from "../../../ui"
+import {
+  getSubscriptionHitStatusBadgeClass,
+  getSubscriptionHitStatusLabel,
+  type SubscriptionHitWorkbenchViewItem
+} from "./subscription-hits-workbench"
 
 type SubscriptionHitRowProps = {
-  hit: SubscriptionHitWorkbenchItem
+  hit: SubscriptionHitWorkbenchViewItem
   isSelected: boolean
   downloading: boolean
   onToggleSelection: () => void
@@ -17,36 +21,6 @@ function formatDiscoveryTime(discoveredAt: string): string {
   return date.toLocaleString()
 }
 
-function getStatusLabel(status: SubscriptionHitWorkbenchItem["downloadStatus"]): string {
-  switch (status) {
-    case "idle":
-      return i18n.t("options.subscriptionHits.statusIdle")
-    case "submitted":
-      return i18n.t("options.subscriptionHits.statusSubmitted")
-    case "duplicate":
-      return i18n.t("options.subscriptionHits.statusDuplicate")
-    case "failed":
-      return i18n.t("options.subscriptionHits.statusFailed")
-    default:
-      return status
-  }
-}
-
-function getStatusBadgeClass(status: SubscriptionHitWorkbenchItem["downloadStatus"]): string {
-  switch (status) {
-    case "idle":
-      return "bg-zinc-100 text-zinc-600"
-    case "submitted":
-      return "bg-green-100 text-green-700"
-    case "duplicate":
-      return "bg-yellow-100 text-yellow-700"
-    case "failed":
-      return "bg-red-100 text-red-700"
-    default:
-      return "bg-zinc-100 text-zinc-600"
-  }
-}
-
 export function SubscriptionHitRow({
   hit,
   isSelected,
@@ -54,7 +28,10 @@ export function SubscriptionHitRow({
   onToggleSelection,
   onDownload
 }: SubscriptionHitRowProps) {
-  const canDownload = hit.downloadStatus === "idle" || hit.downloadStatus === "failed"
+  const canDownload =
+    hit.displayStatus === "new" ||
+    hit.displayStatus === "idle" ||
+    hit.displayStatus === "failed"
   const rowClass = hit.highlighted
     ? "bg-yellow-50 border-l-4 border-l-yellow-400"
     : "bg-white"
@@ -62,6 +39,7 @@ export function SubscriptionHitRow({
   return (
     <div
       className={`flex items-center gap-3 px-4 py-3 ${rowClass}`}
+      data-highlighted={hit.highlighted ? "true" : "false"}
       data-testid={`subscription-hit-row-${hit.id}`}>
       <input
         type="checkbox"
@@ -94,9 +72,9 @@ export function SubscriptionHitRow({
       </div>
 
       <span
-        className={`inline-flex items-center rounded px-2 py-1 text-xs font-medium ${getStatusBadgeClass(hit.downloadStatus)}`}
+        className={`inline-flex items-center rounded px-2 py-1 text-xs font-medium ${getSubscriptionHitStatusBadgeClass(hit.displayStatus)}`}
         data-testid={`hit-status-${hit.id}`}>
-        {getStatusLabel(hit.downloadStatus)}
+        {getSubscriptionHitStatusLabel(hit.displayStatus)}
       </span>
 
       {canDownload && (

@@ -76,6 +76,7 @@ export {
   listSubscriptionHits,
   listSubscriptionHitsByIds,
   listSubscriptionHitsBySubscriptionId,
+  markSubscriptionHitsViewed,
   upsertSubscriptionHits
 } from "./hit-repository"
 export type {

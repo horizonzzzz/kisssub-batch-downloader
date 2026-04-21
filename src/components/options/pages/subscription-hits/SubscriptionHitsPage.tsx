@@ -41,10 +41,8 @@ export function SubscriptionHitsPage({ api, initialRoundId }: SubscriptionHitsPa
     input,
     selectedHitIds,
     selectedCount,
-    isAllSelected,
     summary,
     toggleHitSelection,
-    toggleSelectAll,
     downloadSelectedHits,
     downloadSingleHit,
     setSearchText,
@@ -89,6 +87,34 @@ export function SubscriptionHitsPage({ api, initialRoundId }: SubscriptionHitsPa
           {i18n.t("options.subscriptionHits.description")}
         </p>
       </header>
+
+      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+        <SummaryCard
+          label={i18n.t("options.subscriptionHits.summaryPending")}
+          value={summary.pendingHits}
+          testId="subscription-hit-summary-pending"
+        />
+        <SummaryCard
+          label={i18n.t("options.subscriptionHits.summaryNew")}
+          value={summary.newHits}
+          testId="subscription-hit-summary-new"
+        />
+        <SummaryCard
+          label={i18n.t("options.subscriptionHits.summarySubmitted")}
+          value={summary.submittedHits}
+          testId="subscription-hit-summary-submitted"
+        />
+        <SummaryCard
+          label={i18n.t("options.subscriptionHits.summaryFailed")}
+          value={summary.failedHits}
+          testId="subscription-hit-summary-failed"
+        />
+        <SummaryCard
+          label={i18n.t("options.subscriptionHits.summaryHighlighted")}
+          value={summary.highlightedHits}
+          testId="subscription-hit-summary-highlighted"
+        />
+      </section>
 
       <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -172,5 +198,26 @@ export function SubscriptionHitsPage({ api, initialRoundId }: SubscriptionHitsPa
         )}
       </section>
     </div>
+  )
+}
+
+function SummaryCard({
+  label,
+  value,
+  testId
+}: {
+  label: string
+  value: number
+  testId: string
+}) {
+  return (
+    <Card data-testid={testId}>
+      <div className="space-y-1 px-5 py-4">
+        <div className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+          {label}
+        </div>
+        <div className="text-2xl font-semibold text-zinc-900">{value}</div>
+      </div>
+    </Card>
   )
 }

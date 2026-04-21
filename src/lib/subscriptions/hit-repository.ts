@@ -39,3 +39,24 @@ export async function listSubscriptionHitsBySubscriptionId(
 export async function listSubscriptionHits(): Promise<SubscriptionHitStoreRow[]> {
   return subscriptionDb.subscriptionHits.toArray()
 }
+
+export async function markSubscriptionHitsViewed(
+  hitIds: string[],
+  viewedAt: string
+): Promise<void> {
+  if (hitIds.length === 0) {
+    return
+  }
+
+  const hits = await listSubscriptionHitsByIds(hitIds)
+  if (hits.length === 0) {
+    return
+  }
+
+  await subscriptionDb.subscriptionHits.bulkPut(
+    hits.map((hit) => ({
+      ...hit,
+      readAt: hit.readAt ?? viewedAt
+    }))
+  )
+}

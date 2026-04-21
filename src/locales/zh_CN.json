@@ -629,7 +629,15 @@
       "downloadHitAriaLabel": "下载 $1",
       "highlightedCount": "$1 条高亮",
       "hitCount": "$1 条命中",
-      "latestHit": "最近命中"
+      "latestHit": "最近命中",
+      "summaryPending": "待处理命中",
+      "summaryNew": "新命中",
+      "summarySubmitted": "已下发命中",
+      "summaryFailed": "失败命中",
+      "summaryHighlighted": "高亮命中",
+      "statusNew": "新命中",
+      "statusSubmitting": "下发中",
+      "pendingHitCount": "$1 条待处理"
     }
   },
   "content": {

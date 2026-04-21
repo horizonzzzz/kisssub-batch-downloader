@@ -17,6 +17,7 @@ import {
 
 const permissionsContainsMock = vi.fn()
 const permissionsRequestMock = vi.fn()
+const scrollIntoViewMock = vi.fn()
 
 const sendRuntimeRequestMock = vi.hoisted(() => vi.fn())
 
@@ -184,6 +185,56 @@ async function seedSubscriptionFixture() {
   }
 
   await upsertSubscription(subscription)
+  await subscriptionDb.subscriptionHits.bulkPut([
+    {
+      id: "hit-1",
+      subscriptionId: "sub-1",
+      sourceId: "acgrip",
+      title: "[LoliHouse] Medalist - 01 [1080p]",
+      normalizedTitle: "[lolihouse] medalist - 01 [1080p]",
+      subgroup: "LoliHouse",
+      detailUrl: "https://acg.rip/t/100",
+      magnetUrl: "magnet:?xt=urn:btih:AAA111",
+      torrentUrl: "",
+      discoveredAt: "2026-04-14T08:00:00.000Z",
+      downloadedAt: null,
+      downloadStatus: "idle",
+      readAt: null,
+      resolvedAt: null
+    },
+    {
+      id: "hit-2",
+      subscriptionId: "sub-1",
+      sourceId: "acgrip",
+      title: "[LoliHouse] Medalist - 02 [1080p]",
+      normalizedTitle: "[lolihouse] medalist - 02 [1080p]",
+      subgroup: "LoliHouse",
+      detailUrl: "https://acg.rip/t/101",
+      magnetUrl: "magnet:?xt=urn:btih:AAA222",
+      torrentUrl: "",
+      discoveredAt: "2026-04-14T10:00:00.000Z",
+      downloadedAt: null,
+      downloadStatus: "idle",
+      readAt: null,
+      resolvedAt: null
+    },
+    {
+      id: "hit-3",
+      subscriptionId: "sub-1",
+      sourceId: "acgrip",
+      title: "[LoliHouse] Medalist - 03 [1080p]",
+      normalizedTitle: "[lolihouse] medalist - 03 [1080p]",
+      subgroup: "LoliHouse",
+      detailUrl: "https://acg.rip/t/102",
+      magnetUrl: "magnet:?xt=urn:btih:AAA333",
+      torrentUrl: "",
+      discoveredAt: "2026-04-14T11:00:00.000Z",
+      downloadedAt: "2026-04-14T11:30:00.000Z",
+      downloadStatus: "submitted",
+      readAt: "2026-04-14T11:05:00.000Z",
+      resolvedAt: "2026-04-14T11:30:00.000Z"
+    }
+  ])
   await subscriptionDb.subscriptionRuntime.put({
     subscriptionId: "sub-1",
     lastScanAt: "2026-04-14T09:00:00.000Z",
@@ -231,6 +282,28 @@ async function seedSubscriptionFixture() {
       }
     ]
   })
+  await subscriptionDb.notificationRounds.put({
+    id: "subscription-round:20260414100000000",
+    createdAt: "2026-04-14T10:00:00.000Z",
+    hits: [
+      {
+        id: "hit-2",
+        subscriptionId: "sub-1",
+        sourceId: "acgrip",
+        title: "[LoliHouse] Medalist - 02 [1080p]",
+        normalizedTitle: "[lolihouse] medalist - 02 [1080p]",
+        subgroup: "LoliHouse",
+        detailUrl: "https://acg.rip/t/101",
+        magnetUrl: "magnet:?xt=urn:btih:AAA222",
+        torrentUrl: "",
+        discoveredAt: "2026-04-14T10:00:00.000Z",
+        downloadedAt: null,
+        downloadStatus: "idle",
+        readAt: null,
+        resolvedAt: null
+      }
+    ]
+  })
   await setLastSchedulerRunAt("2026-04-14T09:30:00.000Z")
 }
 
@@ -249,6 +322,7 @@ function createDeferred<T>() {
 describe("OptionsPage", () => {
   beforeEach(async () => {
     vi.clearAllMocks()
+    scrollIntoViewMock.mockReset()
     await resetSubscriptionDb()
     await setLastSchedulerRunAt(null)
     await subscriptionDb.subscriptionRuntime.clear()
@@ -309,7 +383,7 @@ describe("OptionsPage", () => {
     })
     Object.defineProperty(HTMLElement.prototype, "scrollIntoView", {
       configurable: true,
-      value: vi.fn()
+      value: scrollIntoViewMock
     })
   })
 
@@ -510,6 +584,52 @@ describe("OptionsPage", () => {
     expect(screen.getAllByRole("button", { name: "访问站点" })).toHaveLength(4)
     expect(screen.queryByText("http://127.0.0.1:17474")).not.toBeInTheDocument()
     expect(screen.queryByText("后台轮询")).not.toBeInTheDocument()
+  })
+
+  it("renders subscription hits workbench summaries and derives unread idle hits as new", async () => {
+    const api = createOptionsApi()
+
+    await seedSubscriptionFixture()
+    window.location.hash = "#/subscription-hits"
+    render(<OptionsPage api={api} />)
+
+    expect(await screen.findByTestId("subscription-hits-workbench")).toBeInTheDocument()
+    expect(await screen.findByTestId("subscription-hit-group-sub-1")).toBeInTheDocument()
+    expect(screen.getByTestId("subscription-hit-summary-pending")).toHaveTextContent("2")
+    expect(screen.getByTestId("subscription-hit-summary-new")).toHaveTextContent("2")
+    expect(screen.getByTestId("subscription-hit-summary-submitted")).toHaveTextContent("1")
+    expect(screen.getByTestId("subscription-hit-summary-failed")).toHaveTextContent("0")
+    expect(screen.getByTestId("hit-status-hit-2")).toHaveTextContent("新命中")
+  })
+
+  it("tracks round changes, marks highlighted hits viewed, and scrolls the first highlighted hit into view", async () => {
+    const api = createOptionsApi()
+
+    await seedSubscriptionFixture()
+    window.location.hash = "#/subscription-hits?round=subscription-round:20260414093000000"
+    render(<OptionsPage api={api} />)
+
+    expect(await screen.findByTestId("subscription-hits-workbench")).toBeInTheDocument()
+
+    await waitFor(() => {
+      expect(screen.getByTestId("subscription-hit-row-hit-1")).toHaveAttribute("data-highlighted", "true")
+    })
+    await waitFor(async () => {
+      expect((await subscriptionDb.subscriptionHits.get("hit-1"))?.readAt).not.toBeNull()
+    })
+    await waitFor(() => {
+      expect(scrollIntoViewMock).toHaveBeenCalled()
+    })
+
+    window.location.hash = "#/subscription-hits?round=subscription-round:20260414100000000"
+    window.dispatchEvent(new HashChangeEvent("hashchange"))
+
+    await waitFor(() => {
+      expect(screen.getByTestId("subscription-hit-row-hit-2")).toHaveAttribute("data-highlighted", "true")
+    })
+    await waitFor(async () => {
+      expect((await subscriptionDb.subscriptionHits.get("hit-2"))?.readAt).not.toBeNull()
+    })
   })
 
   it(

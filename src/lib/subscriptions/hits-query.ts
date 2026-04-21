@@ -101,7 +101,7 @@ function matchesStatusFilter(
 
   switch (filter) {
     case "pending":
-      return downloadStatus === "idle"
+      return downloadStatus === "idle" || downloadStatus === "failed"
     case "new":
       return downloadStatus === "idle" && readAt === null
     case "failed":

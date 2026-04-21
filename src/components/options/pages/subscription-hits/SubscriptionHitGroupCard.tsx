@@ -1,19 +1,22 @@
 import { i18n } from "../../../../lib/i18n"
-import type { SubscriptionHitsWorkbenchRow, SubscriptionHitWorkbenchItem } from "../../../../lib/subscriptions/hits-query"
-import { HiOutlineChevronDown, HiOutlineChevronRight } from "react-icons/hi2"
 
 import { Card } from "../../../ui"
 import { SubscriptionHitRow } from "./SubscriptionHitRow"
+import {
+  countPendingHits,
+  type SubscriptionHitWorkbenchViewItem,
+  type SubscriptionHitsWorkbenchViewRow
+} from "./subscription-hits-workbench"
 
 type SubscriptionHitGroupCardProps = {
-  row: SubscriptionHitsWorkbenchRow
+  row: SubscriptionHitsWorkbenchViewRow
   selectedHitIds: Set<string>
   downloading: boolean
   onToggleHitSelection: (hitId: string) => void
   onDownloadHit: (hitId: string) => void
 }
 
-function formatLatestHitTime(hits: SubscriptionHitWorkbenchItem[]): string {
+function formatLatestHitTime(hits: SubscriptionHitWorkbenchViewItem[]): string {
   if (hits.length === 0) {
     return i18n.t("options.subscriptions.runtime.never")
   }
@@ -50,6 +53,7 @@ export function SubscriptionHitGroupCard({
     : i18n.t("options.subscriptions.badge.disabled")
 
   const highlightedCount = hits.filter((hit) => hit.highlighted).length
+  const pendingHitCount = countPendingHits(hits)
 
   return (
     <Card data-testid={`subscription-hit-group-${subscription.id}`}>
@@ -86,6 +90,10 @@ export function SubscriptionHitGroupCard({
               <span className="text-zinc-300">|</span>
               <span>
                 {i18n.t("options.subscriptionHits.hitCount", [String(hits.length)])}
+              </span>
+              <span className="text-zinc-300">|</span>
+              <span>
+                {i18n.t("options.subscriptionHits.pendingHitCount", [String(pendingHitCount)])}
               </span>
               <span className="text-zinc-300">|</span>
               <span>

@@ -70,11 +70,144 @@ async function launchExtensionContext() {
   return {
     context,
     extensionId,
+    serviceWorker,
     async close() {
       await context.close()
       fs.rmSync(userDataDir, { recursive: true, force: true })
     }
   }
+}
+
+async function mockDownloaderPermissions(
+  extension: Awaited<ReturnType<typeof launchExtensionContext>>
+) {
+  await extension.context.addInitScript(() => {
+    const runtimeBrowser = (globalThis as typeof globalThis & {
+      browser?: typeof chrome
+      chrome?: typeof chrome
+    }).browser ?? (globalThis as typeof globalThis & { chrome?: typeof chrome }).chrome
+
+    if (!runtimeBrowser) {
+      return
+    }
+
+    ;(globalThis as typeof globalThis & { browser?: typeof chrome }).browser = {
+      ...runtimeBrowser,
+      permissions: {
+        ...runtimeBrowser.permissions,
+        contains: async () => true,
+        request: async () => true
+      }
+    }
+  })
+
+  await extension.serviceWorker.evaluate(() => {
+    const runtimeBrowser = (globalThis as typeof globalThis & {
+      browser?: typeof chrome
+      chrome?: typeof chrome
+    }).browser ?? (globalThis as typeof globalThis & { chrome?: typeof chrome }).chrome
+
+    if (!runtimeBrowser) {
+      return
+    }
+
+    ;(globalThis as typeof globalThis & { browser?: typeof chrome }).browser = {
+      ...runtimeBrowser,
+      permissions: {
+        ...runtimeBrowser.permissions,
+        contains: async () => true,
+        request: async () => true
+      }
+    }
+  })
+}
+
+async function mockSubscriptionHitDownloadRuntime(
+  extension: Awaited<ReturnType<typeof launchExtensionContext>>
+) {
+  await extension.context.addInitScript(() => {
+    const subscriptionDbVersion = 20
+    const runtimeBrowser = (globalThis as typeof globalThis & {
+      browser?: typeof chrome
+      chrome?: typeof chrome
+    }).browser ?? (globalThis as typeof globalThis & { chrome?: typeof chrome }).chrome
+
+    if (!runtimeBrowser?.runtime?.sendMessage) {
+      return
+    }
+
+    const originalSendMessage = runtimeBrowser.runtime.sendMessage.bind(runtimeBrowser.runtime)
+
+    ;(globalThis as typeof globalThis & { browser?: typeof chrome }).browser = {
+      ...runtimeBrowser,
+      runtime: {
+        ...runtimeBrowser.runtime,
+        sendMessage: async (message: unknown) => {
+          if (
+            typeof message !== "object" ||
+            message === null ||
+            (message as { type?: unknown }).type !== "DOWNLOAD_SUBSCRIPTION_HITS"
+          ) {
+            return originalSendMessage(message as Parameters<typeof originalSendMessage>[0])
+          }
+
+          const hitIds = Array.isArray((message as { hitIds?: unknown }).hitIds)
+            ? ((message as { hitIds: string[] }).hitIds)
+            : []
+          const now = new Date().toISOString()
+
+          const db = await new Promise<IDBDatabase>((resolve, reject) => {
+            const request = indexedDB.open("anime-bt-subscription-state", subscriptionDbVersion)
+            request.onerror = () => reject(request.error)
+            request.onsuccess = () => resolve(request.result)
+          })
+
+          const hits = await Promise.all(
+            hitIds.map(
+              (hitId) =>
+                new Promise<any>((resolve, reject) => {
+                  const tx = db.transaction(["subscriptionHits"], "readonly")
+                  const request = tx.objectStore("subscriptionHits").get(hitId)
+                  request.onerror = () => reject(request.error)
+                  request.onsuccess = () => resolve(request.result)
+                })
+            )
+          )
+
+          await new Promise<void>((resolve, reject) => {
+            const tx = db.transaction(["subscriptionHits"], "readwrite")
+            const store = tx.objectStore("subscriptionHits")
+
+            for (const hit of hits.filter(Boolean)) {
+              store.put({
+                ...hit,
+                readAt: hit.readAt ?? now,
+                downloadStatus: "submitted",
+                downloadedAt: now,
+                resolvedAt: now
+              })
+            }
+
+            tx.oncomplete = () => resolve()
+            tx.onerror = () => reject(tx.error)
+            tx.onabort = () => reject(tx.error)
+          })
+
+          db.close()
+
+          return {
+            ok: true,
+            result: {
+              attemptedHits: hitIds.length,
+              submittedHits: hitIds.length,
+              duplicateHits: 0,
+              failedHits: 0
+            }
+          }
+        }
+      }
+    }
+  })
 }
 
 async function assertBatchPanelInjection(
@@ -784,12 +917,44 @@ test("history page shows empty state when no records exist", async () => {
 
 async function seedSubscriptionHitsWorkbench(page: import("@playwright/test").Page) {
   await page.evaluate(async () => {
+    const subscriptionDbVersion = 20
     const db = await new Promise<IDBDatabase>((resolve, reject) => {
-      const request = indexedDB.open("anime-bt-subscription-state", 2)
+      const request = indexedDB.open("anime-bt-subscription-state", subscriptionDbVersion)
       request.onerror = () => reject(request.error)
       request.onsuccess = () => resolve(request.result)
       request.onupgradeneeded = () => {
-        reject(new Error("Expected subscription database schema to exist."))
+        const upgradeDb = request.result
+
+        if (!upgradeDb.objectStoreNames.contains("subscriptions")) {
+          const store = upgradeDb.createObjectStore("subscriptions", { keyPath: "id" })
+          store.createIndex("enabled", "enabled", { unique: false })
+          store.createIndex("sourceIds", "sourceIds", { unique: false, multiEntry: true })
+          store.createIndex("createdAt", "createdAt", { unique: false })
+        }
+
+        if (!upgradeDb.objectStoreNames.contains("subscriptionRuntime")) {
+          const store = upgradeDb.createObjectStore("subscriptionRuntime", { keyPath: "subscriptionId" })
+          store.createIndex("lastScanAt", "lastScanAt", { unique: false })
+          store.createIndex("lastMatchedAt", "lastMatchedAt", { unique: false })
+        }
+
+        if (!upgradeDb.objectStoreNames.contains("notificationRounds")) {
+          const store = upgradeDb.createObjectStore("notificationRounds", { keyPath: "id" })
+          store.createIndex("createdAt", "createdAt", { unique: false })
+        }
+
+        if (!upgradeDb.objectStoreNames.contains("subscriptionMeta")) {
+          upgradeDb.createObjectStore("subscriptionMeta", { keyPath: "key" })
+        }
+
+        if (!upgradeDb.objectStoreNames.contains("subscriptionHits")) {
+          const store = upgradeDb.createObjectStore("subscriptionHits", { keyPath: "id" })
+          store.createIndex("subscriptionId", "subscriptionId", { unique: false })
+          store.createIndex("sourceId", "sourceId", { unique: false })
+          store.createIndex("discoveredAt", "discoveredAt", { unique: false })
+          store.createIndex("downloadStatus", "downloadStatus", { unique: false })
+          store.createIndex("readAt", "readAt", { unique: false })
+        }
       }
     })
 
@@ -852,18 +1017,36 @@ async function seedSubscriptionHitsWorkbench(page: import("@playwright/test").Pa
         ]
       })
 
-      tx.objectStore("subscriptionMeta").put({
-        id: "policy",
-        enabled: true,
-        pollingIntervalMinutes: 30,
-        notificationsEnabled: true,
-        notificationDownloadAction: "workbench"
+      tx.objectStore("subscriptionRuntime").put({
+        subscriptionId: "sub-1",
+        lastScanAt: "2026-04-21T09:30:00.000Z",
+        lastMatchedAt: "2026-04-21T09:30:00.000Z",
+        lastError: "",
+        seenFingerprints: ["fp-hit-1"],
+        recentHits: [
+          {
+            id: "hit-1",
+            subscriptionId: "sub-1",
+            sourceId: "acgrip",
+            title: "[LoliHouse] Medalist - 01 [1080p]",
+            normalizedTitle: "[lolihouse] medalist - 01 [1080p]",
+            subgroup: "LoliHouse",
+            detailUrl: "https://acg.rip/t/100",
+            magnetUrl: "magnet:?xt=urn:btih:AAA111",
+            torrentUrl: "",
+            discoveredAt: "2026-04-21T09:30:00.000Z",
+            downloadedAt: null,
+            downloadStatus: "idle",
+            readAt: null,
+            resolvedAt: null
+          }
+        ]
       })
 
-      tx.objectStore("subscriptionRuntime").put({
-        id: "runtime",
+      tx.objectStore("subscriptionMeta").put({
+        key: "lastSchedulerRunAt",
         lastSchedulerRunAt: "2026-04-21T09:30:00.000Z",
-        notificationActionState: "enabled"
+        value: "2026-04-21T09:30:00.000Z"
       })
 
       tx.oncomplete = () => resolve()
@@ -873,6 +1056,54 @@ async function seedSubscriptionHitsWorkbench(page: import("@playwright/test").Pa
 
     db.close()
   })
+}
+
+async function mockQbWebUiApi(
+  extension: Awaited<ReturnType<typeof launchExtensionContext>>
+) {
+  const injectMockFetch = () => {
+    const originalFetch = globalThis.fetch.bind(globalThis)
+    globalThis.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url =
+        typeof input === "string"
+          ? input
+          : input instanceof URL
+            ? input.toString()
+            : input.url
+
+      if (url === "http://127.0.0.1:17474/api/v2/auth/login") {
+        return new Response("Ok.", {
+          status: 200,
+          headers: {
+            "Content-Type": "text/plain"
+          }
+        })
+      }
+
+      if (url === "http://127.0.0.1:17474/api/v2/torrents/add") {
+        return new Response("", {
+          status: 200,
+          headers: {
+            "Content-Type": "text/plain"
+          }
+        })
+      }
+
+      if (url === "http://127.0.0.1:17474/api/v2/app/version") {
+        return new Response("5.0.0", {
+          status: 200,
+          headers: {
+            "Content-Type": "text/plain"
+          }
+        })
+      }
+
+      return originalFetch(input, init)
+    }
+  }
+
+  await extension.context.addInitScript(injectMockFetch)
+  await extension.serviceWorker.evaluate(injectMockFetch)
 }
 
 async function openSubscriptionHitsWorkbench(
@@ -895,10 +1126,10 @@ test("subscription hits workbench renders with seeded data", async () => {
   const extension = await launchExtensionContext()
 
   try {
-    const page = await extension.context.newPage()
-    await page.goto(`chrome-extension://${extension.extensionId}/options.html`)
-    await seedSubscriptionHitsWorkbench(page)
-    await page.close()
+    const seedPage = await extension.context.newPage()
+    await seedPage.goto(`chrome-extension://${extension.extensionId}/options.html`)
+    await seedSubscriptionHitsWorkbench(seedPage)
+    await seedPage.close()
 
     const workbenchPage = await openSubscriptionHitsWorkbench(extension)
 
@@ -945,6 +1176,29 @@ test("subscription hits workbench shows highlighted state when round parameter i
     })
     expect(hasHighlightedClass).toBe(true)
 
+    await expect
+      .poll(async () => {
+        return workbenchPage.evaluate(async () => {
+          const subscriptionDbVersion = 20
+          const db = await new Promise<IDBDatabase>((resolve, reject) => {
+            const request = indexedDB.open("anime-bt-subscription-state", subscriptionDbVersion)
+            request.onerror = () => reject(request.error)
+            request.onsuccess = () => resolve(request.result)
+          })
+
+          const result = await new Promise<string | null>((resolve, reject) => {
+            const tx = db.transaction(["subscriptionHits"], "readonly")
+            const request = tx.objectStore("subscriptionHits").get("hit-1")
+            request.onerror = () => reject(request.error)
+            request.onsuccess = () => resolve(request.result?.readAt ?? null)
+          })
+
+          db.close()
+          return result
+        })
+      })
+      .not.toBeNull()
+
     await workbenchPage.close()
   } finally {
     await extension.close()
@@ -955,6 +1209,8 @@ test("manual download updates hit status in subscription hits workbench", async 
   const extension = await launchExtensionContext()
 
   try {
+    await mockSubscriptionHitDownloadRuntime(extension)
+
     const seedPage = await extension.context.newPage()
     await seedPage.goto(`chrome-extension://${extension.extensionId}/options.html`)
     await seedSubscriptionHitsWorkbench(seedPage)
@@ -969,9 +1225,10 @@ test("manual download updates hit status in subscription hits workbench", async 
     await checkbox.check()
     await expect(checkbox).toBeChecked()
 
-    const downloadButton = workbenchPage.getByTestId("subscription-hit-row-hit-1").getByRole("button", { name: /下载/ })
-    await expect(downloadButton).toBeVisible()
-    await expect(downloadButton).toBeEnabled()
+    await workbenchPage.getByRole("button", { name: "下载选中项" }).click()
+    await workbenchPage.reload()
+
+    await expect(workbenchPage.getByTestId("hit-status-hit-1")).toContainText("已提交")
 
     await workbenchPage.close()
   } finally {

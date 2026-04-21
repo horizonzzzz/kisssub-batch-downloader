@@ -197,6 +197,23 @@ describe("hits-query", () => {
     it("filters hits by status", async () => {
       await seedTestFixture()
 
+      await subscriptionDb.subscriptionHits.put({
+        id: "hit-4",
+        subscriptionId: "sub-2",
+        sourceId: "bangumimoe",
+        title: "[VCB-Studio] Medalist [720p]",
+        normalizedTitle: "[vcb-studio] medalist [720p]",
+        subgroup: "VCB-Studio",
+        detailUrl: "https://bangumi.moe/t/201",
+        magnetUrl: "magnet:?xt=urn:btih:BBB222",
+        torrentUrl: "",
+        discoveredAt: "2026-04-14T11:00:00.000Z",
+        downloadedAt: null,
+        downloadStatus: "failed",
+        readAt: "2026-04-14T11:10:00.000Z",
+        resolvedAt: null
+      })
+
       const rows = await buildSubscriptionHitsWorkbenchRows({
         ...defaultInput,
         status: "pending"
@@ -204,7 +221,8 @@ describe("hits-query", () => {
 
       expect(rows.length).toBe(2)
       const allHits = rows.flatMap((row) => row.hits)
-      expect(allHits.every((hit) => hit.downloadStatus === "idle")).toBe(true)
+      expect(allHits.map((hit) => hit.id)).toEqual(["hit-4", "hit-3", "hit-1"])
+      expect(allHits.every((hit) => hit.downloadStatus === "idle" || hit.downloadStatus === "failed")).toBe(true)
     })
 
     it("filters hits by 'new' status (idle and unread)", async () => {

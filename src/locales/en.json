@@ -614,7 +614,14 @@
       "selectedCount": "$1 selected",
       "noHits": "No subscription hits",
       "noHitsDescription": "Subscription hits will appear here after background polling discovers new resources.",
+      "summaryPending": "Pending hits",
+      "summaryNew": "New hits",
+      "summarySubmitted": "Submitted hits",
+      "summaryFailed": "Failed hits",
+      "summaryHighlighted": "Highlighted hits",
+      "statusNew": "New",
       "statusIdle": "Idle",
+      "statusSubmitting": "Submitting",
       "statusSubmitted": "Submitted",
       "statusDuplicate": "Duplicate",
       "statusFailed": "Failed",
@@ -622,6 +629,7 @@
       "downloadHitAriaLabel": "Download $1",
       "highlightedCount": "$1 highlighted",
       "hitCount": "$1 hit(s)",
+      "pendingHitCount": "$1 pending",
       "latestHit": "Latest hit"
     }
   },

@@ -13,6 +13,7 @@ import type { DownloaderConfig } from "../downloader/config/types"
 import { getSourceConfig } from "../sources/config"
 import { getBatchExecutionConfig } from "../batch-config/storage"
 import { getDownloaderConfig } from "../downloader/config/storage"
+import { requestDownloaderPermission } from "../downloader/permissions"
 import { extractSingleItem } from "../sources/extraction"
 import {
   buildSubscriptionRoundNotification,
@@ -66,6 +67,7 @@ export type DownloadSubscriptionHitsDependencies = {
   getSourceConfig?: () => Promise<SourceConfig>
   getDownloader?: (config: DownloaderConfig) => DownloaderAdapter
   getDownloaderConfig?: () => Promise<DownloaderConfig>
+  ensureDownloaderPermission?: (config: DownloaderConfig) => Promise<void>
   fetchTorrentForUpload?: (torrentUrl: string) => Promise<DownloaderTorrentFile>
   extractSingleItem?: (item: BatchItem, context: ExtractionContext) => Promise<ExtractionResult>
   now?: () => string
@@ -189,6 +191,7 @@ export async function downloadSubscriptionHits(
     const subscriptionPolicy = await (dependencies.getSubscriptionPolicy ?? getSubscriptionPolicyConfig)()
     const sourceConfig = await (dependencies.getSourceConfig ?? getSourceConfig)()
     const downloaderConfig = await (dependencies.getDownloaderConfig ?? getDownloaderConfig)()
+    await (dependencies.ensureDownloaderPermission ?? requestDownloaderPermission)(downloaderConfig)
     const manager = new SubscriptionManager({
       subscriptionPolicy,
       sourceConfig
@@ -216,6 +219,7 @@ export async function downloadSubscriptionHitsBySelection(
     const subscriptionPolicy = await (dependencies.getSubscriptionPolicy ?? getSubscriptionPolicyConfig)()
     const sourceConfig = await (dependencies.getSourceConfig ?? getSourceConfig)()
     const downloaderConfig = await (dependencies.getDownloaderConfig ?? getDownloaderConfig)()
+    await (dependencies.ensureDownloaderPermission ?? requestDownloaderPermission)(downloaderConfig)
     const getDownloaderImpl =
       dependencies.getDownloader ??
       ((config: DownloaderConfig) => getDownloaderAdapter(config.activeId))

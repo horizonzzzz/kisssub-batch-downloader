@@ -192,10 +192,19 @@ describe("background subscriptions bridge", () => {
 
   it("downloads hits by selection from the subscription hits table", async () => {
     const now = "2026-04-14T09:30:00.000Z"
+    const ensureDownloaderPermission = vi.fn(async () => undefined)
 
     await subscriptionDb.subscriptions.put(createSubscription({
       sourceIds: ["bangumimoe"]
     }))
+    await subscriptionDb.subscriptionRuntime.put({
+      subscriptionId: "sub-1",
+      lastScanAt: "2026-04-14T08:00:00.000Z",
+      lastMatchedAt: "2026-04-14T08:00:00.000Z",
+      lastError: "",
+      seenFingerprints: ["fp-1"],
+      recentHits: [createHit({ id: "hit-1", sourceId: "bangumimoe", detailUrl: "https://bangumi.moe/torrent/100" })]
+    })
     await subscriptionDb.subscriptionHits.bulkPut([
       createHit({ id: "hit-1", sourceId: "bangumimoe", detailUrl: "https://bangumi.moe/torrent/100" }),
       createHit({ id: "hit-2", sourceId: "bangumimoe", magnetUrl: "magnet:?xt=urn:btih:AAA222", detailUrl: "https://bangumi.moe/torrent/101" }),
@@ -214,6 +223,7 @@ describe("background subscriptions bridge", () => {
         getSourceConfig: async () => createSourceConfig(),
         getDownloaderConfig: async () => createDownloaderConfig(),
         getDownloader: () => downloader,
+        ensureDownloaderPermission,
         fetchTorrentForUpload: vi.fn(async (): Promise<DownloaderTorrentFile> => ({
           filename: "test.torrent",
           blob: new Blob(["torrent"])
@@ -225,6 +235,7 @@ describe("background subscriptions bridge", () => {
 
     expect(result.attemptedHits).toBe(1)
     expect(result.submittedHits).toBe(1)
+    expect(ensureDownloaderPermission).toHaveBeenCalledWith(createDownloaderConfig())
     expect(downloader.authenticate).toHaveBeenCalledTimes(1)
     expect(await subscriptionDb.subscriptionHits.get("hit-1")).toEqual(
       expect.objectContaining({
@@ -233,10 +244,23 @@ describe("background subscriptions bridge", () => {
         resolvedAt: now
       })
     )
+    expect(await subscriptionDb.subscriptionRuntime.get("sub-1")).toEqual(
+      expect.objectContaining({
+        recentHits: [
+          expect.objectContaining({
+            id: "hit-1",
+            downloadStatus: "submitted",
+            downloadedAt: now,
+            resolvedAt: now
+          })
+        ]
+      })
+    )
   })
 
   it("does not resubmit hits already marked as submitted or duplicate", async () => {
     const now = "2026-04-14T09:30:00.000Z"
+    const ensureDownloaderPermission = vi.fn(async () => undefined)
 
     await subscriptionDb.subscriptions.put(createSubscription({
       sourceIds: ["bangumimoe"]
@@ -259,6 +283,7 @@ describe("background subscriptions bridge", () => {
         getSourceConfig: async () => createSourceConfig(),
         getDownloaderConfig: async () => createDownloaderConfig(),
         getDownloader: () => downloader,
+        ensureDownloaderPermission,
         fetchTorrentForUpload: vi.fn(),
         extractSingleItem: vi.fn(),
         now: () => now
@@ -267,5 +292,6 @@ describe("background subscriptions bridge", () => {
 
     expect(result.attemptedHits).toBe(1)
     expect(result.submittedHits).toBe(1)
+    expect(ensureDownloaderPermission).toHaveBeenCalledWith(createDownloaderConfig())
   })
 })
