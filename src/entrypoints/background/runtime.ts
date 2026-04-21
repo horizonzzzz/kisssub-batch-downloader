@@ -1,6 +1,7 @@
 import {
   buildPopupState,
   clearPendingSubscriptionNotifications,
+  createSubscriptionCommand,
   deleteSubscriptionDefinition,
   createBatchDownloadManager,
   downloadSubscriptionHits,
@@ -14,6 +15,7 @@ import {
   retryFailedItems,
   saveGeneralSettings,
   testDownloaderConnection,
+  setSubscriptionEnabledCommand,
   setSourceEnabledForPopup,
   upsertSubscriptionDefinition
 } from "../../lib/background"
@@ -299,9 +301,20 @@ export function registerBackgroundRuntime() {
               })
             )
             return
+          case "CREATE_SUBSCRIPTION":
+            await createSubscriptionCommand(runtimeMessage.subscription)
+            sendResponse(createRuntimeSuccessResponse("CREATE_SUBSCRIPTION", {}))
+            return
           case "UPSERT_SUBSCRIPTION":
             await upsertSubscriptionDefinition(runtimeMessage.subscription)
             sendResponse(createRuntimeSuccessResponse("UPSERT_SUBSCRIPTION", {}))
+            return
+          case "SET_SUBSCRIPTION_ENABLED":
+            await setSubscriptionEnabledCommand(
+              runtimeMessage.subscriptionId,
+              runtimeMessage.enabled
+            )
+            sendResponse(createRuntimeSuccessResponse("SET_SUBSCRIPTION_ENABLED", {}))
             return
           case "DELETE_SUBSCRIPTION":
             await deleteSubscriptionDefinition(runtimeMessage.subscriptionId)

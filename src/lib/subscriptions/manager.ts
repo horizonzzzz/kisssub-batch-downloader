@@ -3,9 +3,11 @@ import type { SourceConfig } from "../sources/config/types"
 import type { SubscriptionPolicyConfig } from "./policy/types"
 
 import {
+  createSubscriptionRecord,
   deleteSubscription,
   listSubscriptions,
   replaceSubscriptionCatalog,
+  setSubscriptionRecordEnabled,
   upsertSubscription
 } from "./catalog-repository"
 import {
@@ -74,6 +76,14 @@ export class SubscriptionManager {
 
   async upsertSubscription(subscription: SubscriptionEntry): Promise<void> {
     await upsertSubscription(subscription)
+  }
+
+  async createSubscription(subscription: SubscriptionEntry): Promise<void> {
+    await createSubscriptionRecord(subscription)
+  }
+
+  async setSubscriptionEnabled(subscriptionId: string, enabled: boolean): Promise<void> {
+    await setSubscriptionRecordEnabled(subscriptionId, enabled)
   }
 
   async deleteSubscription(subscriptionId: string): Promise<void> {

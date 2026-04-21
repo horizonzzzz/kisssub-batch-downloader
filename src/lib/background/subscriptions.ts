@@ -19,11 +19,13 @@ import {
   buildSubscriptionRoundNotification,
   canCreateSubscriptionNotifications,
   clearNotificationRounds,
+  createSubscriptionRecord,
   deleteSubscription,
   ensureSubscriptionAlarm,
   getSubscriptionPolicyConfig,
   listNotificationRounds,
   replaceSubscriptionCatalog,
+  setSubscriptionRecordEnabled,
   SubscriptionManager,
   upsertSubscription,
   downloadSubscriptionHitsById,
@@ -162,6 +164,25 @@ export async function upsertSubscriptionDefinition(
 ): Promise<void> {
   return enqueueSubscriptionMutation(async () => {
     await upsertSubscription(subscription)
+  })
+}
+
+export async function createSubscriptionCommand(
+  subscription: SubscriptionEntry,
+  _dependencies: SubscriptionCatalogCommandDependencies = {}
+): Promise<void> {
+  return enqueueSubscriptionMutation(async () => {
+    await createSubscriptionRecord(subscription)
+  })
+}
+
+export async function setSubscriptionEnabledCommand(
+  subscriptionId: string,
+  enabled: boolean,
+  _dependencies: SubscriptionCatalogCommandDependencies = {}
+): Promise<void> {
+  return enqueueSubscriptionMutation(async () => {
+    await setSubscriptionRecordEnabled(subscriptionId, enabled)
   })
 }
 

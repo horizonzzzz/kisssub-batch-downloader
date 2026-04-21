@@ -13,12 +13,14 @@ export { retryFailedItems } from "./retry"
 export { testDownloaderConnection } from "./service"
 export {
   clearPendingSubscriptionNotifications,
+  createSubscriptionCommand,
   deleteSubscriptionDefinition,
   downloadSubscriptionHits,
   downloadSubscriptionHitsBySelection,
   executeSubscriptionScan,
   reconcileSubscriptionAlarm,
   replaceSubscriptionDefinitions,
+  setSubscriptionEnabledCommand,
   upsertSubscriptionDefinition
 } from "./subscriptions"
 export { fetchTorrentForUpload, getTorrentFilename } from "./torrent-file"

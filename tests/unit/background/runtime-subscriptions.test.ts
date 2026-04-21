@@ -16,20 +16,24 @@ type TabsActivatedListener = Parameters<typeof fakeBrowser.tabs.onActivated.addL
 
 const {
   clearPendingSubscriptionNotificationsMock,
+  createSubscriptionCommandMock,
   deleteSubscriptionDefinitionMock,
   downloadSubscriptionHitsMock,
   executeSubscriptionScanMock,
   getSubscriptionPolicyConfigMock,
   reconcileSubscriptionAlarmMock,
+  setSubscriptionEnabledCommandMock,
   testDownloaderConnectionMock,
   upsertSubscriptionDefinitionMock
 } = vi.hoisted(() => ({
   clearPendingSubscriptionNotificationsMock: vi.fn(),
+  createSubscriptionCommandMock: vi.fn(),
   deleteSubscriptionDefinitionMock: vi.fn(),
   downloadSubscriptionHitsMock: vi.fn(),
   executeSubscriptionScanMock: vi.fn(),
   getSubscriptionPolicyConfigMock: vi.fn(),
   reconcileSubscriptionAlarmMock: vi.fn(),
+  setSubscriptionEnabledCommandMock: vi.fn(),
   testDownloaderConnectionMock: vi.fn(),
   upsertSubscriptionDefinitionMock: vi.fn()
 }))
@@ -56,11 +60,13 @@ vi.mock("../../../src/lib/background", async () => {
       startBatchDownload: vi.fn()
     }),
     clearPendingSubscriptionNotifications: clearPendingSubscriptionNotificationsMock,
+    createSubscriptionCommand: createSubscriptionCommandMock,
     deleteSubscriptionDefinition: deleteSubscriptionDefinitionMock,
     downloadSubscriptionHits: downloadSubscriptionHitsMock,
     executeSubscriptionScan: executeSubscriptionScanMock,
     reconcileSubscriptionAlarm: reconcileSubscriptionAlarmMock,
     retryFailedItems: vi.fn(),
+    setSubscriptionEnabledCommand: setSubscriptionEnabledCommandMock,
     testDownloaderConnection: testDownloaderConnectionMock,
     upsertSubscriptionDefinition: upsertSubscriptionDefinitionMock,
     fetchTorrentForUpload: vi.fn(),
@@ -260,6 +266,71 @@ describe("background runtime subscription boundary", () => {
       expect(sendResponse).toHaveBeenCalledTimes(1)
     })
     expect(upsertSubscriptionDefinitionMock).toHaveBeenCalledWith(subscription)
+    expect(sendResponse).toHaveBeenCalledWith({
+      ok: true
+    })
+  })
+
+  it("supports CREATE_SUBSCRIPTION runtime messages", async () => {
+    createSubscriptionCommandMock.mockResolvedValue(undefined)
+    const listener = onMessageAddListener.mock.calls[0]?.[0]
+    const sendResponse = vi.fn()
+    const subscription = {
+      id: "sub-1",
+      name: "ACG Medalist",
+      enabled: true,
+      sourceIds: ["acgrip"],
+      multiSiteModeEnabled: false,
+      titleQuery: "Medalist",
+      subgroupQuery: "",
+      advanced: {
+        must: [],
+        any: []
+      },
+      createdAt: "2026-04-14T09:30:00.000Z",
+      baselineCreatedAt: "2026-04-14T09:30:00.000Z",
+      deletedAt: null
+    }
+
+    const keepsPortOpen = listener?.(
+      {
+        type: "CREATE_SUBSCRIPTION",
+        subscription
+      },
+      {},
+      sendResponse
+    )
+
+    expect(keepsPortOpen).toBe(true)
+    await vi.waitFor(() => {
+      expect(sendResponse).toHaveBeenCalledTimes(1)
+    })
+    expect(createSubscriptionCommandMock).toHaveBeenCalledWith(subscription)
+    expect(sendResponse).toHaveBeenCalledWith({
+      ok: true
+    })
+  })
+
+  it("supports SET_SUBSCRIPTION_ENABLED runtime messages", async () => {
+    setSubscriptionEnabledCommandMock.mockResolvedValue(undefined)
+    const listener = onMessageAddListener.mock.calls[0]?.[0]
+    const sendResponse = vi.fn()
+
+    const keepsPortOpen = listener?.(
+      {
+        type: "SET_SUBSCRIPTION_ENABLED",
+        subscriptionId: "sub-1",
+        enabled: false
+      },
+      {},
+      sendResponse
+    )
+
+    expect(keepsPortOpen).toBe(true)
+    await vi.waitFor(() => {
+      expect(sendResponse).toHaveBeenCalledTimes(1)
+    })
+    expect(setSubscriptionEnabledCommandMock).toHaveBeenCalledWith("sub-1", false)
     expect(sendResponse).toHaveBeenCalledWith({
       ok: true
     })
