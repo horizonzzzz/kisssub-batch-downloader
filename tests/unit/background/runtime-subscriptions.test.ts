@@ -350,6 +350,132 @@ describe("background runtime subscription boundary", () => {
     })
   })
 
+  it("rejects CREATE_SUBSCRIPTION payloads with invalid sourceIds entries", async () => {
+    createSubscriptionCommandMock.mockResolvedValue(undefined)
+    const listener = onMessageAddListener.mock.calls[0]?.[0]
+    const sendResponse = vi.fn()
+
+    const keepsPortOpen = listener?.(
+      {
+        type: "CREATE_SUBSCRIPTION",
+        subscription: {
+          id: "sub-1",
+          name: "Invalid source",
+          enabled: true,
+          sourceIds: ["acgrip", "not-a-source"],
+          multiSiteModeEnabled: false,
+          titleQuery: "Medalist",
+          subgroupQuery: "",
+          advanced: {
+            must: [],
+            any: []
+          },
+          createdAt: "2026-04-14T09:30:00.000Z",
+          baselineCreatedAt: "2026-04-14T09:30:00.000Z",
+          deletedAt: null
+        }
+      },
+      {},
+      sendResponse
+    )
+
+    expect(keepsPortOpen).toBe(true)
+    await vi.waitFor(() => {
+      expect(sendResponse).toHaveBeenCalledTimes(1)
+    })
+    expect(createSubscriptionCommandMock).not.toHaveBeenCalled()
+    expect(sendResponse).toHaveBeenCalledWith({
+      ok: false,
+      error: "Invalid CREATE_SUBSCRIPTION payload"
+    })
+  })
+
+  it("rejects CREATE_SUBSCRIPTION payloads with non-boolean multiSiteModeEnabled", async () => {
+    createSubscriptionCommandMock.mockResolvedValue(undefined)
+    const listener = onMessageAddListener.mock.calls[0]?.[0]
+    const sendResponse = vi.fn()
+
+    const keepsPortOpen = listener?.(
+      {
+        type: "CREATE_SUBSCRIPTION",
+        subscription: {
+          id: "sub-1",
+          name: "Missing multi-site mode",
+          enabled: true,
+          sourceIds: ["acgrip"],
+          titleQuery: "Medalist",
+          subgroupQuery: "",
+          advanced: {
+            must: [],
+            any: []
+          },
+          createdAt: "2026-04-14T09:30:00.000Z",
+          baselineCreatedAt: "2026-04-14T09:30:00.000Z",
+          deletedAt: null
+        }
+      },
+      {},
+      sendResponse
+    )
+
+    expect(keepsPortOpen).toBe(true)
+    await vi.waitFor(() => {
+      expect(sendResponse).toHaveBeenCalledTimes(1)
+    })
+    expect(createSubscriptionCommandMock).not.toHaveBeenCalled()
+    expect(sendResponse).toHaveBeenCalledWith({
+      ok: false,
+      error: "Invalid CREATE_SUBSCRIPTION payload"
+    })
+  })
+
+  it("rejects CREATE_SUBSCRIPTION payloads with malformed advanced conditions", async () => {
+    createSubscriptionCommandMock.mockResolvedValue(undefined)
+    const listener = onMessageAddListener.mock.calls[0]?.[0]
+    const sendResponse = vi.fn()
+
+    const keepsPortOpen = listener?.(
+      {
+        type: "CREATE_SUBSCRIPTION",
+        subscription: {
+          id: "sub-1",
+          name: "Bad conditions",
+          enabled: true,
+          sourceIds: ["acgrip"],
+          multiSiteModeEnabled: false,
+          titleQuery: "Medalist",
+          subgroupQuery: "",
+          advanced: {
+            must: [
+              {
+                id: "cond-1",
+                field: "source",
+                operator: "equals",
+                value: "acgrip"
+              }
+            ],
+            any: []
+          },
+          createdAt: "2026-04-14T09:30:00.000Z",
+          baselineCreatedAt: "2026-04-14T09:30:00.000Z",
+          deletedAt: null
+        }
+      },
+      {},
+      sendResponse
+    )
+
+    expect(keepsPortOpen).toBe(true)
+    await vi.waitFor(() => {
+      expect(sendResponse).toHaveBeenCalledTimes(1)
+    })
+    expect(createSubscriptionCommandMock).not.toHaveBeenCalled()
+    expect(sendResponse).toHaveBeenCalledWith({
+      ok: false,
+      error: "Invalid CREATE_SUBSCRIPTION payload"
+    })
+  })
+
   it("supports SET_SUBSCRIPTION_ENABLED runtime messages", async () => {
     setSubscriptionEnabledCommandMock.mockResolvedValue(undefined)
     const listener = onMessageAddListener.mock.calls[0]?.[0]

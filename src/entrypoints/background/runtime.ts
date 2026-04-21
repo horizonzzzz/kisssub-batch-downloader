@@ -507,12 +507,23 @@ function isValidCreateSubscriptionPayload(message: {
     name: string
     enabled: boolean
     deletedAt: string | null
-    sourceIds: unknown[]
+    sourceIds: SourceId[]
+    multiSiteModeEnabled: boolean
     titleQuery: string
     subgroupQuery: string
     advanced: {
-      must: unknown[]
-      any: unknown[]
+      must: Array<{
+        id: string
+        field: "title" | "subgroup"
+        operator: "contains"
+        value: string
+      }>
+      any: Array<{
+        id: string
+        field: "title" | "subgroup"
+        operator: "contains"
+        value: string
+      }>
     }
     createdAt: string
     baselineCreatedAt: string
@@ -531,11 +542,15 @@ function isValidCreateSubscriptionPayload(message: {
     (subscription.deletedAt === null || typeof subscription.deletedAt === "string") &&
     Array.isArray(subscription.sourceIds) &&
     subscription.sourceIds.length > 0 &&
+    subscription.sourceIds.every((sourceId) => isValidSourceId(sourceId)) &&
+    typeof subscription.multiSiteModeEnabled === "boolean" &&
     typeof subscription.titleQuery === "string" &&
     typeof subscription.subgroupQuery === "string" &&
     isPlainObject(advanced) &&
     Array.isArray(advanced.must) &&
     Array.isArray(advanced.any) &&
+    advanced.must.every((condition) => isValidFilterConditionShape(condition)) &&
+    advanced.any.every((condition) => isValidFilterConditionShape(condition)) &&
     typeof subscription.createdAt === "string" &&
     typeof subscription.baselineCreatedAt === "string"
 }
@@ -555,6 +570,19 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
 
 function isNonEmptyString(value: unknown): value is string {
   return typeof value === "string" && value.trim().length > 0
+}
+
+function isValidFilterConditionShape(value: unknown): value is {
+  id: string
+  field: "title" | "subgroup"
+  operator: "contains"
+  value: string
+} {
+  return isPlainObject(value) &&
+    isNonEmptyString(value.id) &&
+    (value.field === "title" || value.field === "subgroup") &&
+    value.operator === "contains" &&
+    typeof value.value === "string"
 }
 
 async function queryCurrentActiveTabContext(): Promise<{ id: number | null; url: string | null }> {
