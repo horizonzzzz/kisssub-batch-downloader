@@ -27,7 +27,6 @@ import {
   replaceSubscriptionCatalog,
   setSubscriptionRecordEnabled,
   SubscriptionManager,
-  upsertSubscription,
   downloadSubscriptionHitsById,
   type DownloadSubscriptionHitsByIdResult,
   type DownloadSubscriptionHitsRequest,
@@ -156,15 +155,6 @@ export async function reconcileSubscriptionAlarm(
   const policy = await getSubscriptionPolicyImpl()
 
   await ensureSubscriptionAlarm(policy, alarms)
-}
-
-export async function upsertSubscriptionDefinition(
-  subscription: SubscriptionEntry,
-  _dependencies: SubscriptionCatalogCommandDependencies = {}
-): Promise<void> {
-  return enqueueSubscriptionMutation(async () => {
-    await upsertSubscription(subscription)
-  })
 }
 
 export async function createSubscriptionCommand(

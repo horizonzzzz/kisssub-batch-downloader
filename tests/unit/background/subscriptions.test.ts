@@ -10,8 +10,8 @@ import { DEFAULT_DOWNLOADER_CONFIG } from "../../../src/lib/downloader/config/de
 import { DEFAULT_SOURCE_CONFIG } from "../../../src/lib/sources/config/defaults"
 import {
   clearPendingSubscriptionNotifications,
+  createSubscriptionCommand,
   executeSubscriptionScan,
-  upsertSubscriptionDefinition,
   downloadSubscriptionHitsBySelection
 } from "../../../src/lib/background/subscriptions"
 import { listSubscriptions } from "../../../src/lib/subscriptions/catalog-repository"
@@ -123,10 +123,10 @@ describe("background subscriptions bridge", () => {
     await resetSubscriptionDb()
   })
 
-  it("upserts subscription definitions without touching app-settings persistence", async () => {
+  it("creates subscription definitions without touching app-settings persistence", async () => {
     const saveSettings = vi.fn()
 
-    await upsertSubscriptionDefinition(createSubscription(), {
+    await createSubscriptionCommand(createSubscription(), {
       getSettings: async () => createSubscriptionPolicy(),
       saveSettings
     })
@@ -140,7 +140,7 @@ describe("background subscriptions bridge", () => {
   it("creates browser notifications after scans when app settings enable notifications", async () => {
     const createNotification = vi.fn(async () => undefined)
 
-    await upsertSubscriptionDefinition(createSubscription(), {
+    await createSubscriptionCommand(createSubscription(), {
       getSettings: async () => createSubscriptionPolicy()
     })
     await subscriptionDb.subscriptionRuntime.put({

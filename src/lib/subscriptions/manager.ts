@@ -7,8 +7,7 @@ import {
   deleteSubscription,
   listSubscriptions,
   replaceSubscriptionCatalog,
-  setSubscriptionRecordEnabled,
-  upsertSubscription
+  setSubscriptionRecordEnabled
 } from "./catalog-repository"
 import {
   downloadSubscriptionNotificationHits,
@@ -72,10 +71,6 @@ export class SubscriptionManager {
 
   async replaceCatalog(nextSubscriptions: SubscriptionEntry[]): Promise<void> {
     await replaceSubscriptionCatalog(nextSubscriptions)
-  }
-
-  async upsertSubscription(subscription: SubscriptionEntry): Promise<void> {
-    await upsertSubscription(subscription)
   }
 
   async createSubscription(subscription: SubscriptionEntry): Promise<void> {

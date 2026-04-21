@@ -23,8 +23,7 @@ const {
   getSubscriptionPolicyConfigMock,
   reconcileSubscriptionAlarmMock,
   setSubscriptionEnabledCommandMock,
-  testDownloaderConnectionMock,
-  upsertSubscriptionDefinitionMock
+  testDownloaderConnectionMock
 } = vi.hoisted(() => ({
   clearPendingSubscriptionNotificationsMock: vi.fn(),
   createSubscriptionCommandMock: vi.fn(),
@@ -34,8 +33,7 @@ const {
   getSubscriptionPolicyConfigMock: vi.fn(),
   reconcileSubscriptionAlarmMock: vi.fn(),
   setSubscriptionEnabledCommandMock: vi.fn(),
-  testDownloaderConnectionMock: vi.fn(),
-  upsertSubscriptionDefinitionMock: vi.fn()
+  testDownloaderConnectionMock: vi.fn()
 }))
 
 const onAlarmAddListener = vi.fn()
@@ -68,7 +66,6 @@ vi.mock("../../../src/lib/background", async () => {
     retryFailedItems: vi.fn(),
     setSubscriptionEnabledCommand: setSubscriptionEnabledCommandMock,
     testDownloaderConnection: testDownloaderConnectionMock,
-    upsertSubscriptionDefinition: upsertSubscriptionDefinitionMock,
     fetchTorrentForUpload: vi.fn(),
     openOptionsPageAtTarget: vi.fn(async (target: string) => {
       const optionsUrl = `chrome-extension://test-extension-id/options.html#${target}`
@@ -229,45 +226,6 @@ describe("background runtime subscription boundary", () => {
         baseUrl: "http://127.0.0.1:17474",
         version: "5.0.0"
       }
-    })
-  })
-
-  it("supports UPSERT_SUBSCRIPTION runtime messages", async () => {
-    upsertSubscriptionDefinitionMock.mockResolvedValue(undefined)
-    const listener = onMessageAddListener.mock.calls[0]?.[0]
-    const sendResponse = vi.fn()
-    const subscription = {
-      id: "sub-1",
-      name: "ACG Medalist",
-      enabled: true,
-      sourceIds: ["acgrip"],
-      multiSiteModeEnabled: false,
-      titleQuery: "Medalist",
-      subgroupQuery: "",
-      advanced: {
-        must: [],
-        any: []
-      },
-      createdAt: "2026-04-14T09:30:00.000Z",
-      baselineCreatedAt: "2026-04-14T09:30:00.000Z"
-    }
-
-    const keepsPortOpen = listener?.(
-      {
-        type: "UPSERT_SUBSCRIPTION",
-        subscription
-      },
-      {},
-      sendResponse
-    )
-
-    expect(keepsPortOpen).toBe(true)
-    await vi.waitFor(() => {
-      expect(sendResponse).toHaveBeenCalledTimes(1)
-    })
-    expect(upsertSubscriptionDefinitionMock).toHaveBeenCalledWith(subscription)
-    expect(sendResponse).toHaveBeenCalledWith({
-      ok: true
     })
   })
 

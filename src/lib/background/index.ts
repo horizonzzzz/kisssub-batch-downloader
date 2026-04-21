@@ -20,7 +20,6 @@ export {
   executeSubscriptionScan,
   reconcileSubscriptionAlarm,
   replaceSubscriptionDefinitions,
-  setSubscriptionEnabledCommand,
-  upsertSubscriptionDefinition
+  setSubscriptionEnabledCommand
 } from "./subscriptions"
 export { fetchTorrentForUpload, getTorrentFilename } from "./torrent-file"

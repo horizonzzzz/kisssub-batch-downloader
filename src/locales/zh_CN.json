@@ -509,6 +509,7 @@
       "add": "新增订阅",
       "edit": "编辑",
       "duplicate": "复制",
+      "openHitsWorkbench": "打开命中工作台",
       "configuredCount": "已配置 $1 条订阅",
       "enabledCount": "已启用 $1 条",
       "scannedCount": "已有扫描记录 $1 条",
@@ -526,6 +527,7 @@
       "badge": {
         "enabled": "已启用",
         "disabled": "已停用",
+        "deleted": "已删除",
         "singleSite": "单站点",
         "multiSite": "多站点"
       },
@@ -566,7 +568,7 @@
       "dialog": {
         "addTitle": "新增订阅",
         "editTitle": "编辑订阅",
-        "description": "编辑订阅名称、站点范围和查询条件",
+        "description": "配置订阅名称、站点范围和查询条件",
         "close": "关闭订阅面板",
         "nameLabel": "订阅名称",
         "namePlaceholder": "例如：ACG Medalist",

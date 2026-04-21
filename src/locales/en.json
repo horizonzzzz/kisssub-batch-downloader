@@ -527,6 +527,7 @@
       "badge": {
         "enabled": "Enabled",
         "disabled": "Disabled",
+        "deleted": "Deleted",
         "singleSite": "Single site",
         "multiSite": "Multi-site"
       },
@@ -559,7 +560,7 @@
       "dialog": {
         "addTitle": "Add subscription",
         "editTitle": "Edit subscription",
-        "description": "Edit the subscription name, source scope, and query conditions",
+        "description": "Configure the subscription name, source scope, and query conditions",
         "close": "Close subscription panel",
         "nameLabel": "Subscription name",
         "namePlaceholder": "For example: ACG Medalist",

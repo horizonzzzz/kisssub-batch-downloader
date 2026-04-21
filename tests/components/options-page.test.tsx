@@ -8,6 +8,7 @@ import type { SubscriptionEntry } from "../../src/lib/shared/types"
 import type { SourceConfig } from "../../src/lib/sources/config/types"
 import type { SubscriptionPolicyConfig } from "../../src/lib/subscriptions/policy/types"
 import {
+  createSubscriptionRecord,
   deleteSubscription,
   resetSubscriptionDb,
   setLastSchedulerRunAt,
@@ -146,10 +147,7 @@ function createOptionsApi(overrides: Partial<OptionsApi> = {}): OptionsApi {
     getSubscriptionPolicy: vi.fn().mockResolvedValue(subscriptionPolicy),
     saveSubscriptionPolicy: vi.fn().mockImplementation(async (config) => config),
     createSubscription: vi.fn().mockImplementation(async (subscription) => {
-      await upsertSubscription(subscription)
-    }),
-    upsertSubscription: vi.fn().mockImplementation(async (subscription) => {
-      await upsertSubscription(subscription)
+      await createSubscriptionRecord(subscription)
     }),
     setSubscriptionEnabled: vi.fn().mockImplementation(async (subscriptionId, enabled) => {
       const subscription = await subscriptionDb.subscriptions.get(subscriptionId)
@@ -615,6 +613,21 @@ describe("OptionsPage", () => {
     expect(screen.getByTestId("hit-status-hit-2")).toHaveTextContent("新命中")
   })
 
+  it("shows a deleted badge for tombstoned subscription hit groups without a live enabled badge", async () => {
+    const api = createOptionsApi()
+
+    await seedSubscriptionFixture()
+    await deleteSubscription("sub-1")
+    window.location.hash = "#/subscription-hits"
+    render(<OptionsPage api={api} />)
+
+    const deletedGroup = await screen.findByTestId("subscription-hit-group-sub-1")
+
+    expect(within(deletedGroup).getByText("已删除")).toBeInTheDocument()
+    expect(within(deletedGroup).queryByText("已启用")).not.toBeInTheDocument()
+    expect(within(deletedGroup).queryByText("已停用")).not.toBeInTheDocument()
+  })
+
   it("tracks round changes, marks highlighted hits viewed, and scrolls the first highlighted hit into view", async () => {
     const api = createOptionsApi()
 
@@ -756,9 +769,9 @@ describe("OptionsPage", () => {
       await user.click(screen.getByRole("button", { name: "保存订阅" }))
 
       await waitFor(() => {
-        expect(api.upsertSubscription).toHaveBeenCalledTimes(1)
+        expect(api.createSubscription).toHaveBeenCalledTimes(1)
       })
-      expect(api.upsertSubscription).toHaveBeenCalledWith(
+      expect(api.createSubscription).toHaveBeenCalledWith(
         expect.objectContaining({
           name: "ACG Medalist",
           titleQuery: "Medalist",
@@ -772,7 +785,7 @@ describe("OptionsPage", () => {
   it("keeps the subscription editor open when async persistence fails", async () => {
     const user = userEvent.setup()
     const api = createOptionsApi({
-      upsertSubscription: vi.fn().mockRejectedValue(new Error("save failed"))
+      createSubscription: vi.fn().mockRejectedValue(new Error("save failed"))
     })
 
     render(<OptionsPage api={api} />)
@@ -783,7 +796,7 @@ describe("OptionsPage", () => {
     await user.click(screen.getAllByRole("button", { name: "新增订阅" })[0])
 
     expect(await screen.findByRole("dialog", { name: "新增订阅" })).toBeInTheDocument()
-    await user.type(screen.getByLabelText("订阅名称"), "ACG Medalist")
+      await user.type(screen.getByLabelText("订阅名称"), "ACG Medalist")
     await user.type(screen.getByLabelText("标题关键词"), "Medalist")
     await user.click(screen.getByRole("button", { name: "保存订阅" }))
 
@@ -868,7 +881,7 @@ describe("OptionsPage", () => {
 
       await user.click(screen.getByRole("button", { name: "保存订阅" }))
 
-      const savedSubscription = vi.mocked(api.upsertSubscription).mock.calls[0]?.[0]
+      const savedSubscription = vi.mocked(api.createSubscription).mock.calls[0]?.[0]
       expect(Object.keys(savedSubscription ?? {}).sort()).toEqual([
         "advanced",
         "baselineCreatedAt",
@@ -893,7 +906,7 @@ describe("OptionsPage", () => {
   )
 
   it(
-    "keeps subscription domain saves independent from other settings domains",
+    "duplicates a subscription through the create-only API without touching other settings domains",
     async () => {
       const user = userEvent.setup()
       await seedSubscriptionFixture()
@@ -907,22 +920,23 @@ describe("OptionsPage", () => {
       await screen.findByTestId("subscription-card-sub-1")
       await user.click(
         within(screen.getByTestId("subscription-card-sub-1")).getByRole("button", {
-          name: "编辑"
+          name: "复制"
         })
       )
 
-      expect(await screen.findByRole("dialog", { name: "编辑订阅" })).toBeInTheDocument()
-      const titleQueryInput = screen.getByLabelText("标题关键词")
-      await user.clear(titleQueryInput)
-      await user.type(titleQueryInput, "Bang Dream")
-      await user.click(screen.getByRole("button", { name: "保存订阅" }))
-
-      expect(api.upsertSubscription).toHaveBeenCalledWith(
+      await waitFor(() => {
+        expect(api.createSubscription).toHaveBeenCalledTimes(1)
+      })
+      expect(api.createSubscription).toHaveBeenCalledWith(
         expect.objectContaining({
-          id: "sub-1",
-          titleQuery: "Bang Dream"
+          name: expect.stringMatching(/^ACG Medalist/),
+          titleQuery: "Medalist",
+          subgroupQuery: "LoliHouse",
+          sourceIds: ["acgrip"]
         })
       )
+      expect(api.saveGeneralSettings).not.toHaveBeenCalled()
+      expect(api.saveSourceConfig).not.toHaveBeenCalled()
     },
     10000
   )

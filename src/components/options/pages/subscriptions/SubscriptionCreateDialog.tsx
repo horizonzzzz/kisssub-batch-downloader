@@ -13,7 +13,6 @@ import {
   SelectTrigger,
   SelectValue,
   Sheet,
-  SheetClose,
   SheetContent,
   SheetDescription,
   SheetHeader,
@@ -42,23 +41,21 @@ import {
   type SubscriptionWorkbenchDraft
 } from "./subscription-workbench"
 
-type SubscriptionEditorDialogProps = {
+type SubscriptionCreateDialogProps = {
   open: boolean
-  initialSubscription?: SubscriptionWorkbenchDraft
   onClose: () => void
-  onSave: (subscription: SubscriptionWorkbenchDraft) => Promise<void>
+  onCreate: (subscription: SubscriptionWorkbenchDraft) => Promise<void>
   saving?: boolean
 }
 
 type ConditionGroupKey = "must" | "any"
 
-export function SubscriptionEditorDialog({
+export function SubscriptionCreateDialog({
   open,
-  initialSubscription,
   onClose,
-  onSave,
+  onCreate,
   saving = false
-}: SubscriptionEditorDialogProps) {
+}: SubscriptionCreateDialogProps) {
   const [draft, setDraft] = useState<SubscriptionWorkbenchDraft>(() => createSubscriptionDraft())
   const [error, setError] = useState("")
   const nameId = useId()
@@ -70,9 +67,9 @@ export function SubscriptionEditorDialog({
       return
     }
 
-    setDraft(createSubscriptionDraft(initialSubscription))
+    setDraft(createSubscriptionDraft())
     setError("")
-  }, [initialSubscription, open])
+  }, [open])
 
   const handleAddCondition = (group: ConditionGroupKey) => {
     setDraft((current) => ({
@@ -120,7 +117,7 @@ export function SubscriptionEditorDialog({
     }
 
     try {
-      await onSave(normalizeSubscriptionDraft(draft))
+      await onCreate(normalizeSubscriptionDraft(draft))
       onClose()
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : i18n.t("options.status.saveFailed"))
@@ -138,11 +135,7 @@ export function SubscriptionEditorDialog({
       <SheetContent side="right" className="flex h-full w-full max-w-2xl flex-col p-0 sm:max-w-2xl">
         <div className="flex items-center justify-between border-b border-zinc-100 px-6 py-4">
           <SheetHeader className="space-y-0">
-            <SheetTitle>
-              {initialSubscription
-                ? i18n.t("options.subscriptions.dialog.editTitle")
-                : i18n.t("options.subscriptions.dialog.addTitle")}
-            </SheetTitle>
+            <SheetTitle>{i18n.t("options.subscriptions.dialog.addTitle")}</SheetTitle>
             <SheetDescription className="sr-only">
               {i18n.t("options.subscriptions.dialog.description")}
             </SheetDescription>

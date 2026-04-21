@@ -113,8 +113,12 @@ export function useSubscriptionsWorkbench(api: OptionsApi) {
     }
   }
 
-  const upsertSubscription = async (subscription: SubscriptionEntry) => {
-    await mutateSubscription(() => api.upsertSubscription(subscription))
+  const createSubscription = async (subscription: SubscriptionEntry) => {
+    await mutateSubscription(() => api.createSubscription(subscription))
+  }
+
+  const setSubscriptionEnabled = async (subscriptionId: string, enabled: boolean) => {
+    await mutateSubscription(() => api.setSubscriptionEnabled(subscriptionId, enabled))
   }
 
   const deleteSubscription = async (subscriptionId: string) => {
@@ -138,7 +142,8 @@ export function useSubscriptionsWorkbench(api: OptionsApi) {
     mutatingSubscription,
     runtimeStatus,
     subscriptionRows,
-    upsertSubscription,
+    createSubscription,
+    setSubscriptionEnabled,
     deleteSubscription,
     summary
   }

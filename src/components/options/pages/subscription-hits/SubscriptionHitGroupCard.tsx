@@ -48,9 +48,17 @@ export function SubscriptionHitGroupCard({
   onDownloadHit
 }: SubscriptionHitGroupCardProps) {
   const { subscription, hits } = row
-  const enabledLabel = subscription.enabled
-    ? i18n.t("options.subscriptions.badge.enabled")
-    : i18n.t("options.subscriptions.badge.disabled")
+  const isDeleted = subscription.deletedAt !== null
+  const statusLabel = isDeleted
+    ? i18n.t("options.subscriptions.badge.deleted")
+    : subscription.enabled
+      ? i18n.t("options.subscriptions.badge.enabled")
+      : i18n.t("options.subscriptions.badge.disabled")
+  const statusClassName = isDeleted
+    ? "bg-rose-100 text-rose-700"
+    : subscription.enabled
+      ? "bg-green-100 text-green-700"
+      : "bg-zinc-100 text-zinc-500"
 
   const highlightedCount = hits.filter((hit) => hit.highlighted).length
   const pendingHitCount = countPendingHits(hits)
@@ -65,12 +73,8 @@ export function SubscriptionHitGroupCard({
                 {subscription.name}
               </h4>
               <span
-                className={`inline-flex items-center rounded px-2 py-0.5 text-xs font-medium ${
-                  subscription.enabled
-                    ? "bg-green-100 text-green-700"
-                    : "bg-zinc-100 text-zinc-500"
-                }`}>
-                {enabledLabel}
+                className={`inline-flex items-center rounded px-2 py-0.5 text-xs font-medium ${statusClassName}`}>
+                {statusLabel}
               </span>
               {highlightedCount > 0 && (
                 <span

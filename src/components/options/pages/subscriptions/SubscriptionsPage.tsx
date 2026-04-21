@@ -21,11 +21,10 @@ import {
 import { useOptionsPageFooter } from "../../layout/OptionsPageFooter"
 import type { OptionsApi } from "../../OptionsPage"
 import { SubscriptionCard } from "./SubscriptionCard"
-import { SubscriptionEditorDialog } from "./SubscriptionEditorDialog"
+import { SubscriptionCreateDialog } from "./SubscriptionCreateDialog"
 import { SubscriptionsGlobalCard } from "./SubscriptionsGlobalCard"
 import { SubscriptionsSummaryCard } from "./SubscriptionsSummaryCard"
 import {
-  createSubscriptionDraft,
   duplicateSubscriptionDraft,
   type SubscriptionWorkbenchDraft
 } from "./subscription-workbench"
@@ -46,7 +45,8 @@ export function SubscriptionsPage({ api }: SubscriptionsPageProps) {
     mutatingSubscription,
     runtimeStatus,
     subscriptionRows,
-    upsertSubscription,
+    createSubscription,
+    setSubscriptionEnabled,
     deleteSubscription,
     summary
   } = useSubscriptionsWorkbench(api)
@@ -61,7 +61,6 @@ export function SubscriptionsPage({ api }: SubscriptionsPageProps) {
   const [pollingIntervalInput, setPollingIntervalInput] = useState(
     String(policy.pollingIntervalMinutes)
   )
-  const [editingSubscriptionId, setEditingSubscriptionId] = useState<string | null>(null)
   const [creatingSubscription, setCreatingSubscription] = useState(false)
   const [pendingDeleteSubscriptionId, setPendingDeleteSubscriptionId] = useState<string | null>(null)
   const pendingDeleteSubscription = subscriptionRows.find(
@@ -72,23 +71,13 @@ export function SubscriptionsPage({ api }: SubscriptionsPageProps) {
     setPollingIntervalInput(String(policy.pollingIntervalMinutes))
   }, [policy.pollingIntervalMinutes])
 
-  const initialSubscription = useMemo(() => {
-    if (!editingSubscriptionId) {
-      return undefined
-    }
-
-    const editingRow = subscriptionRows.find((row) => row.subscription.id === editingSubscriptionId)
-    return editingRow ? createSubscriptionDraft(editingRow.subscription) : undefined
-  }, [editingSubscriptionId, subscriptionRows])
-
-  const handleSaveSubscription = async (nextSubscription: SubscriptionWorkbenchDraft) => {
-    await upsertSubscription(nextSubscription)
+  const handleCreateSubscription = async (nextSubscription: SubscriptionWorkbenchDraft) => {
+    await createSubscription(nextSubscription)
     setCreatingSubscription(false)
-    setEditingSubscriptionId(null)
   }
 
   const handleDuplicateSubscription = async (subscription: SubscriptionEntry) => {
-    await upsertSubscription(duplicateSubscriptionDraft(subscription))
+    await createSubscription(duplicateSubscriptionDraft(subscription))
   }
 
   const handleDeleteSubscription = async (subscriptionId: string) => {
@@ -96,10 +85,7 @@ export function SubscriptionsPage({ api }: SubscriptionsPageProps) {
   }
 
   const handleToggleEnabled = async (subscription: SubscriptionEntry, enabled: boolean) => {
-    await upsertSubscription({
-      ...subscription,
-      enabled
-    })
+    await setSubscriptionEnabled(subscription.id, enabled)
   }
 
   const syncPollingIntervalInput = useCallback((value: string) => {
@@ -220,7 +206,6 @@ export function SubscriptionsPage({ api }: SubscriptionsPageProps) {
               type="button"
               disabled={loading || mutatingSubscription}
               onClick={() => {
-                setEditingSubscriptionId(null)
                 setCreatingSubscription(true)
               }}>
               <HiOutlinePlus className="h-4 w-4" />
@@ -236,10 +221,6 @@ export function SubscriptionsPage({ api }: SubscriptionsPageProps) {
                 key={row.subscription.id}
                 subscription={row.subscription}
                 runtimeState={toSubscriptionRuntimeState(row)}
-                onEdit={() => {
-                  setCreatingSubscription(false)
-                  setEditingSubscriptionId(row.subscription.id)
-                }}
                 onDuplicate={() => void handleDuplicateSubscription(row.subscription)}
                 onDelete={() => setPendingDeleteSubscriptionId(row.subscription.id)}
                 onToggleEnabled={(enabled) => void handleToggleEnabled(row.subscription, enabled)}
@@ -260,7 +241,6 @@ export function SubscriptionsPage({ api }: SubscriptionsPageProps) {
                   type="button"
                   disabled={loading || mutatingSubscription}
                   onClick={() => {
-                    setEditingSubscriptionId(null)
                     setCreatingSubscription(true)
                   }}>
                   <HiOutlinePlus className="h-4 w-4" />
@@ -272,14 +252,12 @@ export function SubscriptionsPage({ api }: SubscriptionsPageProps) {
         )}
       </section>
 
-      <SubscriptionEditorDialog
-        open={creatingSubscription || editingSubscriptionId !== null}
-        initialSubscription={initialSubscription}
+      <SubscriptionCreateDialog
+        open={creatingSubscription}
         onClose={() => {
           setCreatingSubscription(false)
-          setEditingSubscriptionId(null)
         }}
-        onSave={handleSaveSubscription}
+        onCreate={handleCreateSubscription}
         saving={mutatingSubscription}
       />
 

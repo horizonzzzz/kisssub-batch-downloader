@@ -60,7 +60,6 @@ export type RuntimeRequest =
   | { type: "OPEN_OPTIONS_PAGE"; route?: PopupOptionsRoute }
   | { type: "START_BATCH_DOWNLOAD"; items?: BatchItem[]; savePath?: string }
   | { type: "CREATE_SUBSCRIPTION"; subscription: SubscriptionEntry }
-  | { type: "UPSERT_SUBSCRIPTION"; subscription: SubscriptionEntry }
   | { type: "SET_SUBSCRIPTION_ENABLED"; subscriptionId: string; enabled: boolean }
   | { type: "DELETE_SUBSCRIPTION"; subscriptionId: string }
   | { type: "GET_SUBSCRIPTION_POLICY" }
@@ -116,10 +115,6 @@ export type RetryFailedItemsSuccessResponse = {
   ok: true
   successCount: number
   failedCount: number
-}
-
-export type UpsertSubscriptionSuccessResponse = {
-  ok: true
 }
 
 export type CreateSubscriptionSuccessResponse = {
@@ -246,7 +241,6 @@ export type RuntimeSuccessResponseMap = {
   OPEN_OPTIONS_PAGE: OpenOptionsPageSuccessResponse
   START_BATCH_DOWNLOAD: StartBatchDownloadSuccessResponse
   CREATE_SUBSCRIPTION: CreateSubscriptionSuccessResponse
-  UPSERT_SUBSCRIPTION: UpsertSubscriptionSuccessResponse
   SET_SUBSCRIPTION_ENABLED: SetSubscriptionEnabledSuccessResponse
   DELETE_SUBSCRIPTION: DeleteSubscriptionSuccessResponse
   GET_SUBSCRIPTION_POLICY: GetSubscriptionPolicySuccessResponse
@@ -271,7 +265,6 @@ export type SetSourceEnabledResponse = RuntimeResponseFor<"SET_SOURCE_ENABLED">
 export type OpenOptionsPageResponse = RuntimeResponseFor<"OPEN_OPTIONS_PAGE">
 export type StartBatchDownloadResponse = RuntimeResponseFor<"START_BATCH_DOWNLOAD">
 export type CreateSubscriptionResponse = RuntimeResponseFor<"CREATE_SUBSCRIPTION">
-export type UpsertSubscriptionResponse = RuntimeResponseFor<"UPSERT_SUBSCRIPTION">
 export type SetSubscriptionEnabledResponse = RuntimeResponseFor<"SET_SUBSCRIPTION_ENABLED">
 export type DeleteSubscriptionResponse = RuntimeResponseFor<"DELETE_SUBSCRIPTION">
 export type GetFilterConfigResponse = RuntimeResponseFor<"GET_FILTER_CONFIG">

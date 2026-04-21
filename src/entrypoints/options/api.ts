@@ -31,7 +31,6 @@ export type OptionsApi = {
   getSubscriptionPolicy: () => Promise<SubscriptionPolicyConfig>
   saveSubscriptionPolicy: (config: SubscriptionPolicyConfig) => Promise<SubscriptionPolicyConfig>
   createSubscription: (subscription: SubscriptionEntry) => Promise<void>
-  upsertSubscription: (subscription: SubscriptionEntry) => Promise<void>
   setSubscriptionEnabled: (subscriptionId: string, enabled: boolean) => Promise<void>
   deleteSubscription: (subscriptionId: string) => Promise<void>
   downloadSubscriptionHits: (request: {
@@ -49,16 +48,6 @@ export const optionsApi: OptionsApi = {
   async createSubscription(subscription) {
     const response = await sendRuntimeRequest({
       type: "CREATE_SUBSCRIPTION",
-      subscription
-    })
-
-    if (!response.ok) {
-      throw new Error(response.error || i18n.t("options.status.saveFailed"))
-    }
-  },
-  async upsertSubscription(subscription) {
-    const response = await sendRuntimeRequest({
-      type: "UPSERT_SUBSCRIPTION",
       subscription
     })
 

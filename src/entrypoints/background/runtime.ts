@@ -16,8 +16,7 @@ import {
   saveGeneralSettings,
   testDownloaderConnection,
   setSubscriptionEnabledCommand,
-  setSourceEnabledForPopup,
-  upsertSubscriptionDefinition
+  setSourceEnabledForPopup
 } from "../../lib/background"
 import { getDownloaderAdapter } from "../../lib/downloader"
 import { ensureDownloaderPermission } from "../../lib/downloader/permissions"
@@ -309,10 +308,6 @@ export function registerBackgroundRuntime() {
 
             await createSubscriptionCommand(runtimeMessage.subscription)
             sendResponse(createRuntimeSuccessResponse("CREATE_SUBSCRIPTION", {}))
-            return
-          case "UPSERT_SUBSCRIPTION":
-            await upsertSubscriptionDefinition(runtimeMessage.subscription)
-            sendResponse(createRuntimeSuccessResponse("UPSERT_SUBSCRIPTION", {}))
             return
           case "SET_SUBSCRIPTION_ENABLED":
             if (!isValidSetSubscriptionEnabledPayload(runtimeMessage)) {

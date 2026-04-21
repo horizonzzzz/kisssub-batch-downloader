@@ -5,7 +5,7 @@ import type {
 } from "../../../../lib/shared/types"
 
 import { Badge, Button, Card, Switch } from "../../../ui"
-import { HiOutlineDocumentDuplicate, HiOutlinePencilSquare, HiOutlineTrash } from "react-icons/hi2"
+import { HiOutlineDocumentDuplicate, HiOutlineTrash } from "react-icons/hi2"
 
 import {
   getSubscriptionRuntimeSummary,
@@ -16,7 +16,6 @@ import {
 type SubscriptionCardProps = {
   subscription: SubscriptionEntry
   runtimeState?: SubscriptionRuntimeState
-  onEdit: () => void
   onDuplicate: () => void
   onDelete: () => void
   onToggleEnabled: (enabled: boolean) => void
@@ -25,7 +24,6 @@ type SubscriptionCardProps = {
 export function SubscriptionCard({
   subscription,
   runtimeState,
-  onEdit,
   onDuplicate,
   onDelete,
   onToggleEnabled
@@ -56,10 +54,6 @@ export function SubscriptionCard({
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <Button type="button" variant="ghost" size="sm" onClick={onEdit}>
-              <HiOutlinePencilSquare className="h-4 w-4" />
-              {i18n.t("options.subscriptions.edit")}
-            </Button>
             <Button type="button" variant="ghost" size="sm" onClick={onDuplicate}>
               <HiOutlineDocumentDuplicate className="h-4 w-4" />
               {i18n.t("options.subscriptions.duplicate")}

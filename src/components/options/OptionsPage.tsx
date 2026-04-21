@@ -63,7 +63,6 @@ export type OptionsApi = {
   getSubscriptionPolicy: () => Promise<SubscriptionPolicyConfig>
   saveSubscriptionPolicy: (config: SubscriptionPolicyConfig) => Promise<SubscriptionPolicyConfig>
   createSubscription: (subscription: SubscriptionEntry) => Promise<void>
-  upsertSubscription: (subscription: SubscriptionEntry) => Promise<void>
   setSubscriptionEnabled: (subscriptionId: string, enabled: boolean) => Promise<void>
   deleteSubscription: (subscriptionId: string) => Promise<void>
   downloadSubscriptionHits: (request: {
