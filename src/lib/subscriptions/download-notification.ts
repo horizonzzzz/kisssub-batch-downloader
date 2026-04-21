@@ -27,7 +27,6 @@ import { listSubscriptionsByIds } from "./catalog-repository"
 import { subscriptionDb } from "./db"
 import { getNotificationRound } from "./notification-round-repository"
 import { parseSubscriptionNotificationRoundId } from "./notifications"
-import { canDownloadSubscriptionNotifications } from "./policy"
 
 export type DownloadSubscriptionHitsRequest = {
   roundId: string
@@ -232,11 +231,6 @@ export async function downloadSubscriptionNotificationHits(
   const notificationRound = await getNotificationRound(normalizedRoundId)
   if (!notificationRound) {
     throw new Error(`Subscription notification round not found: ${normalizedRoundId}`)
-  }
-
-  if (!canDownloadSubscriptionNotifications(input.subscriptionPolicy)) {
-    await persistDownloadState(notificationRound.id, [])
-    return createEmptyDownloadSubscriptionHitsResult()
   }
 
   const subscriptions = await listSubscriptionsByIds([

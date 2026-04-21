@@ -2,7 +2,7 @@ import { i18n } from "../../../../lib/i18n"
 import { normalizeSubscriptionPollingInterval } from "../../../../lib/subscriptions/policy/index"
 import { useCallback, useEffect, useMemo, useState } from "react"
 
-import { HiOutlineArrowPath, HiOutlinePlus } from "react-icons/hi2"
+import { HiOutlineArrowPath, HiOutlinePlus, HiOutlineListBullet } from "react-icons/hi2"
 
 import type { SubscriptionEntry } from "../../../../lib/shared/types"
 import {
@@ -169,7 +169,6 @@ export function SubscriptionsPage({ api }: SubscriptionsPageProps) {
         subscriptionsEnabled={policy.enabled}
         pollingIntervalMinutes={pollingIntervalInput}
         notificationsEnabled={policy.notificationsEnabled}
-        notificationDownloadActionEnabled={policy.notificationDownloadActionEnabled}
         configuredCount={summary.configuredCount}
         enabledCount={summary.enabledCount}
         scannedCount={summary.scannedCount}
@@ -194,12 +193,6 @@ export function SubscriptionsPage({ api }: SubscriptionsPageProps) {
             notificationsEnabled: enabled
           }))
         }
-        onNotificationDownloadActionEnabledChange={(enabled) =>
-          setPolicy((current) => ({
-            ...current,
-            notificationDownloadActionEnabled: enabled
-          }))
-        }
       />
 
       <section className="space-y-4" data-testid="subscriptions-list">
@@ -213,16 +206,27 @@ export function SubscriptionsPage({ api }: SubscriptionsPageProps) {
             </p>
           </div>
 
-          <Button
-            type="button"
-            disabled={loading || mutatingSubscription}
-            onClick={() => {
-              setEditingSubscriptionId(null)
-              setCreatingSubscription(true)
-            }}>
-            <HiOutlinePlus className="h-4 w-4" />
-            {i18n.t("options.subscriptions.add")}
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => {
+                window.location.hash = "#/subscription-hits"
+              }}>
+              <HiOutlineListBullet className="h-4 w-4" />
+              {i18n.t("options.subscriptions.openHitsWorkbench")}
+            </Button>
+            <Button
+              type="button"
+              disabled={loading || mutatingSubscription}
+              onClick={() => {
+                setEditingSubscriptionId(null)
+                setCreatingSubscription(true)
+              }}>
+              <HiOutlinePlus className="h-4 w-4" />
+              {i18n.t("options.subscriptions.add")}
+            </Button>
+          </div>
         </div>
 
         {subscriptionRows.length ? (

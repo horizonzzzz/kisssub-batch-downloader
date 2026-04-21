@@ -283,21 +283,6 @@ export function getSubscriptionRuntimeSummary(
   }
 }
 
-export function getNotificationDownloadActionStateLabel(
-  notificationsEnabled: boolean,
-  notificationDownloadActionEnabled: boolean
-) {
-  if (!notificationsEnabled) {
-    return i18n.t("options.subscriptions.global.notificationActionState.notificationsOff")
-  }
-
-  if (!notificationDownloadActionEnabled) {
-    return i18n.t("options.subscriptions.global.notificationActionState.manualOnly")
-  }
-
-  return i18n.t("options.subscriptions.global.notificationActionState.enabled")
-}
-
 export function countSubscriptionsWithRecentErrors(
   runtimeStateById: Record<string, SubscriptionRuntimeState>,
   subscriptionIds: string[]

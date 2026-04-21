@@ -41,6 +41,9 @@ const onMessageAddListener = vi.fn()
 const onStartupAddListener = vi.fn()
 const onUpdatedAddListener = vi.fn()
 const onActivatedAddListener = vi.fn()
+const tabsUpdateMock = vi.fn()
+const tabsCreateMock = vi.fn()
+const windowsUpdateMock = vi.fn()
 
 vi.mock("../../../src/lib/background", async () => {
   const actual = await vi.importActual<typeof import("../../../src/lib/background")>(
@@ -60,7 +63,19 @@ vi.mock("../../../src/lib/background", async () => {
     retryFailedItems: vi.fn(),
     testDownloaderConnection: testDownloaderConnectionMock,
     upsertSubscriptionDefinition: upsertSubscriptionDefinitionMock,
-    fetchTorrentForUpload: vi.fn()
+    fetchTorrentForUpload: vi.fn(),
+    openOptionsPageAtTarget: vi.fn(async (target: string) => {
+      const optionsUrl = `chrome-extension://test-extension-id/options.html#${target}`
+      const existingTabs = await fakeBrowser.tabs.query({ url: "chrome-extension://test-extension-id/options.html*" })
+      if (existingTabs.length > 0 && typeof existingTabs[0].id === "number") {
+        await tabsUpdateMock(existingTabs[0].id, { url: optionsUrl, active: true })
+        if (typeof existingTabs[0].windowId === "number") {
+          await windowsUpdateMock(existingTabs[0].windowId, { focused: true })
+        }
+      } else {
+        await tabsCreateMock({ url: optionsUrl })
+      }
+    })
   }
 })
 
@@ -124,6 +139,9 @@ function installBrowserSpies() {
   vi.spyOn(fakeBrowser.permissions, "request").mockImplementation(
     vi.fn(async () => true) as never
   )
+  tabsUpdateMock.mockImplementation(vi.fn(async () => {}) as never)
+  tabsCreateMock.mockImplementation(vi.fn(async () => {}) as never)
+  windowsUpdateMock.mockImplementation(vi.fn(async () => {}) as never)
 }
 
 describe("background runtime subscription boundary", () => {
@@ -133,8 +151,7 @@ describe("background runtime subscription boundary", () => {
     vi.clearAllMocks()
     getSubscriptionPolicyConfigMock.mockResolvedValue(createSubscriptionPolicy({
       enabled: true,
-      notificationsEnabled: true,
-      notificationDownloadActionEnabled: true
+      notificationsEnabled: true
     }))
     testDownloaderConnectionMock.mockResolvedValue({
       downloaderId: "qbittorrent",
@@ -142,6 +159,9 @@ describe("background runtime subscription boundary", () => {
       baseUrl: "http://127.0.0.1:17474",
       version: "5.0.0"
     })
+    tabsUpdateMock.mockClear()
+    tabsCreateMock.mockClear()
+    windowsUpdateMock.mockClear()
     installBrowserSpies()
     const { registerBackgroundRuntime } = await import("../../../src/entrypoints/background/runtime")
     registerBackgroundRuntime()
@@ -269,71 +289,40 @@ describe("background runtime subscription boundary", () => {
     })
   })
 
-  it("downloads subscription hits when a subscription notification is clicked and ignores other ids", async () => {
-    downloadSubscriptionHitsMock.mockResolvedValue(undefined)
+  it("navigates to subscription hits workbench when a subscription notification is clicked and ignores other ids", async () => {
     const listener = onClickedAddListener.mock.calls[0]?.[0]
 
     listener?.("not-a-subscription-round")
     await Promise.resolve()
-    expect(downloadSubscriptionHitsMock).not.toHaveBeenCalled()
+    expect(tabsCreateMock).not.toHaveBeenCalled()
+    expect(tabsUpdateMock).not.toHaveBeenCalled()
 
     listener?.("subscription-round:20260414093000000")
     await vi.waitFor(() => {
-      expect(downloadSubscriptionHitsMock).toHaveBeenCalledTimes(1)
+      expect(tabsCreateMock).toHaveBeenCalledTimes(1)
     })
-    expect(downloadSubscriptionHitsMock).toHaveBeenCalledWith({
-      roundId: "subscription-round:20260414093000000"
+    expect(tabsCreateMock).toHaveBeenCalledWith({
+      url: "chrome-extension://test-extension-id/options.html#/subscription-hits?round=subscription-round%3A20260414093000000"
     })
+    expect(downloadSubscriptionHitsMock).not.toHaveBeenCalled()
   })
 
-  it("does not download hits from notification clicks when the click action toggle is disabled", async () => {
-    getSubscriptionPolicyConfigMock.mockResolvedValue(
-      createSubscriptionPolicy({
-        notificationDownloadActionEnabled: false
-      })
-    )
-    downloadSubscriptionHitsMock.mockResolvedValue(undefined)
+  it("does not request downloader permission when notification is clicked", async () => {
     const listener = onClickedAddListener.mock.calls[0]?.[0]
 
     listener?.("subscription-round:20260414093000000")
     await Promise.resolve()
 
-    expect(getSubscriptionPolicyConfigMock).toHaveBeenCalledTimes(1)
-    expect(downloadSubscriptionHitsMock).not.toHaveBeenCalled()
-  })
-
-  it("does not download hits from notification clicks when subscriptions are globally disabled", async () => {
-    getSubscriptionPolicyConfigMock.mockResolvedValue(
-      createSubscriptionPolicy({
-        enabled: false
-      })
-    )
-    downloadSubscriptionHitsMock.mockResolvedValue(undefined)
-    const listener = onClickedAddListener.mock.calls[0]?.[0]
-
-    listener?.("subscription-round:20260414093000000")
-    await Promise.resolve()
-
-    expect(getSubscriptionPolicyConfigMock).toHaveBeenCalledTimes(1)
-    expect(downloadSubscriptionHitsMock).not.toHaveBeenCalled()
     expect(fakeBrowser.permissions.request).not.toHaveBeenCalled()
   })
 
-  it("does not download hits from notification clicks when notifications are globally disabled", async () => {
-    getSubscriptionPolicyConfigMock.mockResolvedValue(
-      createSubscriptionPolicy({
-        notificationsEnabled: false
-      })
-    )
-    downloadSubscriptionHitsMock.mockResolvedValue(undefined)
+  it("does not call download service when notification is clicked", async () => {
     const listener = onClickedAddListener.mock.calls[0]?.[0]
 
     listener?.("subscription-round:20260414093000000")
     await Promise.resolve()
 
-    expect(getSubscriptionPolicyConfigMock).toHaveBeenCalledTimes(1)
     expect(downloadSubscriptionHitsMock).not.toHaveBeenCalled()
-    expect(fakeBrowser.permissions.request).not.toHaveBeenCalled()
   })
 
   it("logs alarm-triggered subscription scan failures", async () => {
@@ -358,9 +347,9 @@ describe("background runtime subscription boundary", () => {
     })
   })
 
-  it("logs subscription notification click download errors", async () => {
+  it("logs subscription notification click navigation errors", async () => {
     const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {})
-    downloadSubscriptionHitsMock.mockRejectedValue(new Error("downloader offline"))
+    tabsCreateMock.mockRejectedValue(new Error("tab creation failed"))
     const listener = onClickedAddListener.mock.calls[0]?.[0]
 
     expect(() => {
@@ -368,26 +357,30 @@ describe("background runtime subscription boundary", () => {
     }).not.toThrow()
 
     await vi.waitFor(() => {
-      expect(downloadSubscriptionHitsMock).toHaveBeenCalledTimes(1)
       expect(warnSpy).toHaveBeenCalledWith(
-        "Subscription notification click download failed.",
+        "Subscription notification click navigation failed.",
         expect.objectContaining({
-          message: "downloader offline"
+          message: "tab creation failed"
         })
       )
     })
   })
 
-  it("still downloads notification hits after permission prompts when extraction is needed", async () => {
-    downloadSubscriptionHitsMock.mockResolvedValue(undefined)
+  it("focuses existing options tab instead of creating new one when options page is already open", async () => {
+    vi.spyOn(fakeBrowser.tabs, "query").mockImplementation(
+      vi.fn(async () => [{ id: 123, windowId: 456, url: "chrome-extension://test-extension-id/options.html#/general" }]) as never
+    )
     const listener = onClickedAddListener.mock.calls[0]?.[0]
 
     listener?.("subscription-round:20260414093000000")
-
     await vi.waitFor(() => {
-      expect(downloadSubscriptionHitsMock).toHaveBeenCalledWith({
-        roundId: "subscription-round:20260414093000000"
-      })
+      expect(tabsUpdateMock).toHaveBeenCalledTimes(1)
     })
+    expect(tabsUpdateMock).toHaveBeenCalledWith(123, {
+      url: "chrome-extension://test-extension-id/options.html#/subscription-hits?round=subscription-round%3A20260414093000000",
+      active: true
+    })
+    expect(windowsUpdateMock).toHaveBeenCalledWith(456, { focused: true })
+    expect(tabsCreateMock).not.toHaveBeenCalled()
   })
 })

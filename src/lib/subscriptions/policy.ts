@@ -5,12 +5,3 @@ export function canCreateSubscriptionNotifications(
 ): boolean {
   return settings.enabled && settings.notificationsEnabled
 }
-
-export function canDownloadSubscriptionNotifications(
-  settings: Pick<
-    SubscriptionPolicyConfig,
-    "enabled" | "notificationsEnabled" | "notificationDownloadActionEnabled"
-  >
-): boolean {
-  return canCreateSubscriptionNotifications(settings) && settings.notificationDownloadActionEnabled
-}

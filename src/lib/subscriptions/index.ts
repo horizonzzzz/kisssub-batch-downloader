@@ -44,10 +44,7 @@ export { getSubscriptionSourceFetcherById } from "./source-fetch"
 export type { SubscriptionSourceFetcher, SubscriptionSourceFetchFunction } from "./source-fetch/types"
 export { ensureSubscriptionAlarm, SUBSCRIPTION_ALARM_NAME } from "./scheduler"
 export { createEmptySubscriptionRuntimeRow } from "./runtime-state"
-export {
-  canCreateSubscriptionNotifications,
-  canDownloadSubscriptionNotifications
-} from "./policy"
+export { canCreateSubscriptionNotifications } from "./policy"
 export {
   DEFAULT_SUBSCRIPTION_POLICY_CONFIG,
   ensureSubscriptionPolicyConfig,

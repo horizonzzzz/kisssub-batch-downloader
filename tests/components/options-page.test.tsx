@@ -66,8 +66,7 @@ const settings = {
   filters: [],
   subscriptionsEnabled: false,
   pollingIntervalMinutes: 30,
-  notificationsEnabled: true,
-  notificationDownloadActionEnabled: true
+  notificationsEnabled: true
 }
 
 const sourceConfig: SourceConfig = {
@@ -114,8 +113,7 @@ const downloaderConfig: DownloaderConfig = {
 const subscriptionPolicy: SubscriptionPolicyConfig = {
   enabled: false,
   pollingIntervalMinutes: 30,
-  notificationsEnabled: true,
-  notificationDownloadActionEnabled: true
+  notificationsEnabled: true
 }
 
 const editableSettings = settings
@@ -123,7 +121,6 @@ const {
   subscriptionsEnabled: _subscriptionsEnabled,
   pollingIntervalMinutes: _pollingIntervalMinutes,
   notificationsEnabled: _notificationsEnabled,
-  notificationDownloadActionEnabled: _notificationDownloadActionEnabled,
   ...formEditableSettings
 } = editableSettings
 

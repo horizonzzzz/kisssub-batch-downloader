@@ -225,6 +225,24 @@ export async function openOptionsPageForRoute(
   await dependencies.createTab(optionsUrl)
 }
 
+export async function openOptionsPageAtTarget(
+  target: string,
+  dependencies: OpenOptionsPageDependencies = DEFAULT_OPEN_OPTIONS_PAGE_DEPENDENCIES
+) {
+  const optionsUrl = dependencies.getExtensionUrl(`options.html#${target}`)
+  const [existingTab] = await dependencies.queryOptionsTabs()
+
+  if (existingTab) {
+    await dependencies.updateTab(existingTab.tabId, optionsUrl)
+    if (typeof existingTab.windowId === "number") {
+      await dependencies.focusWindow(existingTab.windowId)
+    }
+    return
+  }
+
+  await dependencies.createTab(optionsUrl)
+}
+
 export async function queryActiveTabUrl(): Promise<string | null> {
   const activeTab = await queryActiveTabContext()
   return activeTab.url

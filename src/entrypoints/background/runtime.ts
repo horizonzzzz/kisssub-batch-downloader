@@ -9,6 +9,7 @@ import {
   fetchTorrentForUpload,
   notifySupportedSourceTabsOfContentSettingsChange,
   openOptionsPageForRoute,
+  openOptionsPageAtTarget,
   reconcileSubscriptionAlarm,
   retryFailedItems,
   saveGeneralSettings,
@@ -63,7 +64,6 @@ import type { BatchEventPayload } from "../../lib/shared/types"
 import { extractSingleItem } from "../../lib/sources/extraction"
 import { getSourceAdapterForPage } from "../../lib/sources"
 import {
-  canDownloadSubscriptionNotifications,
   parseSubscriptionNotificationRoundId,
   SUBSCRIPTION_ALARM_NAME,
   getSubscriptionPolicyConfig,
@@ -138,19 +138,10 @@ export function registerBackgroundRuntime() {
       return
     }
 
-    void (async () => {
-      const policy = await getSubscriptionPolicyConfig()
-      if (!canDownloadSubscriptionNotifications(policy)) {
-        return
-      }
-
-      const downloaderConfig = await getDownloaderConfig()
-      await ensureDownloaderPermission(downloaderConfig, {
-        interactive: true
-      })
-      await downloadSubscriptionHits({ roundId })
-    })().catch((error) => {
-      console.warn("Subscription notification click download failed.", error)
+    void openOptionsPageAtTarget(
+      `/subscription-hits?round=${encodeURIComponent(roundId)}`
+    ).catch((error) => {
+      console.warn("Subscription notification click navigation failed.", error)
     })
   })
 

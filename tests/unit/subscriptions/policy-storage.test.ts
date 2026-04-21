@@ -31,14 +31,12 @@ describe("subscription policy storage", () => {
       saveSubscriptionPolicyConfig({
         enabled: true,
         pollingIntervalMinutes: 15,
-        notificationsEnabled: true,
-        notificationDownloadActionEnabled: false
+        notificationsEnabled: true
       })
     ).resolves.toEqual({
       enabled: true,
       pollingIntervalMinutes: 15,
-      notificationsEnabled: true,
-      notificationDownloadActionEnabled: false
+      notificationsEnabled: true
     })
   })
 
@@ -46,8 +44,7 @@ describe("subscription policy storage", () => {
     await saveSubscriptionPolicyConfig({
       enabled: true,
       pollingIntervalMinutes: 60,
-      notificationsEnabled: false,
-      notificationDownloadActionEnabled: false
+      notificationsEnabled: false
     })
 
     await ensureSubscriptionPolicyConfig()
@@ -61,8 +58,7 @@ describe("subscription policy storage", () => {
     const config = await saveSubscriptionPolicyConfig({
       enabled: true,
       pollingIntervalMinutes: 200, // Above max 120
-      notificationsEnabled: true,
-      notificationDownloadActionEnabled: true
+      notificationsEnabled: true
     })
 
     expect(config.pollingIntervalMinutes).toBe(120)
@@ -72,8 +68,7 @@ describe("subscription policy storage", () => {
     const config = await saveSubscriptionPolicyConfig({
       enabled: true,
       pollingIntervalMinutes: 2, // Below min 5
-      notificationsEnabled: true,
-      notificationDownloadActionEnabled: true
+      notificationsEnabled: true
     })
 
     expect(config.pollingIntervalMinutes).toBe(5)
@@ -83,8 +78,7 @@ describe("subscription policy storage", () => {
     await saveSubscriptionPolicyConfig({
       enabled: true,
       pollingIntervalMinutes: 45,
-      notificationsEnabled: false,
-      notificationDownloadActionEnabled: false
+      notificationsEnabled: false
     })
 
     await ensureSubscriptionPolicyConfig()
@@ -92,6 +86,27 @@ describe("subscription policy storage", () => {
     const config = await getSubscriptionPolicyConfig()
     expect(config.pollingIntervalMinutes).toBe(45)
     expect(config.notificationsEnabled).toBe(false)
+  })
+
+  it("silently ignores legacy notificationDownloadActionEnabled field from persisted config", async () => {
+    // Simulate legacy persisted data with the obsolete field
+    await fakeBrowser.storage.local.set({
+      subscription_policy_config: {
+        enabled: true,
+        pollingIntervalMinutes: 30,
+        notificationsEnabled: true,
+        notificationDownloadActionEnabled: false
+      }
+    })
+
+    const config = await getSubscriptionPolicyConfig()
+    // The returned config should not have the obsolete field
+    expect(config).toEqual({
+      enabled: true,
+      pollingIntervalMinutes: 30,
+      notificationsEnabled: true
+    })
+    expect("notificationDownloadActionEnabled" in config).toBe(false)
   })
 
 })

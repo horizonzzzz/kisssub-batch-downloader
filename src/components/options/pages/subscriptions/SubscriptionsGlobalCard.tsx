@@ -6,15 +6,13 @@ import {
 
 import { Badge, Card, Input, Label, Switch } from "../../../ui"
 import {
-  formatSubscriptionDateTime,
-  getNotificationDownloadActionStateLabel
+  formatSubscriptionDateTime
 } from "./subscription-workbench"
 
 type SubscriptionsGlobalCardProps = {
   subscriptionsEnabled: boolean
   pollingIntervalMinutes: string
   notificationsEnabled: boolean
-  notificationDownloadActionEnabled: boolean
   configuredCount: number
   enabledCount: number
   scannedCount: number
@@ -27,14 +25,12 @@ type SubscriptionsGlobalCardProps = {
   onPollingIntervalMinutesChange: (minutes: string) => void
   onPollingIntervalMinutesBlur: () => void
   onNotificationsEnabledChange: (enabled: boolean) => void
-  onNotificationDownloadActionEnabledChange: (enabled: boolean) => void
 }
 
 export function SubscriptionsGlobalCard({
   subscriptionsEnabled,
   pollingIntervalMinutes,
   notificationsEnabled,
-  notificationDownloadActionEnabled,
   configuredCount,
   enabledCount,
   scannedCount,
@@ -46,13 +42,8 @@ export function SubscriptionsGlobalCard({
   onSubscriptionsEnabledChange,
   onPollingIntervalMinutesChange,
   onPollingIntervalMinutesBlur,
-  onNotificationsEnabledChange,
-  onNotificationDownloadActionEnabledChange
+  onNotificationsEnabledChange
 }: SubscriptionsGlobalCardProps) {
-  const notificationActionState = getNotificationDownloadActionStateLabel(
-    notificationsEnabled,
-    notificationDownloadActionEnabled
-  )
   const controlsDisabled = loading || saving
 
   return (
@@ -125,14 +116,6 @@ export function SubscriptionsGlobalCard({
               disabled={controlsDisabled}
               onCheckedChange={onNotificationsEnabledChange}
             />
-
-            <SettingSwitchRow
-              title={i18n.t("options.subscriptions.global.notificationDownloadActionTitle")}
-              description={i18n.t("options.subscriptions.global.notificationDownloadActionDescription")}
-              checked={notificationDownloadActionEnabled}
-              disabled={controlsDisabled || !notificationsEnabled}
-              onCheckedChange={onNotificationDownloadActionEnabledChange}
-            />
           </div>
 
           <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4">
@@ -144,10 +127,6 @@ export function SubscriptionsGlobalCard({
               <StatusRow
                 label={i18n.t("options.subscriptions.global.lastSchedulerRunAt")}
                 value={formatSubscriptionDateTime(lastSchedulerRunAt)}
-              />
-              <StatusRow
-                label={i18n.t("options.subscriptions.global.notificationActionStateLabel")}
-                value={notificationActionState}
               />
               <StatusRow
                 label={i18n.t("options.subscriptions.global.supportedSourcesLabel")}

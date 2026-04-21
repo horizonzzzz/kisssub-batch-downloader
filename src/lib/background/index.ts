@@ -4,6 +4,7 @@ export {
   buildPopupState,
   notifySupportedSourceTabsOfContentSettingsChange,
   openOptionsPageForRoute,
+  openOptionsPageAtTarget,
   queryActiveTabId,
   queryActiveTabUrl,
   setSourceEnabledForPopup

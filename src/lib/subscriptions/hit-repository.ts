@@ -33,7 +33,7 @@ export async function listSubscriptionHitsBySubscriptionId(
     .where("subscriptionId")
     .equals(subscriptionId)
     .sortBy("discoveredAt")
-  return hits.toReversed()
+  return [...hits].reverse()
 }
 
 export async function listSubscriptionHits(): Promise<SubscriptionHitStoreRow[]> {

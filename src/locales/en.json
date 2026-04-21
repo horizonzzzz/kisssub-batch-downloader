@@ -509,6 +509,7 @@
       "add": "Add subscription",
       "edit": "Edit",
       "duplicate": "Duplicate",
+      "openHitsWorkbench": "Open hits workbench",
       "configuredCount": "$1 subscriptions configured",
       "enabledCount": "$1 enabled",
       "scannedCount": "$1 with scan history",
@@ -536,19 +537,11 @@
         "pollingIntervalHint": "The scheduler runs between 5 and 120 minutes and uses the saved value after the next settings save.",
         "notificationsEnabledTitle": "Enable notifications",
         "notificationsEnabledDescription": "Show browser notifications when a polling round discovers new hits.",
-        "notificationDownloadActionTitle": "Notification click downloads hits",
-        "notificationDownloadActionDescription": "If enabled, clicking a notification triggers the current downloader flow for that round.",
         "saveButton": "Save subscription settings",
         "runtimeTitle": "Runtime status",
         "lastSchedulerRunAt": "Last scheduler run",
-        "notificationActionStateLabel": "Notification click action",
         "supportedSourcesLabel": "Background scan support",
-        "supportedSourcesValue": "ACG.RIP, Bangumi.moe",
-        "notificationActionState": {
-          "enabled": "Clicking a notification starts the download flow.",
-          "manualOnly": "Notifications stay informational only.",
-          "notificationsOff": "Notifications are currently disabled."
-        }
+        "supportedSourcesValue": "ACG.RIP, Bangumi.moe"
       },
       "card": {
         "sourceScope": "Source scope",
@@ -656,31 +649,5 @@
       "messageOne": "1 new subscription hit is ready.",
       "messageMany": "$1 new subscription hits are ready."
     }
-  },
-  "subscriptionHits": {
-    "title": "Subscription Hits",
-    "description": "Manage and download subscription-matched resources.",
-    "searchPlaceholder": "Search title...",
-    "filterAll": "All",
-    "filterPending": "Pending",
-    "filterNew": "New",
-    "filterFailed": "Failed",
-    "filterProcessed": "Processed",
-    "selectedCount": "$1 selected",
-    "downloadSelected": "Download selected",
-    "noHits": "No subscription hits yet",
-    "noHitsDescription": "Subscription hits will appear here after polling scans find matching resources.",
-    "hitCount": "$1 hits",
-    "latestHit": "Latest hit",
-    "highlightedCount": "$1 highlighted",
-    "download": "Download",
-    "downloading": "Downloading...",
-    "downloadSuccess": "Submitted $1, duplicates $2, failed $3.",
-    "selectHitAriaLabel": "Select $1",
-    "downloadHitAriaLabel": "Download $1",
-    "statusIdle": "Pending",
-    "statusSubmitted": "Submitted",
-    "statusDuplicate": "Duplicate",
-    "statusFailed": "Failed"
   }
 }

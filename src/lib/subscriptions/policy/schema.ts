@@ -9,8 +9,7 @@ export function sanitizeSubscriptionPolicyConfig(raw: unknown): SubscriptionPoli
     return {
       enabled: false,
       pollingIntervalMinutes: DEFAULT_SUBSCRIPTION_POLLING_INTERVAL_MINUTES,
-      notificationsEnabled: true,
-      notificationDownloadActionEnabled: true
+      notificationsEnabled: true
     }
   }
 
@@ -19,8 +18,7 @@ export function sanitizeSubscriptionPolicyConfig(raw: unknown): SubscriptionPoli
   return {
     enabled: normalizeBoolean(record.enabled, false),
     pollingIntervalMinutes: normalizeSubscriptionPollingInterval(record.pollingIntervalMinutes),
-    notificationsEnabled: normalizeBoolean(record.notificationsEnabled, true),
-    notificationDownloadActionEnabled: normalizeBoolean(record.notificationDownloadActionEnabled, true)
+    notificationsEnabled: normalizeBoolean(record.notificationsEnabled, true)
   }
 }
 
