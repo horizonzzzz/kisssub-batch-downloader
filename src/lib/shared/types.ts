@@ -22,8 +22,6 @@ export type FilterEntry = {
   any: FilterCondition[]
 }
 
-export type SubscriptionDeliveryMode = "direct-only" | "allow-detail-extraction"
-
 export type SubscriptionEntry = {
   id: string
   name: string
@@ -36,7 +34,6 @@ export type SubscriptionEntry = {
     must: FilterCondition[]
     any: FilterCondition[]
   }
-  deliveryMode: SubscriptionDeliveryMode
   createdAt: string
   baselineCreatedAt: string
 }
@@ -50,7 +47,6 @@ export type EditableSubscriptionDefinition = Pick<
   | "titleQuery"
   | "subgroupQuery"
   | "advanced"
-  | "deliveryMode"
 >
 
 export type SubscriptionHitRecord = {

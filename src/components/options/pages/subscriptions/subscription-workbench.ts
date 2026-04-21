@@ -2,15 +2,10 @@ import { i18n } from "../../../../lib/i18n"
 import type {
   FilterCondition,
   SourceId,
-  SubscriptionDeliveryMode,
   SubscriptionEntry,
   SubscriptionHitRecord,
   SubscriptionRuntimeState
 } from "../../../../lib/shared/types"
-import {
-  getDefaultSubscriptionDeliveryMode,
-  resolveSubscriptionDeliveryMode
-} from "../../../../lib/subscriptions/delivery-mode"
 
 export type SubscriptionWorkbenchDraft = SubscriptionEntry
 export type SubscriptionWorkbenchCondition = FilterCondition
@@ -61,28 +56,6 @@ export function getSubscriptionConditionFieldOptions(): Array<{
   ]
 }
 
-export function getSubscriptionDeliveryModeOptions(): Array<{
-  value: SubscriptionDeliveryMode
-  label: string
-}> {
-  return [
-    {
-      value: "direct-only",
-      label: i18n.t("options.subscriptions.deliveryMode.directOnly")
-    },
-    {
-      value: "allow-detail-extraction",
-      label: i18n.t("options.subscriptions.deliveryMode.allowDetailExtraction")
-    }
-  ]
-}
-
-export function getSubscriptionDeliveryModeLabel(mode: SubscriptionDeliveryMode) {
-  return (
-    getSubscriptionDeliveryModeOptions().find((option) => option.value === mode)?.label ?? mode
-  )
-}
-
 export function createSubscriptionWorkbenchId(prefix: string) {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
 }
@@ -116,7 +89,6 @@ export function createSubscriptionDraft(
         must: [],
         any: []
       },
-      deliveryMode: getDefaultSubscriptionDeliveryMode([DEFAULT_SOURCE_ID]),
       createdAt: now,
       baselineCreatedAt: now
     }
@@ -129,10 +101,6 @@ export function createSubscriptionDraft(
     sourceIds: editableSourceIds.length ? editableSourceIds : [DEFAULT_SOURCE_ID],
     multiSiteModeEnabled:
       subscription.multiSiteModeEnabled && editableSourceIds.length > 1,
-    deliveryMode: resolveSubscriptionDeliveryMode(
-      editableSourceIds.length ? editableSourceIds : [DEFAULT_SOURCE_ID],
-      subscription.deliveryMode
-    ),
     titleQuery: subscription.titleQuery,
     subgroupQuery: subscription.subgroupQuery,
     advanced: {
@@ -196,7 +164,6 @@ export function normalizeSubscriptionDraft(
     name: draft.name.trim(),
     sourceIds,
     multiSiteModeEnabled: draft.multiSiteModeEnabled && sourceIds.length > 1,
-    deliveryMode: resolveSubscriptionDeliveryMode(sourceIds, draft.deliveryMode),
     titleQuery: draft.titleQuery.trim(),
     subgroupQuery: draft.subgroupQuery.trim(),
     advanced: {

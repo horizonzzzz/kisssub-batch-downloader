@@ -34,6 +34,24 @@ function extractTorrentId(detailUrl: string) {
   return match ? match[1].toLowerCase() : ""
 }
 
+export function buildBangumiMoeTorrentDownloadUrl(
+  torrentId: string,
+  title: string,
+  origin = "https://bangumi.moe"
+): string {
+  const normalizedId = normalizeText(torrentId).toLowerCase()
+  const normalizedTitle = normalizeText(title)
+
+  if (!normalizedId || !normalizedTitle) {
+    return ""
+  }
+
+  return new URL(
+    `/download/torrent/${normalizedId}/${encodeURIComponent(normalizedTitle)}.torrent`,
+    origin
+  ).href
+}
+
 function getTitleFromAnchor(anchor: HTMLAnchorElement) {
   const titleNode =
     anchor.closest("h3")?.querySelector("span") ||
@@ -68,9 +86,6 @@ export const bangumiMoeSourceAdapter: SourceAdapter = {
   displayName: "Bangumi.moe",
   supportedDeliveryModes: getSupportedDeliveryModes("bangumimoe"),
   defaultDeliveryMode: DEFAULT_SOURCE_DELIVERY_MODES.bangumimoe,
-  subscriptionListScan: {
-    listPageUrl: "https://bangumi.moe/"
-  },
   matchesListPage(url) {
     if (!matchesHost(url) || this.matchesDetailUrl(url)) {
       return false

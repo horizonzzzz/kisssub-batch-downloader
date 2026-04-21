@@ -54,9 +54,6 @@ export const acgRipSourceAdapter: SourceAdapter = {
   displayName: "ACG.RIP",
   supportedDeliveryModes: getSupportedDeliveryModes("acgrip"),
   defaultDeliveryMode: DEFAULT_SOURCE_DELIVERY_MODES.acgrip,
-  subscriptionListScan: {
-    listPageUrl: "https://acg.rip/"
-  },
   matchesListPage(url) {
     if (!matchesHost(url) || this.matchesDetailUrl(url) || matchesTorrentUrl(url)) {
       return false

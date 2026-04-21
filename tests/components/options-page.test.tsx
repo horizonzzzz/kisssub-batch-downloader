@@ -172,7 +172,6 @@ async function seedSubscriptionFixture() {
     multiSiteModeEnabled: false,
     titleQuery: "Medalist",
     subgroupQuery: "LoliHouse",
-    deliveryMode: "direct-only",
     advanced: {
       must: [],
       any: []
@@ -681,7 +680,7 @@ describe("OptionsPage", () => {
   })
 
   it(
-    "manages Bangumi.moe subscription delivery mode without using app-settings save payload",
+    "manages Bangumi.moe subscription with the current subscription fields only",
     async () => {
       const user = userEvent.setup()
       const api = createOptionsApi()
@@ -697,15 +696,27 @@ describe("OptionsPage", () => {
       await user.type(screen.getByLabelText("订阅名称"), "Bangumi Medalist")
       await user.type(screen.getByLabelText("标题关键词"), "Medalist")
       await user.click(screen.getByTestId("subscription-source-tag-bangumimoe"))
+
       await user.click(screen.getByRole("button", { name: "保存订阅" }))
 
-      expect(api.upsertSubscription).toHaveBeenCalledWith(
-        expect.objectContaining({
-          name: "Bangumi Medalist",
-          sourceIds: ["bangumimoe"],
-          deliveryMode: "allow-detail-extraction"
-        })
-      )
+      const savedSubscription = vi.mocked(api.upsertSubscription).mock.calls[0]?.[0]
+      expect(Object.keys(savedSubscription ?? {}).sort()).toEqual([
+        "advanced",
+        "baselineCreatedAt",
+        "createdAt",
+        "enabled",
+        "id",
+        "multiSiteModeEnabled",
+        "name",
+        "sourceIds",
+        "subgroupQuery",
+        "titleQuery"
+      ])
+      expect(savedSubscription).toEqual(expect.objectContaining({
+        name: "Bangumi Medalist",
+        sourceIds: ["bangumimoe"],
+        titleQuery: "Medalist"
+      }))
     },
     10000
   )
@@ -1256,7 +1267,7 @@ describe("OptionsPage", () => {
 
       render(<OptionsPage api={api} />)
 
-      expect(await screen.findByRole("status")).toHaveTextContent("设置已加载。")
+      await screen.findByText("设置已加载。")
 
       await user.click(screen.getByRole("button", { name: "测试连接" }))
 
@@ -1282,7 +1293,7 @@ describe("OptionsPage", () => {
 
       render(<OptionsPage api={api} />)
 
-      expect(await screen.findByRole("status")).toHaveTextContent("设置已加载。")
+      await screen.findByText("设置已加载。")
 
       await user.click(screen.getByRole("button", { name: "测试连接" }))
 

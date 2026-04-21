@@ -20,7 +20,6 @@ function createSubscription(overrides: Partial<SubscriptionEntry> = {}): Subscri
       must: [],
       any: []
     },
-    deliveryMode: "direct-only",
     createdAt: "2026-04-13T00:00:00.000Z",
     baselineCreatedAt: "2026-04-13T00:00:00.000Z",
     ...overrides
@@ -46,34 +45,54 @@ function createHit(overrides: Partial<SubscriptionHitRecord> = {}): Subscription
 }
 
 describe("subscription workbench helpers", () => {
-  it("coerces Bangumi.moe subscriptions to allow detail extraction in drafts and saves", () => {
-    const existingBangumiSubscription = createSubscription({
-      sourceIds: ["bangumimoe"],
-      deliveryMode: "direct-only"
+  it("creates and normalizes subscription drafts with only the current subscription fields", () => {
+    const draft = createSubscriptionDraft()
+
+    expect(Object.keys(draft).sort()).toEqual([
+      "advanced",
+      "baselineCreatedAt",
+      "createdAt",
+      "enabled",
+      "id",
+      "multiSiteModeEnabled",
+      "name",
+      "sourceIds",
+      "subgroupQuery",
+      "titleQuery"
+    ])
+    expect(draft).toEqual(expect.objectContaining({
+      sourceIds: ["acgrip"],
+      titleQuery: "",
+      subgroupQuery: "",
+      advanced: {
+        must: [],
+        any: []
+      }
+    }))
+
+    const normalized = normalizeSubscriptionDraft({
+      ...draft,
+      name: "Medalist",
+      titleQuery: "Medalist"
     })
 
-    expect(createSubscriptionDraft(existingBangumiSubscription).deliveryMode).toBe(
-      "allow-detail-extraction"
-    )
-    expect(
-      normalizeSubscriptionDraft(
-        createSubscription({
-          sourceIds: ["bangumimoe"],
-          deliveryMode: "direct-only"
-        })
-      ).deliveryMode
-    ).toBe("allow-detail-extraction")
-  })
-
-  it("keeps direct-only for sources that retain direct links", () => {
-    expect(
-      normalizeSubscriptionDraft(
-        createSubscription({
-          sourceIds: ["acgrip"],
-          deliveryMode: "direct-only"
-        })
-      ).deliveryMode
-    ).toBe("direct-only")
+    expect(Object.keys(normalized).sort()).toEqual([
+      "advanced",
+      "baselineCreatedAt",
+      "createdAt",
+      "enabled",
+      "id",
+      "multiSiteModeEnabled",
+      "name",
+      "sourceIds",
+      "subgroupQuery",
+      "titleQuery"
+    ])
+    expect(normalized).toEqual(expect.objectContaining({
+      name: "Medalist",
+      sourceIds: ["acgrip"],
+      titleQuery: "Medalist"
+    }))
   })
 
   it("summarizes the newest retained hit instead of the oldest one", () => {

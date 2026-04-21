@@ -317,12 +317,17 @@ async function prepareSubscriptionHit(
     ...(hit.magnetUrl ? { magnetUrl: hit.magnetUrl } : {}),
     ...(hit.torrentUrl ? { torrentUrl: hit.torrentUrl } : {})
   }
+
   const preparedResult = createPreparedExtractionResult(batchItem)
   if (preparedResult) {
     return classifyExtractionResult(hit.sourceId, preparedResult, sourceConfig, seenHashes, seenUrls)
   }
 
-  if (subscription?.deliveryMode !== "allow-detail-extraction") {
+  try {
+    const extractedResult = await extractSingleItem(batchItem, context)
+    return classifyExtractionResult(hit.sourceId, extractedResult, sourceConfig, seenHashes, seenUrls)
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Hidden detail extraction failed."
     return {
       ok: false,
       title: hit.title,
@@ -330,16 +335,13 @@ async function prepareSubscriptionHit(
       hash: "",
       magnetUrl: "",
       torrentUrl: "",
-      failureReason: "No direct download link retained for this hit.",
       status: "failed",
       deliveryMode: "",
       submitUrl: "",
-      message: "No direct download link retained for this hit."
+      message,
+      failureReason: message
     }
   }
-
-  const extractedResult = await extractSingleItem(batchItem, context)
-  return classifyExtractionResult(hit.sourceId, extractedResult, sourceConfig, seenHashes, seenUrls)
 }
 
 async function submitPreparedHits(

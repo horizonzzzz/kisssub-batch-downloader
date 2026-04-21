@@ -15,10 +15,6 @@ export type SourceSubscriptionScanCandidate = {
   subgroup?: string
 }
 
-export type SourceSubscriptionListScanSupport = {
-  listPageUrl: string
-}
-
 export type ExtractionContext = {
   execution: {
     retryCount: number
@@ -42,5 +38,4 @@ export type SourceAdapter = {
   getDetailAnchors: (root: ParentNode, pageUrl: URL) => HTMLAnchorElement[]
   getBatchItemFromAnchor: (anchor: HTMLAnchorElement, pageUrl: URL) => BatchItem | null
   extractSingleItem: (item: BatchItem, context: ExtractionContext) => Promise<ExtractionResult>
-  subscriptionListScan?: SourceSubscriptionListScanSupport
 }

@@ -1,20 +1,17 @@
-import { afterEach, beforeEach, describe, expect, expectTypeOf, it, vi } from "vitest"
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
-import type { SubscriptionEntry, DeliveryMode } from "../../../src/lib/shared/types"
+import type { SubscriptionEntry } from "../../../src/lib/shared/types"
 import type { SourceConfig } from "../../../src/lib/sources/config/types"
-import type { ScanSubscriptionListResultMessage } from "../../../src/lib/shared/messages"
 import type { SubscriptionPolicyConfig } from "../../../src/lib/subscriptions/policy/types"
 import { DEFAULT_SUBSCRIPTION_POLICY_CONFIG } from "../../../src/lib/subscriptions/policy/defaults"
 import { DEFAULT_SOURCE_CONFIG } from "../../../src/lib/sources/config/defaults"
 import { upsertSubscription } from "../../../src/lib/subscriptions/catalog-repository"
-import { markContentScriptReady, resetContentScriptReadyRegistry } from "../../../src/lib/subscriptions/content-ready"
 import { resetSubscriptionDb, subscriptionDb } from "../../../src/lib/subscriptions/db"
 import { RECENT_HIT_RETENTION_CAP } from "../../../src/lib/subscriptions/retention"
 import { scanSubscriptions } from "../../../src/lib/subscriptions/scan"
 import { scanSubscriptionCandidatesFromSource } from "../../../src/lib/subscriptions/source-scan"
 import type { SubscriptionCandidate } from "../../../src/lib/subscriptions/types"
 import type { SourceSubscriptionScanCandidate } from "../../../src/lib/sources/types"
-import { SCAN_SUBSCRIPTION_LIST_REQUEST } from "../../../src/lib/shared/messages"
 
 function createSubscriptionPolicy(overrides: Partial<SubscriptionPolicyConfig> = {}): SubscriptionPolicyConfig {
   return {
@@ -47,7 +44,6 @@ function createSubscription(
       must: [],
       any: []
     },
-    deliveryMode: "direct-only",
     createdAt: "2026-04-01T00:00:00.000Z",
     baselineCreatedAt: "2026-04-01T00:00:00.000Z",
     ...overrides
@@ -89,27 +85,10 @@ function createStoredHit(index: number) {
 describe("scanSubscriptions", () => {
   beforeEach(async () => {
     await resetSubscriptionDb()
-    resetContentScriptReadyRegistry()
   })
 
   afterEach(async () => {
     await resetSubscriptionDb()
-    resetContentScriptReadyRegistry()
-  })
-
-  it("defines the typed response protocol for content script subscription scan results", () => {
-    // Protocol type contract: content runtime returns typed success/error responses
-    // with normalized candidate data instead of raw executeScript results
-    expectTypeOf<ScanSubscriptionListResultMessage>().toMatchTypeOf<
-      | {
-          ok: true
-          candidates: SourceSubscriptionScanCandidate[]
-        }
-      | {
-          ok: false
-          error: string
-        }
-    >()
   })
 
   it("records first-scan fingerprints without emitting notification hits", async () => {
@@ -262,176 +241,75 @@ describe("scanSubscriptions", () => {
   })
 })
 
-describe("scanSubscriptionCandidatesFromSource", () => {
-  beforeEach(() => {
-    resetContentScriptReadyRegistry()
-  })
-
-  it("requests candidates from the content runtime instead of executeScript", async () => {
-    const mockSendMessageToTab = vi.fn(async () => ({
-      ok: true as const,
-      candidates: [
-        {
-          sourceId: "acgrip" as const,
-          title: "[LoliHouse] Medalist - 01 [1080p]",
-          detailUrl: "https://acg.rip/t/100",
-          magnetUrl: "",
-          torrentUrl: "https://acg.rip/t/100.torrent",
-          subgroup: ""
-        }
-      ]
-    }))
-
-    const mockGetAdapterById = vi.fn(() => ({
-      id: "acgrip" as const,
-      displayName: "ACG.RIP",
-      supportedDeliveryModes: ["magnet", "torrent-url"] as DeliveryMode[],
-      defaultDeliveryMode: "torrent-url" as DeliveryMode,
-      subscriptionListScan: {
-        listPageUrl: "https://acg.rip/"
-      },
-      matchesListPage: vi.fn(() => false),
-      matchesDetailUrl: vi.fn((url: URL) => /\/t\/\d+$/i.test(url.pathname)),
-      getDetailAnchors: vi.fn(() => []),
-      getBatchItemFromAnchor: vi.fn(() => null),
-      extractSingleItem: vi.fn(async () => ({ ok: false, title: "", detailUrl: "", hash: "", magnetUrl: "", torrentUrl: "", failureReason: "" }))
-    }))
-
-    const mockRunWithListPageTab = vi.fn(async (_listPageUrl: string, run: (tabId: number) => Promise<any>) => {
-      return run(12)
-    })
-
-    await scanSubscriptionCandidatesFromSource("acgrip", {
-      getAdapterById: mockGetAdapterById,
-      runWithListPageTab: mockRunWithListPageTab,
-      sendMessageToTab: mockSendMessageToTab,
-      waitForContentScriptReady: vi.fn(async () => {})
-    })
-
-    expect(mockSendMessageToTab).toHaveBeenCalledWith(12, {
-      type: SCAN_SUBSCRIPTION_LIST_REQUEST,
-      sourceId: "acgrip"
-    })
-  })
-
-  it("waits for content script ready signal before requesting scan", async () => {
-    const mockWaitForReady = vi.fn(async () => {})
-    const mockSendMessageToTab = vi.fn(async () => ({
-      ok: true as const,
-      candidates: []
-    }))
-
-    const mockGetAdapterById = vi.fn(() => ({
-      id: "acgrip" as const,
-      displayName: "ACG.RIP",
-      supportedDeliveryModes: ["magnet", "torrent-url"] as DeliveryMode[],
-      defaultDeliveryMode: "torrent-url" as DeliveryMode,
-      subscriptionListScan: {
-        listPageUrl: "https://acg.rip/"
-      },
-      matchesListPage: vi.fn(() => false),
-      matchesDetailUrl: vi.fn((url: URL) => /\/t\/\d+$/i.test(url.pathname)),
-      getDetailAnchors: vi.fn(() => []),
-      getBatchItemFromAnchor: vi.fn(() => null),
-      extractSingleItem: vi.fn(async () => ({ ok: false, title: "", detailUrl: "", hash: "", magnetUrl: "", torrentUrl: "", failureReason: "" }))
-    }))
-
-    const mockRunWithListPageTab = vi.fn(async (_listPageUrl: string, run: (tabId: number) => Promise<any>) => {
-      return run(12)
-    })
-
-    await scanSubscriptionCandidatesFromSource("acgrip", {
-      getAdapterById: mockGetAdapterById,
-      runWithListPageTab: mockRunWithListPageTab,
-      sendMessageToTab: mockSendMessageToTab,
-      waitForContentScriptReady: mockWaitForReady
-    })
-
-    expect(mockWaitForReady).toHaveBeenCalledWith(12, "acgrip")
-    expect(mockSendMessageToTab).toHaveBeenCalledAfter(mockWaitForReady)
-  })
-
-  it("handles scan errors from content runtime", async () => {
-    const mockSendMessageToTab = vi.fn(async () => ({
-      ok: false as const,
-      error: "Failed to parse list page structure"
-    }))
-
-    const mockGetAdapterById = vi.fn(() => ({
-      id: "acgrip" as const,
-      displayName: "ACG.RIP",
-      supportedDeliveryModes: ["magnet", "torrent-url"] as DeliveryMode[],
-      defaultDeliveryMode: "torrent-url" as DeliveryMode,
-      subscriptionListScan: {
-        listPageUrl: "https://acg.rip/"
-      },
-      matchesListPage: vi.fn(() => false),
-      matchesDetailUrl: vi.fn((url: URL) => /\/t\/\d+$/i.test(url.pathname)),
-      getDetailAnchors: vi.fn(() => []),
-      getBatchItemFromAnchor: vi.fn(() => null),
-      extractSingleItem: vi.fn(async () => ({ ok: false, title: "", detailUrl: "", hash: "", magnetUrl: "", torrentUrl: "", failureReason: "" }))
-    }))
-
-    const mockRunWithListPageTab = vi.fn(async (_listPageUrl: string, run: (tabId: number) => Promise<any>) => {
-      return run(12)
-    })
+describe("background fetcher registry", () => {
+  it("fetches ACG.RIP subscription candidates through the background fetcher registry", async () => {
+    const fetchImpl = vi.fn(async () =>
+      new Response(
+        `<table><tr><td><a href="/t/100">[LoliHouse] Medalist - 01 [1080p]</a></td><td><a href="/t/100.torrent">Torrent</a></td></tr></table>`,
+        { status: 200 }
+      )
+    )
 
     await expect(
       scanSubscriptionCandidatesFromSource("acgrip", {
-        getAdapterById: mockGetAdapterById,
-        runWithListPageTab: mockRunWithListPageTab,
-        sendMessageToTab: mockSendMessageToTab,
-        waitForContentScriptReady: vi.fn(async () => {})
-      })
-    ).rejects.toThrow("Failed to parse list page structure")
-  })
-
-  it("consumes a ready signal that arrived before source-scan started waiting", async () => {
-    const mockSendMessageToTab = vi.fn(async () => ({
-      ok: true as const,
-      candidates: [
-        {
-          sourceId: "acgrip" as const,
-          title: "[LoliHouse] Medalist - 01 [1080p]",
-          detailUrl: "https://acg.rip/t/100",
-          magnetUrl: "",
-          torrentUrl: "https://acg.rip/t/100.torrent",
-          subgroup: ""
-        }
-      ]
-    }))
-
-    const mockGetAdapterById = vi.fn(() => ({
-      id: "acgrip" as const,
-      displayName: "ACG.RIP",
-      supportedDeliveryModes: ["magnet", "torrent-url"] as DeliveryMode[],
-      defaultDeliveryMode: "torrent-url" as DeliveryMode,
-      subscriptionListScan: {
-        listPageUrl: "https://acg.rip/"
-      },
-      matchesListPage: vi.fn(() => false),
-      matchesDetailUrl: vi.fn((url: URL) => /\/t\/\d+$/i.test(url.pathname)),
-      getDetailAnchors: vi.fn(() => []),
-      getBatchItemFromAnchor: vi.fn(() => null),
-      extractSingleItem: vi.fn(async () => ({ ok: false, title: "", detailUrl: "", hash: "", magnetUrl: "", torrentUrl: "", failureReason: "" }))
-    }))
-
-    const mockRunWithListPageTab = vi.fn(async (_listPageUrl: string, run: (tabId: number) => Promise<any>) => {
-      markContentScriptReady(12, "acgrip")
-      return run(12)
-    })
-
-    await expect(
-      scanSubscriptionCandidatesFromSource("acgrip", {
-        getAdapterById: mockGetAdapterById,
-        runWithListPageTab: mockRunWithListPageTab,
-        sendMessageToTab: mockSendMessageToTab
+        fetchImpl
       })
     ).resolves.toEqual([
       expect.objectContaining({
         sourceId: "acgrip",
-        detailUrl: "https://acg.rip/t/100"
+        detailUrl: "https://acg.rip/t/100",
+        torrentUrl: "https://acg.rip/t/100.torrent"
       })
     ])
+  })
+
+  it("fetches Bangumi candidates through the API-backed source fetcher", async () => {
+    const fetchImpl = vi.fn(async () =>
+      new Response(
+        JSON.stringify({
+          torrents: [
+            {
+              _id: "69e5c31584f11a93b597ac80",
+              title: "[LoliHouse] Medalist - 01 [1080p]",
+              magnet: "magnet:?xt=urn:btih:AAA111"
+            }
+          ]
+        }),
+        { status: 200 }
+      )
+    )
+
+    await expect(
+      scanSubscriptionCandidatesFromSource("bangumimoe", { fetchImpl })
+    ).resolves.toEqual([
+      expect.objectContaining({
+        sourceId: "bangumimoe",
+        detailUrl: "https://bangumi.moe/torrent/69e5c31584f11a93b597ac80",
+        magnetUrl: "magnet:?xt=urn:btih:AAA111"
+      })
+    ])
+  })
+
+  it("returns an empty list for sources without a registered subscription fetcher", async () => {
+    const fetchImpl = vi.fn()
+
+    await expect(
+      scanSubscriptionCandidatesFromSource("kisssub", {
+        fetchImpl
+      })
+    ).resolves.toEqual([])
+
+    expect(fetchImpl).not.toHaveBeenCalled()
+  })
+
+  it("does not require content-script ready state or tab messaging for subscription scans", async () => {
+    const fetchImpl = vi.fn(async () =>
+      new Response(
+        `<table><tr><td><a href="/t/100">[LoliHouse] Medalist - 01 [1080p]</a></td><td><a href="/t/100.torrent">Torrent</a></td></tr></table>`,
+        { status: 200 }
+      )
+    )
+
+    await expect(scanSubscriptionCandidatesFromSource("acgrip", { fetchImpl })).resolves.toHaveLength(1)
   })
 })

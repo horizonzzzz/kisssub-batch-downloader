@@ -32,7 +32,6 @@ import {
   createSubscriptionDraft,
   getSubscriptionConditionFieldLabel,
   getSubscriptionConditionFieldOptions,
-  getSubscriptionDeliveryModeOptions,
   getSubscriptionValidationError,
   getSubscriptionSourceOptions,
   normalizeSubscriptionDraft,
@@ -42,7 +41,6 @@ import {
   type SubscriptionWorkbenchCondition,
   type SubscriptionWorkbenchDraft
 } from "./subscription-workbench"
-import { resolveSubscriptionDeliveryMode } from "../../../../lib/subscriptions/delivery-mode"
 
 type SubscriptionEditorDialogProps = {
   open: boolean
@@ -66,7 +64,6 @@ export function SubscriptionEditorDialog({
   const nameId = useId()
   const titleQueryId = useId()
   const subgroupQueryId = useId()
-  const deliveryModeOptions = getSubscriptionDeliveryModeOptions()
 
   useEffect(() => {
     if (!open) {
@@ -216,32 +213,6 @@ export function SubscriptionEditorDialog({
             onError={setError}
           />
 
-          <div className="space-y-2">
-            <Label>{i18n.t("options.subscriptions.dialog.deliveryModeLabel")}</Label>
-            <Select
-              value={draft.deliveryMode}
-              onValueChange={(value: string) =>
-                setDraft((current) => ({
-                  ...current,
-                  deliveryMode: resolveSubscriptionDeliveryMode(
-                    current.sourceIds,
-                    value as SubscriptionWorkbenchDraft["deliveryMode"]
-                  )
-                }))
-              }>
-              <SelectTrigger aria-label={i18n.t("options.subscriptions.dialog.deliveryModeLabel")}>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {deliveryModeOptions.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
           <ConditionSection
             title={i18n.t("options.filters.mustTitle")}
             description={i18n.t("options.subscriptions.dialog.mustDescription")}
@@ -372,8 +343,7 @@ function SourceSelectionSection({
                 return {
                   ...current,
                   multiSiteModeEnabled: checked,
-                  sourceIds,
-                  deliveryMode: resolveSubscriptionDeliveryMode(sourceIds, current.deliveryMode)
+                  sourceIds
                 }
               })
             }
@@ -410,11 +380,7 @@ function SourceSelectionSection({
 
                     return {
                       ...current,
-                      sourceIds,
-                      deliveryMode: resolveSubscriptionDeliveryMode(
-                        sourceIds,
-                        current.deliveryMode
-                      )
+                      sourceIds
                     }
                   })
                 }}

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest"
 
+import * as sourceRegistry from "../../../src/lib/sources"
 import { getSourceAdapterById, getSourceAdapterForPage } from "../../../src/lib/sources"
 import {
   DEFAULT_SOURCE_DELIVERY_MODES,
@@ -51,6 +52,37 @@ describe("source registry", () => {
       expect(getSourceAdapterById(sourceId)?.id).toBe(sourceId)
       expect(SITE_CONFIG_META[sourceId].id).toBe(sourceId)
     }
+  })
+
+  it("keeps subscription discovery out of source adapters and source registry exports", () => {
+    expect(Object.keys(getSourceAdapterById("acgrip") ?? {}).sort()).toEqual([
+      "defaultDeliveryMode",
+      "displayName",
+      "extractSingleItem",
+      "getBatchItemFromAnchor",
+      "getDetailAnchors",
+      "id",
+      "matchesDetailUrl",
+      "matchesListPage",
+      "supportedDeliveryModes"
+    ])
+    expect(Object.keys(getSourceAdapterById("bangumimoe") ?? {}).sort()).toEqual([
+      "defaultDeliveryMode",
+      "displayName",
+      "extractSingleItem",
+      "getBatchItemFromAnchor",
+      "getDetailAnchors",
+      "id",
+      "matchesDetailUrl",
+      "matchesListPage",
+      "supportedDeliveryModes"
+    ])
+    expect(Object.keys(sourceRegistry).sort()).toEqual([
+      "getSourceAdapterById",
+      "getSourceAdapterForDetailUrl",
+      "getSourceAdapterForPage",
+      "getSourceAdapters"
+    ])
   })
 
   it("keeps overview accent metadata alongside the shared site configuration", () => {

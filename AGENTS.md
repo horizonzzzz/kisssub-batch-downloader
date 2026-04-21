@@ -129,6 +129,7 @@ The extension injects selection UI into supported list pages, reuses direct magn
   - `src/lib/sources/config/` for per-source defaults, selectors, storage, and types
   - `src/lib/subscriptions/` for subscription definitions, Dexie-backed runtime cache/manager coordination, retained-notification download workflows, grouped source scans, scheduler/alarm helpers, notification payloads, and recent-hit retention
   - `src/lib/subscriptions/policy/` for subscription policy defaults, sanitization, storage, and types
+  - `src/lib/subscriptions/source-fetch/` for background-only source fetchers that fetch subscription candidates from subscription-capable sites without opening hidden tabs
   - `src/lib/shared/` for the WXT browser helper, cross-runtime messages, shared types, and Tailwind utility helpers
 - `.github/workflows/release.yml`
   Tagged-release automation that validates package, manifest `version` / `version_name`, packages the extension, extracts the matching `CHANGELOG.md` section, renames the packaged archive, and publishes the GitHub Release. Prerelease tags must publish prerelease GitHub Releases.
@@ -201,7 +202,7 @@ Use this section as the shortest runtime-oriented guide to the current code layo
 5. `src/lib/subscriptions/scan.ts`
    Groups enabled subscriptions by source, runs one scan per source, updates each subscription's bounded runtime recent-hit cache, and creates retained notification rounds from newly discovered hits.
 6. `src/lib/subscriptions/source-scan.ts`
-   Opens background list tabs only for subscription-capable sources, fetches list-page candidates, and normalizes/deduplicates scan results before matching.
+   Uses source-specific background fetchers for subscription-capable sites and normalizes/deduplicates scan results before matching.
 7. `src/lib/subscriptions/scheduler.ts` and `src/lib/subscriptions/notifications.ts`
    Own the alarm cadence plus notification id/payload construction and round retention for recent hits.
 

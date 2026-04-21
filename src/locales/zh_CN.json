@@ -546,7 +546,6 @@
       },
       "card": {
         "sourceScope": "站点范围",
-        "deliveryMode": "获取方式",
         "titleQuery": "标题关键词",
         "subgroupQuery": "字幕组关键词",
         "mustConditions": "高级必须条件",
@@ -557,10 +556,6 @@
         "lastMatchedAt": "最近命中",
         "lastError": "最近错误",
         "recentHits": "最近命中摘要"
-      },
-      "deliveryMode": {
-        "directOnly": "仅复用直链结果",
-        "allowDetailExtraction": "允许回退到详情页提取"
       },
       "dialog": {
         "addTitle": "新增订阅",
@@ -578,8 +573,7 @@
         "sourceTitle": "来源站点",
         "sourceDescription": "选择这条订阅应该扫描哪些站点。",
         "sourceCount": "已选 $1 个站点",
-        "sourceHint": "当前只有 ACG.RIP 和 Bangumi.moe 支持后台列表扫描，至少保留一个站点。",
-        "deliveryModeLabel": "获取方式",
+        "sourceHint": "当前只有 ACG.RIP 和 Bangumi.moe 支持后台订阅扫描，至少保留一个站点。",
         "mustDescription": "可选的高级必须条件，全部命中才算通过。",
         "mustEmpty": "还没有高级必须条件。",
         "addMust": "添加必须条件",

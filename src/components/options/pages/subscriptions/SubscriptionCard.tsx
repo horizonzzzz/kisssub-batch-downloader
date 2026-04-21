@@ -8,7 +8,6 @@ import { Badge, Button, Card, Switch } from "../../../ui"
 import { HiOutlineDocumentDuplicate, HiOutlinePencilSquare, HiOutlineTrash } from "react-icons/hi2"
 
 import {
-  getSubscriptionDeliveryModeLabel,
   getSubscriptionRuntimeSummary,
   summarizeSubscriptionConditionList,
   summarizeSubscriptionSourceIds
@@ -50,9 +49,6 @@ export function SubscriptionCard({
                   ? i18n.t("options.subscriptions.badge.multiSite")
                   : i18n.t("options.subscriptions.badge.singleSite")}
               </Badge>
-              <Badge variant="brand">
-                {getSubscriptionDeliveryModeLabel(subscription.deliveryMode)}
-              </Badge>
             </div>
             <p className="text-sm leading-6 text-zinc-500">
               {i18n.t("options.subscriptions.cardDescription")}
@@ -84,10 +80,6 @@ export function SubscriptionCard({
           <FieldBlock
             label={i18n.t("options.subscriptions.card.sourceScope")}
             value={summarizeSubscriptionSourceIds(subscription.sourceIds)}
-          />
-          <FieldBlock
-            label={i18n.t("options.subscriptions.card.deliveryMode")}
-            value={getSubscriptionDeliveryModeLabel(subscription.deliveryMode)}
           />
           <FieldBlock
             label={i18n.t("options.subscriptions.card.titleQuery")}

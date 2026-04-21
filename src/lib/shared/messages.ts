@@ -7,7 +7,6 @@ import type {
 } from "./types"
 import type { TaskHistoryRecord } from "../history/types"
 import type { PopupOptionsRoute, PopupStateViewModel } from "./popup"
-import type { SourceSubscriptionScanCandidate } from "../sources/types"
 import type { FilterConfig } from "../filter-rules/types"
 import type { SourceConfig } from "../sources/config/types"
 import type { DownloaderConfig } from "../downloader/config/types"
@@ -20,8 +19,6 @@ import { getBrowser } from "./browser"
 
 export const BATCH_EVENT = "ANIME_BT_BATCH_EVENT"
 export const CONTENT_SETTINGS_CHANGED_EVENT = "ANIME_BT_CONTENT_SETTINGS_CHANGED_EVENT"
-export const SCAN_SUBSCRIPTION_LIST_REQUEST = "ANIME_BT_SCAN_SUBSCRIPTION_LIST"
-export const CONTENT_SCRIPT_READY_EVENT = "ANIME_BT_CONTENT_SCRIPT_READY"
 
 export type BatchEventMessage = {
   type: typeof BATCH_EVENT
@@ -34,26 +31,6 @@ export type ContentSettingsChangedMessage = {
 export type ContentRuntimeMessage =
   | BatchEventMessage
   | ContentSettingsChangedMessage
-
-export type ScanSubscriptionListMessage = {
-  type: typeof SCAN_SUBSCRIPTION_LIST_REQUEST
-  sourceId: SourceId
-}
-
-export type ContentScriptReadyMessage = {
-  type: typeof CONTENT_SCRIPT_READY_EVENT
-  sourceId: SourceId
-}
-
-export type ScanSubscriptionListResultMessage =
-  | {
-      ok: true
-      candidates: SourceSubscriptionScanCandidate[]
-    }
-  | {
-      ok: false
-      error: string
-    }
 
 export type RuntimeRequest =
   | { type: "GET_HISTORY" }
@@ -84,8 +61,6 @@ export type RuntimeRequest =
   | { type: "START_BATCH_DOWNLOAD"; items?: BatchItem[]; savePath?: string }
   | { type: "UPSERT_SUBSCRIPTION"; subscription: SubscriptionEntry }
   | { type: "DELETE_SUBSCRIPTION"; subscriptionId: string }
-  | { type: "SCAN_SUBSCRIPTION_LIST"; sourceId: SourceId }
-  | { type: typeof CONTENT_SCRIPT_READY_EVENT; sourceId: SourceId }
   | { type: "GET_SUBSCRIPTION_POLICY" }
   | { type: "SAVE_SUBSCRIPTION_POLICY"; config: SubscriptionPolicyConfig }
 
@@ -145,12 +120,6 @@ export type UpsertSubscriptionSuccessResponse = {
 }
 
 export type DeleteSubscriptionSuccessResponse = {
-  ok: true
-}
-
-export type ScanSubscriptionListSuccessResponse = ScanSubscriptionListResultMessage
-
-export type ContentScriptReadySuccessResponse = {
   ok: true
 }
 
@@ -255,8 +224,6 @@ export type RuntimeSuccessResponseMap = {
   START_BATCH_DOWNLOAD: StartBatchDownloadSuccessResponse
   UPSERT_SUBSCRIPTION: UpsertSubscriptionSuccessResponse
   DELETE_SUBSCRIPTION: DeleteSubscriptionSuccessResponse
-  SCAN_SUBSCRIPTION_LIST: ScanSubscriptionListSuccessResponse
-  [CONTENT_SCRIPT_READY_EVENT]: ContentScriptReadySuccessResponse
   GET_SUBSCRIPTION_POLICY: GetSubscriptionPolicySuccessResponse
   SAVE_SUBSCRIPTION_POLICY: SaveSubscriptionPolicySuccessResponse
 }
@@ -279,8 +246,6 @@ export type OpenOptionsPageResponse = RuntimeResponseFor<"OPEN_OPTIONS_PAGE">
 export type StartBatchDownloadResponse = RuntimeResponseFor<"START_BATCH_DOWNLOAD">
 export type UpsertSubscriptionResponse = RuntimeResponseFor<"UPSERT_SUBSCRIPTION">
 export type DeleteSubscriptionResponse = RuntimeResponseFor<"DELETE_SUBSCRIPTION">
-export type ScanSubscriptionListResponse = RuntimeResponseFor<"SCAN_SUBSCRIPTION_LIST">
-export type ContentScriptReadyResponse = RuntimeResponseFor<typeof CONTENT_SCRIPT_READY_EVENT>
 export type GetFilterConfigResponse = RuntimeResponseFor<"GET_FILTER_CONFIG">
 export type SaveFilterConfigResponse = RuntimeResponseFor<"SAVE_FILTER_CONFIG">
 export type GetSourceConfigResponse = RuntimeResponseFor<"GET_SOURCE_CONFIG">
