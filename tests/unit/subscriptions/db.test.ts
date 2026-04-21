@@ -222,6 +222,35 @@ describe("subscription catalog repository", () => {
     )
   })
 
+  it("allows brand-new subscriptions to be created through upsert", async () => {
+    await upsertSubscription(
+      createSubscription({
+        id: "sub-new",
+        name: "New Subscription",
+        titleQuery: "new subscription"
+      })
+    )
+
+    await expect(subscriptionDb.subscriptions.get("sub-new")).resolves.toEqual(
+      expect.objectContaining({
+        id: "sub-new",
+        name: "New Subscription",
+        deletedAt: null
+      })
+    )
+  })
+
+  it("rejects upsert payloads that already carry a tombstone marker", async () => {
+    await expect(
+      upsertSubscription(
+        createSubscription({
+          id: "sub-1",
+          deletedAt: "2026-04-18T00:00:00.000Z"
+        })
+      )
+    ).rejects.toThrow("Cannot upsert tombstoned subscription: sub-1")
+  })
+
   it("does not allow replace catalog to undelete a tombstoned subscription", async () => {
     await createSubscriptionRecord(createSubscription())
     await softDeleteSubscriptionRecord("sub-1", "2026-04-18T00:00:00.000Z")
@@ -239,6 +268,19 @@ describe("subscription catalog repository", () => {
         enabled: false,
         deletedAt: "2026-04-18T00:00:00.000Z"
       })
+    )
+  })
+
+  it("rejects replace catalog payloads that already carry a tombstone marker", async () => {
+    await expect(
+      replaceSubscriptionCatalog([
+        createSubscription({
+          id: "sub-1",
+          deletedAt: "2026-04-18T00:00:00.000Z"
+        })
+      ])
+    ).rejects.toThrow(
+      "Active catalog input cannot include tombstoned subscription: sub-1"
     )
   })
 

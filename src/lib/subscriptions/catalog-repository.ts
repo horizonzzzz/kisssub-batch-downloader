@@ -191,7 +191,7 @@ export async function upsertSubscription(subscription: SubscriptionEntry): Promi
     async () => {
       const previous = await subscriptionDb.subscriptions.get(normalizedSubscription.id)
       const normalizedPrevious = previous ? normalizeSubscriptionRecord(previous) : null
-      if (normalizedPrevious?.deletedAt !== null) {
+      if (normalizedPrevious && normalizedPrevious.deletedAt !== null) {
         throw new Error(
           `Cannot update tombstoned subscription: ${normalizedSubscription.id}`
         )

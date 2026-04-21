@@ -861,6 +861,7 @@ describe("OptionsPage", () => {
         "advanced",
         "baselineCreatedAt",
         "createdAt",
+        "deletedAt",
         "enabled",
         "id",
         "multiSiteModeEnabled",
@@ -872,7 +873,8 @@ describe("OptionsPage", () => {
       expect(savedSubscription).toEqual(expect.objectContaining({
         name: "Bangumi Medalist",
         sourceIds: ["bangumimoe"],
-        titleQuery: "Medalist"
+        titleQuery: "Medalist",
+        deletedAt: null
       }))
     },
     10000
