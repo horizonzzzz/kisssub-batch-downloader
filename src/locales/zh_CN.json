@@ -509,7 +509,6 @@
       "add": "新增订阅",
       "edit": "编辑",
       "duplicate": "复制",
-      "openHitsWorkbench": "打开命中工作台",
       "configuredCount": "已配置 $1 条订阅",
       "enabledCount": "已启用 $1 条",
       "scannedCount": "已有扫描记录 $1 条",
@@ -537,11 +536,19 @@
         "pollingIntervalHint": "支持 5 到 120 分钟，保存设置后按最新值生效。",
         "notificationsEnabledTitle": "启用通知",
         "notificationsEnabledDescription": "后台轮询发现新的命中记录时显示浏览器通知。",
+        "notificationDownloadActionTitle": "点击通知后直接处理命中",
+        "notificationDownloadActionDescription": "开启后，点击通知会直接触发当前下载器流程来处理该轮命中。",
         "saveButton": "保存订阅设置",
         "runtimeTitle": "运行状态",
         "lastSchedulerRunAt": "上次调度运行",
+        "notificationActionStateLabel": "通知点击行为",
         "supportedSourcesLabel": "当前后台扫描支持",
-        "supportedSourcesValue": "ACG.RIP、Bangumi.moe"
+        "supportedSourcesValue": "ACG.RIP、Bangumi.moe",
+        "notificationActionState": {
+          "enabled": "点击通知后会直接进入下载流程。",
+          "manualOnly": "通知仅用于提醒，不会自动处理命中。",
+          "notificationsOff": "通知当前已关闭。"
+        }
       },
       "card": {
         "sourceScope": "站点范围",
@@ -599,6 +606,30 @@
         "latestHitSingle": "最近命中：$1",
         "latestHitMany": "最近命中：$1，共 $2 条"
       }
+    },
+    "subscriptionHits": {
+      "title": "订阅命中",
+      "description": "管理和下载订阅匹配的资源。",
+      "filterAll": "全部",
+      "filterPending": "待处理",
+      "filterNew": "新发现",
+      "filterFailed": "失败",
+      "filterProcessed": "已处理",
+      "downloadSelected": "下载选中项",
+      "download": "下载",
+      "searchPlaceholder": "搜索命中...",
+      "selectedCount": "已选 $1 项",
+      "noHits": "暂无订阅命中",
+      "noHitsDescription": "后台轮询发现新资源后，订阅命中将在此显示。",
+      "statusIdle": "待处理",
+      "statusSubmitted": "已提交",
+      "statusDuplicate": "重复",
+      "statusFailed": "失败",
+      "selectHitAriaLabel": "选择 $1",
+      "downloadHitAriaLabel": "下载 $1",
+      "highlightedCount": "$1 条高亮",
+      "hitCount": "$1 条命中",
+      "latestHit": "最近命中"
     }
   },
   "content": {

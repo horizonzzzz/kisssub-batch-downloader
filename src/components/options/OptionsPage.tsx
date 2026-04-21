@@ -7,7 +7,8 @@ import {
   Route,
   Routes,
   useLocation,
-  useNavigate
+  useNavigate,
+  useSearchParams
 } from "react-router-dom"
 
 import type {
@@ -86,6 +87,7 @@ function OptionsWorkspace({ api }: OptionsPageProps) {
 function OptionsWorkspaceContent({ api }: OptionsPageProps) {
   const location = useLocation()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const downloaderWorkbench = useDownloaderWorkbench()
   const activeMeta = useMemo(
     () => getOptionsRouteMeta(location.pathname),
@@ -93,6 +95,7 @@ function OptionsWorkspaceContent({ api }: OptionsPageProps) {
   )
   const localizedRoutes = useMemo(() => getOptionsRoutes(), [])
   const currentDownloaderName = getDownloaderMeta(downloaderWorkbench.config.activeId).displayName
+  const roundId = searchParams.get("round")
 
   return (
     <div className="flex min-h-screen flex-col bg-zinc-50 text-zinc-900 lg:flex-row lg:items-start">
@@ -109,7 +112,7 @@ function OptionsWorkspaceContent({ api }: OptionsPageProps) {
           <Route path="/sites" element={<SitesPage api={api} />} />
           <Route path="/filters" element={<FiltersPage api={api} />} />
           <Route path="/subscriptions" element={<SubscriptionsPage api={api} />} />
-          <Route path="/subscription-hits" element={<SubscriptionHitsPage api={api} />} />
+          <Route path="/subscription-hits" element={<SubscriptionHitsPage api={api} initialRoundId={roundId} />} />
           <Route path="/history" element={<HistoryPage />} />
           <Route path="/overview" element={<OverviewPage />} />
           <Route path="*" element={<Navigate to={DEFAULT_OPTIONS_ROUTE} replace />} />
