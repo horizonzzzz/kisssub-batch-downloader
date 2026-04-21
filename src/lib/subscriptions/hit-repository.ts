@@ -29,11 +29,11 @@ export async function listSubscriptionHitsByIds(
 export async function listSubscriptionHitsBySubscriptionId(
   subscriptionId: string
 ): Promise<SubscriptionHitStoreRow[]> {
-  return subscriptionDb.subscriptionHits
+  const hits = await subscriptionDb.subscriptionHits
     .where("subscriptionId")
     .equals(subscriptionId)
-    .reverse()
     .sortBy("discoveredAt")
+  return hits.toReversed()
 }
 
 export async function listSubscriptionHits(): Promise<SubscriptionHitStoreRow[]> {
