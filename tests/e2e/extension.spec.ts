@@ -602,21 +602,62 @@ test("subscriptions page refreshes from background Dexie mutations without reloa
     })
     await expect(createdCard).toHaveCount(1)
 
-    await createdCard.getByRole("button", { name: "编辑" }).click()
-    await expect(page.getByRole("dialog", { name: "编辑订阅" })).toBeVisible()
-    await page.getByLabel("订阅名称").fill("Medalist S2")
-    await page.getByRole("button", { name: "保存订阅" }).click()
-
-    const updatedCard = page.getByTestId(/subscription-card-/).filter({
-      has: page.getByRole("heading", { name: "Medalist S2", exact: true })
+    const subscriptionId = await createdCard.evaluate((element) => {
+      const testId = element.getAttribute("data-testid") ?? ""
+      return testId.replace(/^subscription-card-/, "")
     })
-    await expect(updatedCard).toHaveCount(1)
 
-    await updatedCard.getByRole("button", { name: "删除" }).click()
-    await expect(page.getByText("确定删除订阅“Medalist S2”吗？")).toBeVisible()
-    await page.getByRole("button", { name: "删除" }).last().click()
+    await page.evaluate(async (targetSubscriptionId) => {
+      const runtimeBrowser = (globalThis as typeof globalThis & {
+        browser?: typeof chrome
+        chrome?: typeof chrome
+      }).browser ?? (globalThis as typeof globalThis & { chrome?: typeof chrome }).chrome
 
-    await expect(page.getByRole("heading", { name: "Medalist S2", exact: true })).toHaveCount(0)
+      if (!runtimeBrowser?.runtime?.sendMessage) {
+        throw new Error("Runtime messaging is unavailable in the options page")
+      }
+
+      const response = await runtimeBrowser.runtime.sendMessage({
+        type: "SET_SUBSCRIPTION_ENABLED",
+        subscriptionId: targetSubscriptionId,
+        enabled: false
+      })
+
+      if (!response?.ok) {
+        throw new Error(response?.error ?? "Failed to disable subscription")
+      }
+    }, subscriptionId)
+
+    const disabledCard = page.getByTestId(/subscription-card-/).filter({
+      has: page.getByRole("heading", { name: "Medalist", exact: true })
+    })
+    await expect(disabledCard).toHaveCount(1)
+    await expect(disabledCard.getByRole("switch", { name: "Medalist 启用开关" })).toHaveAttribute(
+      "aria-checked",
+      "false"
+    )
+
+    await page.evaluate(async (targetSubscriptionId) => {
+      const runtimeBrowser = (globalThis as typeof globalThis & {
+        browser?: typeof chrome
+        chrome?: typeof chrome
+      }).browser ?? (globalThis as typeof globalThis & { chrome?: typeof chrome }).chrome
+
+      if (!runtimeBrowser?.runtime?.sendMessage) {
+        throw new Error("Runtime messaging is unavailable in the options page")
+      }
+
+      const response = await runtimeBrowser.runtime.sendMessage({
+        type: "DELETE_SUBSCRIPTION",
+        subscriptionId: targetSubscriptionId
+      })
+
+      if (!response?.ok) {
+        throw new Error(response?.error ?? "Failed to delete subscription")
+      }
+    }, subscriptionId)
+
+    await expect(page.getByRole("heading", { name: "Medalist", exact: true })).toHaveCount(0)
     await expect(page.getByText("还没有订阅规则")).toBeVisible()
 
     await page.close()
