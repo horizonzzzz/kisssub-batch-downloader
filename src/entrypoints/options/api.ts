@@ -32,6 +32,12 @@ export type OptionsApi = {
   saveSubscriptionPolicy: (config: SubscriptionPolicyConfig) => Promise<SubscriptionPolicyConfig>
   upsertSubscription: (subscription: SubscriptionEntry) => Promise<void>
   deleteSubscription: (subscriptionId: string) => Promise<void>
+  downloadSubscriptionHits: (hitIds: string[]) => Promise<{
+    attemptedHits: number
+    submittedHits: number
+    duplicateHits: number
+    failedHits: number
+  }>
 }
 
 export const optionsApi: OptionsApi = {
@@ -202,5 +208,17 @@ export const optionsApi: OptionsApi = {
     }
 
     return response.preferences
+  },
+  async downloadSubscriptionHits(hitIds: string[]) {
+    const response = await sendRuntimeRequest({
+      type: "DOWNLOAD_SUBSCRIPTION_HITS",
+      hitIds
+    })
+
+    if (!response.ok) {
+      throw new Error(response.error || i18n.t("options.status.saveFailed"))
+    }
+
+    return response.result
   }
 }

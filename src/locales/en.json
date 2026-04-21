@@ -184,6 +184,12 @@
         "title": "Overview",
         "description": "Review the supported sites and jump to them quickly.",
         "footerLabel": "Viewing source overview"
+      },
+      "subscriptionHits": {
+        "label": "Subscription Hits",
+        "title": "Subscription Hits",
+        "description": "Manage and download subscription-matched resources.",
+        "footerLabel": "Managing subscription hits"
       }
     },
     "general": {
@@ -650,5 +656,31 @@
       "messageOne": "1 new subscription hit is ready.",
       "messageMany": "$1 new subscription hits are ready."
     }
+  },
+  "subscriptionHits": {
+    "title": "Subscription Hits",
+    "description": "Manage and download subscription-matched resources.",
+    "searchPlaceholder": "Search title...",
+    "filterAll": "All",
+    "filterPending": "Pending",
+    "filterNew": "New",
+    "filterFailed": "Failed",
+    "filterProcessed": "Processed",
+    "selectedCount": "$1 selected",
+    "downloadSelected": "Download selected",
+    "noHits": "No subscription hits yet",
+    "noHitsDescription": "Subscription hits will appear here after polling scans find matching resources.",
+    "hitCount": "$1 hits",
+    "latestHit": "Latest hit",
+    "highlightedCount": "$1 highlighted",
+    "download": "Download",
+    "downloading": "Downloading...",
+    "downloadSuccess": "Submitted $1, duplicates $2, failed $3.",
+    "selectHitAriaLabel": "Select $1",
+    "downloadHitAriaLabel": "Download $1",
+    "statusIdle": "Pending",
+    "statusSubmitted": "Submitted",
+    "statusDuplicate": "Duplicate",
+    "statusFailed": "Failed"
   }
 }

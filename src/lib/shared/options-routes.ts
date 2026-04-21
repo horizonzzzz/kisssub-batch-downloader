@@ -3,6 +3,7 @@ export const OPTIONS_ROUTE_PATHS = [
   "/sites",
   "/filters",
   "/subscriptions",
+  "/subscription-hits",
   "/history",
   "/overview"
 ] as const
@@ -12,6 +13,7 @@ export const [
   SITES_ROUTE,
   FILTERS_ROUTE,
   SUBSCRIPTIONS_ROUTE,
+  SUBSCRIPTION_HITS_ROUTE,
   HISTORY_ROUTE,
   OVERVIEW_ROUTE
 ] =

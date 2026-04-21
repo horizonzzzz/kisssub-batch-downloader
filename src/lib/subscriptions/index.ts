@@ -109,3 +109,10 @@ export {
   type DownloadPreparedHitsResult,
   type SubscriptionNotificationDownloadDependencies
 } from "./download-notification"
+export {
+  buildSubscriptionHitsWorkbenchRows,
+  getSubscriptionHitIdsForRound,
+  type SubscriptionHitsWorkbenchInput,
+  type SubscriptionHitsWorkbenchRow,
+  type SubscriptionHitWorkbenchItem
+} from "./hits-query"

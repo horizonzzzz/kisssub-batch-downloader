@@ -153,6 +153,12 @@ function createOptionsApi(overrides: Partial<OptionsApi> = {}): OptionsApi {
     deleteSubscription: vi.fn().mockImplementation(async (subscriptionId) => {
       await deleteSubscription(subscriptionId)
     }),
+    downloadSubscriptionHits: vi.fn().mockResolvedValue({
+      attemptedHits: 1,
+      submittedHits: 1,
+      duplicateHits: 0,
+      failedHits: 0
+    }),
     testConnection: vi.fn().mockResolvedValue({
       downloaderId: "qbittorrent",
       displayName: "qBittorrent",
@@ -354,11 +360,12 @@ describe("OptionsPage", () => {
     expect(screen.getAllByText("Anime BT Batch")).toHaveLength(1)
 
     const sidebarNav = screen.getByTestId("options-sidebar-groups")
-    expect(within(sidebarNav).getAllByRole("button")).toHaveLength(6)
+    expect(within(sidebarNav).getAllByRole("button")).toHaveLength(7)
     expect(screen.getByRole("button", { name: "下载器与基础设置" })).toBeInTheDocument()
     expect(screen.getByRole("button", { name: "站点配置" })).toBeInTheDocument()
     expect(screen.getByRole("button", { name: "过滤规则" })).toBeInTheDocument()
     expect(screen.getByRole("button", { name: "订阅" })).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "订阅命中" })).toBeInTheDocument()
     expect(screen.getByRole("button", { name: "批次历史" })).toBeInTheDocument()
     expect(screen.getByRole("button", { name: "源站概览" })).toBeInTheDocument()
     expect(screen.getByRole("heading", { name: "下载器与基础设置" })).toBeInTheDocument()

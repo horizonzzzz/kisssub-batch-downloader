@@ -34,6 +34,7 @@ import { HistoryPage } from "./pages/history/HistoryPage"
 import { OverviewPage } from "./pages/overview/OverviewPage"
 import { SitesPage } from "./pages/sites/SitesPage"
 import { SubscriptionsPage } from "./pages/subscriptions/SubscriptionsPage"
+import { SubscriptionHitsPage } from "./pages/subscription-hits/SubscriptionHitsPage"
 import {
   DownloaderWorkbenchProvider,
   useDownloaderWorkbench
@@ -62,6 +63,12 @@ export type OptionsApi = {
   saveSubscriptionPolicy: (config: SubscriptionPolicyConfig) => Promise<SubscriptionPolicyConfig>
   upsertSubscription: (subscription: SubscriptionEntry) => Promise<void>
   deleteSubscription: (subscriptionId: string) => Promise<void>
+  downloadSubscriptionHits: (hitIds: string[]) => Promise<{
+    attemptedHits: number
+    submittedHits: number
+    duplicateHits: number
+    failedHits: number
+  }>
 }
 
 type OptionsPageProps = {
@@ -102,6 +109,7 @@ function OptionsWorkspaceContent({ api }: OptionsPageProps) {
           <Route path="/sites" element={<SitesPage api={api} />} />
           <Route path="/filters" element={<FiltersPage api={api} />} />
           <Route path="/subscriptions" element={<SubscriptionsPage api={api} />} />
+          <Route path="/subscription-hits" element={<SubscriptionHitsPage api={api} />} />
           <Route path="/history" element={<HistoryPage />} />
           <Route path="/overview" element={<OverviewPage />} />
           <Route path="*" element={<Navigate to={DEFAULT_OPTIONS_ROUTE} replace />} />

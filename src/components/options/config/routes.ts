@@ -12,6 +12,7 @@ export type OptionsRouteId =
   | "sites"
   | "filters"
   | "subscriptions"
+  | "subscriptionHits"
   | "history"
   | "overview"
 
@@ -29,6 +30,7 @@ const [
   SITES_ROUTE,
   FILTERS_ROUTE,
   SUBSCRIPTIONS_ROUTE,
+  SUBSCRIPTION_HITS_ROUTE,
   HISTORY_ROUTE,
   OVERVIEW_ROUTE
 ] = OPTIONS_ROUTE_PATHS
@@ -49,6 +51,10 @@ export const OPTIONS_ROUTES = [
   {
     id: "subscriptions",
     path: SUBSCRIPTIONS_ROUTE
+  },
+  {
+    id: "subscriptionHits",
+    path: SUBSCRIPTION_HITS_ROUTE
   },
   {
     id: "history",
