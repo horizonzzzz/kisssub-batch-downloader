@@ -241,6 +241,56 @@ describe("scanSubscriptions", () => {
       })
     )
   })
+
+  it("writes newly discovered hits into the subscription hit store", async () => {
+    const firstScanNow = "2026-04-14T08:00:00.000Z"
+    const secondScanNow = "2026-04-14T09:30:00.000Z"
+    const subscription = createSubscription()
+
+    await upsertSubscription(subscription)
+
+    // First scan establishes the observation baseline (no hits emitted)
+    await scanSubscriptions({
+      subscriptionPolicy: createSubscriptionPolicy(),
+      sourceConfig: createSourceConfig(),
+      subscriptions: [subscription],
+      now: () => firstScanNow,
+      scanCandidatesFromSource: vi.fn(async () => [createCandidate()])
+    })
+
+    // Second scan discovers a new hit (candidate not seen before)
+    await scanSubscriptions({
+      subscriptionPolicy: createSubscriptionPolicy(),
+      sourceConfig: createSourceConfig(),
+      subscriptions: [subscription],
+      now: () => secondScanNow,
+      scanCandidatesFromSource: vi.fn(async () => [
+        createCandidate({
+          title: "[LoliHouse] Medalist - 02 [1080p]",
+          normalizedTitle: "[lolihouse] medalist - 02 [1080p]",
+          detailUrl: "https://acg.rip/t/101",
+          magnetUrl: "magnet:?xt=urn:btih:AAA111",
+          torrentUrl: "https://acg.rip/t/101.torrent"
+        })
+      ])
+    })
+
+    await expect(subscriptionDb.subscriptionHits.toArray()).resolves.toEqual([
+      expect.objectContaining({
+        subscriptionId: "sub-1",
+        sourceId: "acgrip",
+        title: "[LoliHouse] Medalist - 02 [1080p]",
+        normalizedTitle: "[lolihouse] medalist - 02 [1080p]",
+        detailUrl: "https://acg.rip/t/101",
+        magnetUrl: "magnet:?xt=urn:btih:AAA111",
+        torrentUrl: "https://acg.rip/t/101.torrent",
+        discoveredAt: secondScanNow,
+        readAt: null,
+        resolvedAt: null,
+        downloadStatus: "idle"
+      })
+    ])
+  })
 })
 
 describe("background fetcher registry", () => {

@@ -8,6 +8,7 @@ import type { SubscriptionPolicyConfig } from "./policy/types"
 import { resolveSourceEnabled } from "../sources/config/selectors"
 import { subscriptionDb } from "./db"
 import { createSubscriptionFingerprint } from "./fingerprint"
+import { upsertSubscriptionHits } from "./hit-repository"
 import { matchesSubscriptionCandidate } from "./match"
 import {
   createSubscriptionNotificationRound,
@@ -16,7 +17,7 @@ import {
 import { pushRecentHit, pushSeenFingerprint } from "./retention"
 import { createEmptySubscriptionRuntimeRow } from "./runtime-state"
 import { scanSubscriptionCandidatesFromSource } from "./source-scan"
-import type { NotificationRoundRow, SubscriptionRuntimeRow } from "./store-types"
+import type { NotificationRoundRow, SubscriptionRuntimeRow, SubscriptionHitStoreRow } from "./store-types"
 import type { SubscriptionCandidate, SubscriptionQuery } from "./types"
 import { LAST_SCHEDULER_RUN_AT_META_KEY } from "./runtime-query"
 
@@ -58,7 +59,7 @@ export async function scanSubscriptions(
   const errors: SubscriptionScanError[] = []
 
   if (!input.subscriptionPolicy.enabled || enabledSubscriptions.length === 0) {
-    await persistScanState(now, runtimeBySubscriptionId, null)
+    await persistScanState(now, runtimeBySubscriptionId, null, [])
     return {
       lastSchedulerRunAt: now,
       notificationRound: null,
@@ -113,7 +114,7 @@ export async function scanSubscriptions(
         })
       : null
 
-  await persistScanState(now, runtimeBySubscriptionId, notificationRound)
+  await persistScanState(now, runtimeBySubscriptionId, notificationRound, newHits)
 
   return {
     lastSchedulerRunAt: now,
@@ -141,14 +142,20 @@ async function loadRuntimeRows(
 async function persistScanState(
   lastSchedulerRunAt: string,
   runtimeBySubscriptionId: Map<string, SubscriptionRuntimeRow>,
-  notificationRound: NotificationRoundRow | null
+  notificationRound: NotificationRoundRow | null,
+  newHits: SubscriptionHitStoreRow[]
 ): Promise<void> {
   await subscriptionDb.transaction(
     "rw",
     subscriptionDb.subscriptionRuntime,
     subscriptionDb.notificationRounds,
     subscriptionDb.subscriptionMeta,
+    subscriptionDb.subscriptionHits,
     async () => {
+      if (newHits.length > 0) {
+        await upsertSubscriptionHits(newHits)
+      }
+
       const runtimeRows = [...runtimeBySubscriptionId.values()]
       if (runtimeRows.length > 0) {
         await subscriptionDb.subscriptionRuntime.bulkPut(runtimeRows)
