@@ -3,11 +3,7 @@ import type { SourceConfig } from "./types"
 export const DEFAULT_SOURCE_CONFIG: SourceConfig = Object.freeze({
   kisssub: {
     enabled: true,
-    deliveryMode: "magnet",
-    script: {
-      url: "//1.acgscript.com/script/miobt/4.js?3",
-      revision: "20181120.2"
-    }
+    deliveryMode: "magnet"
   },
   dongmanhuayuan: {
     enabled: true,

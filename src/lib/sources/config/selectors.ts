@@ -12,12 +12,6 @@ export function resolveSourceDeliveryMode(
   return config[sourceId].deliveryMode
 }
 
-export function resolveKisssubScriptConfig(config: SourceConfig): {
-  url: string
-  revision: string
-} {
-  return config.kisssub.script
-}
 
 export function getDisabledSources(
   sourceIds: SourceId[],

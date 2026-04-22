@@ -1,6 +1,6 @@
 import { isSupportedDeliveryMode } from "../delivery"
 import type { DeliveryMode, SourceId } from "../../shared/types"
-import type { SourceConfig, KisssubScriptConfig } from "./types"
+import type { SourceConfig } from "./types"
 import { DEFAULT_SOURCE_CONFIG } from "./defaults"
 
 export function sanitizeSourceConfig(raw: unknown): SourceConfig {
@@ -32,31 +32,10 @@ function normalizeKisssubConfig(raw: unknown): SourceConfig["kisssub"] {
   const record = raw as Record<string, unknown>
   const enabled = normalizeBoolean(record.enabled, defaults.enabled)
   const deliveryMode = normalizeDeliveryMode(record.deliveryMode, "kisssub", defaults.deliveryMode)
-  const script = normalizeKisssubScript(record.script, defaults.script)
 
   return {
     enabled,
-    deliveryMode,
-    script
-  }
-}
-
-function normalizeKisssubScript(raw: unknown, fallback: KisssubScriptConfig): KisssubScriptConfig {
-  if (!raw || typeof raw !== "object") {
-    return fallback
-  }
-
-  const record = raw as Record<string, unknown>
-  const url = String(record.url ?? "").trim()
-  const revision = String(record.revision ?? "").trim()
-
-  if (!url || !revision) {
-    return fallback
-  }
-
-  return {
-    url,
-    revision
+    deliveryMode
   }
 }
 

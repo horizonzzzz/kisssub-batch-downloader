@@ -22,8 +22,11 @@ describe("source config storage", () => {
     expect(config).toEqual(DEFAULT_SOURCE_CONFIG)
     expect(config.kisssub.enabled).toBe(true)
     expect(config.kisssub.deliveryMode).toBe("magnet")
-    expect(config.kisssub.script.url).toBe("//1.acgscript.com/script/miobt/4.js?3")
-    expect(config.kisssub.script.revision).toBe("20181120.2")
+    expect(config.kisssub).toEqual({
+      enabled: true,
+      deliveryMode: "magnet"
+    })
+    expect(config.kisssub).not.toHaveProperty("script")
     expect(config.dongmanhuayuan.enabled).toBe(true)
     expect(config.dongmanhuayuan.deliveryMode).toBe("magnet")
     expect(config.acgrip.enabled).toBe(true)
@@ -32,68 +35,39 @@ describe("source config storage", () => {
     expect(config.bangumimoe.deliveryMode).toBe("magnet")
   })
 
-  it("persists kisssub script fields inside source config", async () => {
-    const saved = await saveSourceConfig({
-      ...DEFAULT_SOURCE_CONFIG,
-      kisssub: {
-        ...DEFAULT_SOURCE_CONFIG.kisssub,
-        script: {
-          url: "//1.acgscript.com/script/miobt/4.js?3",
-          revision: "20260418.1"
-        }
-      }
-    })
-
-    expect(saved.kisssub.script.revision).toBe("20260418.1")
-
-    const reloaded = await getSourceConfig()
-    expect(reloaded.kisssub.script.revision).toBe("20260418.1")
-  })
-
-  it("preserves user-entered https kisssub script URLs when saving", async () => {
-    const saved = await saveSourceConfig({
-      ...DEFAULT_SOURCE_CONFIG,
-      kisssub: {
-        ...DEFAULT_SOURCE_CONFIG.kisssub,
-        script: {
-          url: "https://mirror.example.com/helpers/kisssub-helper.js",
-          revision: "custom-rev"
-        }
-      }
-    })
-
-    expect(saved.kisssub.script).toEqual({
-      url: "https://mirror.example.com/helpers/kisssub-helper.js",
-      revision: "custom-rev"
-    })
-
-    const reloaded = await getSourceConfig()
-    expect(reloaded.kisssub.script).toEqual({
-      url: "https://mirror.example.com/helpers/kisssub-helper.js",
-      revision: "custom-rev"
-    })
-  })
-
-  it("preserves previously stored custom kisssub script URLs on load", async () => {
+  it("drops legacy kisssub script fields during sanitization", async () => {
     await fakeBrowser.storage.local.set({
       source_config: {
-        ...DEFAULT_SOURCE_CONFIG,
         kisssub: {
-          ...DEFAULT_SOURCE_CONFIG.kisssub,
+          enabled: false,
+          deliveryMode: "torrent-file",
           script: {
             url: "https://mirror.example.com/helpers/kisssub-helper.js",
             revision: "custom-rev"
           }
+        },
+        dongmanhuayuan: {
+          enabled: true,
+          deliveryMode: "magnet"
+        },
+        acgrip: {
+          enabled: true,
+          deliveryMode: "torrent-file"
+        },
+        bangumimoe: {
+          enabled: true,
+          deliveryMode: "magnet"
         }
       }
     })
 
     const config = await getSourceConfig()
 
-    expect(config.kisssub.script).toEqual({
-      url: "https://mirror.example.com/helpers/kisssub-helper.js",
-      revision: "custom-rev"
+    expect(config.kisssub).toEqual({
+      enabled: false,
+      deliveryMode: "torrent-file"
     })
+    expect(config.kisssub).not.toHaveProperty("script")
   })
 
   it("persists source enablement changes under dedicated source config storage", async () => {
@@ -133,12 +107,7 @@ describe("source config storage", () => {
       source_config: {
         kisssub: {
           enabled: false,
-          deliveryMode: "torrent-file",
-          script: {
-            // URL must match acgscript pattern
-            url: "//new.acgscript.com/script/miobt/new.js?20260419",
-            revision: "new-rev"
-          }
+          deliveryMode: "torrent-file"
         },
         dongmanhuayuan: {
           enabled: false,
@@ -157,9 +126,9 @@ describe("source config storage", () => {
 
     const config = await getSourceConfig()
 
-    expect(config.kisssub.enabled).toBe(false)
-    expect(config.kisssub.deliveryMode).toBe("torrent-file")
-    expect(config.kisssub.script.url).toBe("//new.acgscript.com/script/miobt/new.js?20260419")
-    expect(config.kisssub.script.revision).toBe("new-rev")
+    expect(config.kisssub).toEqual({
+      enabled: false,
+      deliveryMode: "torrent-file"
+    })
   })
 })

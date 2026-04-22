@@ -6,15 +6,8 @@ type BaseSourceRuntimeConfig<TDeliveryMode extends DeliveryMode> = {
 }
 
 export type SourceConfig = {
-  kisssub: BaseSourceRuntimeConfig<DeliveryMode> & {
-    script: {
-      url: string
-      revision: string
-    }
-  }
+  kisssub: BaseSourceRuntimeConfig<DeliveryMode>
   dongmanhuayuan: BaseSourceRuntimeConfig<"magnet">
   acgrip: BaseSourceRuntimeConfig<"torrent-url" | "torrent-file">
   bangumimoe: BaseSourceRuntimeConfig<DeliveryMode>
 }
-
-export type KisssubScriptConfig = SourceConfig["kisssub"]["script"]

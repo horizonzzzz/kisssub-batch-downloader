@@ -21,11 +21,6 @@ function createRuntimeContext(): BatchRuntimeContext {
         retryCount: DEFAULT_BATCH_EXECUTION_CONFIG.retryCount,
         injectTimeoutMs: DEFAULT_BATCH_EXECUTION_CONFIG.injectTimeoutMs,
         domSettleMs: DEFAULT_BATCH_EXECUTION_CONFIG.domSettleMs
-      },
-      source: {
-        kisssub: {
-          script: DEFAULT_SOURCE_CONFIG.kisssub.script
-        }
       }
     }
   }
