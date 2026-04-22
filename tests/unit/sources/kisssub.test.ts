@@ -86,7 +86,7 @@ describe("parseKisssubDetailSnapshot", () => {
       hash: "cafebabe",
       magnetUrl: "",
       torrentUrl: "",
-      failureReason: "The detail page finished loading, but no usable magnet or torrent URL was exposed."
+      failureReason: "The Kisssub detail page no longer exposes the fields required to build download links."
     })
   })
 })
@@ -263,7 +263,7 @@ describe("buildKisssubLinksFromConfig", () => {
         "http://www.kisssub.org/show-879d7afe81cfa5ca0a3f4ba07ca3932036cc9b51.html"
       )?.torrentUrl
     ).toBe(
-      "http://v2.uploadbt.com/?r=down&hash=879d7afe81cfa5ca0a3f4ba07ca3932036cc9b51&name=[kisssub.org]Episode%2001"
+      "http://v2.uploadbt.com/?r=down&hash=879d7afe81cfa5ca0a3f4ba07ca3932036cc9b51&name=%5Bkisssub.org%5DEpisode%2001"
     )
   })
 

@@ -22,18 +22,13 @@ export function buildBatchRuntimeContext(
 
 export function buildExtractionContextFromConfigs(
   executionConfig: BatchExecutionConfig,
-  sourceConfig: SourceConfig
+  _sourceConfig: SourceConfig
 ): ExtractionContext {
   return {
     execution: {
       retryCount: executionConfig.retryCount,
       injectTimeoutMs: executionConfig.injectTimeoutMs,
       domSettleMs: executionConfig.domSettleMs
-    },
-    source: {
-      kisssub: {
-        script: sourceConfig.kisssub.script
-      }
     }
   }
 }

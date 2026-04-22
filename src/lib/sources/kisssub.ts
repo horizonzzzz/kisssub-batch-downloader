@@ -3,11 +3,15 @@ import { getBrowser } from "../shared/browser"
 import { DEFAULT_SOURCE_DELIVERY_MODES, getSupportedDeliveryModes } from "./delivery"
 import { matchesSourceHost } from "./matching"
 import type { BatchItem, ExtractionResult } from "../shared/types"
-import { reloadDetailTab, withDetailTab } from "./detail-tab"
+import { withDetailTab } from "./detail-tab"
 import type { ExtractionContext, SourceAdapter } from "./types"
 
 const ENTRY_SELECTOR = 'a[href*="show-"][href$=".html"]'
 const MAIN_EXECUTION_WORLD = "MAIN" as const
+const KISSSUB_FIELD_FAILURE =
+  "The Kisssub detail page no longer exposes the fields required to build download links."
+const KISSSUB_TORRENT_BASE_URL = "//v2.uploadbt.com/"
+const KISSSUB_FALLBACK_TORRENT_FORMAT = "[kisssub.org]%s"
 
 type KisssubDetailSnapshot = {
   title: string
@@ -16,6 +20,20 @@ type KisssubDetailSnapshot = {
   torrentUrl: string
   magnetLabel: string
   downloadLabel: string
+}
+
+type KisssubConfigSnapshot = {
+  in_script?: unknown
+  hash_id?: unknown
+  bt_data_title?: unknown
+  announce?: unknown
+  down_torrent_format?: unknown
+}
+
+type KisssubBuiltLinks = {
+  hash: string
+  magnetUrl: string
+  torrentUrl: string
 }
 
 function matchesHost(url: URL) {
@@ -28,8 +46,40 @@ function normalizeText(value: string | null | undefined): string {
     .trim()
 }
 
-function needsHelperReload(snapshot: KisssubDetailSnapshot) {
-  return snapshot.magnetLabel === "开启虫洞" || snapshot.downloadLabel === "开启虫洞"
+export function buildKisssubLinksFromConfig(
+  config: KisssubConfigSnapshot | null | undefined,
+  detailUrl: string
+): KisssubBuiltLinks | null {
+  if (!config || config.in_script !== "show") {
+    return null
+  }
+
+  const hash = normalizeText(config.hash_id)
+  const title = normalizeText(config.bt_data_title)
+
+  if (!hash || !/^[a-f0-9]+$/i.test(hash) || !title) {
+    return null
+  }
+
+  const announce = normalizeText(config.announce)
+  const torrentFormat = normalizeText(config.down_torrent_format)
+  const effectiveFormat = torrentFormat.includes("%s")
+    ? torrentFormat
+    : KISSSUB_FALLBACK_TORRENT_FORMAT
+  const formattedTitle = effectiveFormat.replace("%s", title)
+  const magnetUrl = announce
+    ? `magnet:?xt=urn:btih:${hash.toLowerCase()}&tr=${announce}`
+    : `magnet:?xt=urn:btih:${hash.toLowerCase()}`
+  const torrentUrl = new URL(
+    `?r=down&hash=${encodeURIComponent(hash.toLowerCase())}&name=${encodeURIComponent(formattedTitle)}`,
+    new URL(KISSSUB_TORRENT_BASE_URL, detailUrl)
+  ).href
+
+  return {
+    hash: hash.toLowerCase(),
+    magnetUrl,
+    torrentUrl
+  }
 }
 
 function buildExtractionResult(item: BatchItem, snapshot: KisssubDetailSnapshot): ExtractionResult {
@@ -95,17 +145,7 @@ export const kisssubSourceAdapter: SourceAdapter = {
         return await withDetailTab(
           item.detailUrl,
           timeoutMs,
-          async (tabId) => {
-            const preparation = await executeExtraction(tabId, context, "prepare")
-
-            if (!needsHelperReload(preparation)) {
-              return buildExtractionResult(item, preparation)
-            }
-
-            await reloadDetailTab(tabId, timeoutMs)
-
-            return buildExtractionResult(item, await executeExtraction(tabId, context, "extract"))
-          }
+          async (tabId) => buildExtractionResult(item, await executeExtraction(tabId, context, item.detailUrl))
         )
       } catch (error: unknown) {
         lastFailure = error instanceof Error ? error.message : String(error)
@@ -129,7 +169,6 @@ export function parseKisssubDetailSnapshot(
 ): Omit<ExtractionResult, "detailUrl"> {
   const magnetUrl = normalizeText(snapshot.magnetUrl)
   const torrentUrl = normalizeText(snapshot.torrentUrl)
-  const helperStillRequired = snapshot.magnetLabel === "开启虫洞" || snapshot.downloadLabel === "开启虫洞"
 
   return {
     ok: Boolean(magnetUrl || torrentUrl),
@@ -137,19 +176,14 @@ export function parseKisssubDetailSnapshot(
     hash: normalizeText(snapshot.hash),
     magnetUrl,
     torrentUrl,
-    failureReason:
-      magnetUrl || torrentUrl
-        ? ""
-        : helperStillRequired
-          ? "The helper script timed out and the detail buttons still point to the wormhole page."
-          : "The detail page finished loading, but no usable magnet or torrent URL was exposed."
+    failureReason: magnetUrl || torrentUrl ? "" : KISSSUB_FIELD_FAILURE
   }
 }
 
 async function executeExtraction(
   tabId: number,
   context: ExtractionContext,
-  mode: "prepare" | "extract"
+  detailUrl: string
 ) {
   const execution = await getBrowser().scripting.executeScript({
     target: { tabId },
@@ -157,11 +191,8 @@ async function executeExtraction(
     func: kisssubDetailExtractionScript,
     args: [
       {
-        remoteScriptUrl: context.source.kisssub.script.url,
-        remoteScriptRevision: context.source.kisssub.script.revision,
-        injectTimeoutMs: context.execution.injectTimeoutMs,
-        domSettleMs: context.execution.domSettleMs,
-        mode
+        detailUrl,
+        domSettleMs: context.execution.domSettleMs
       }
     ]
   })
@@ -170,13 +201,15 @@ async function executeExtraction(
 }
 
 function kisssubDetailExtractionScript(config: {
-  remoteScriptUrl: string
-  remoteScriptRevision: string
-  injectTimeoutMs: number
+  detailUrl: string
   domSettleMs: number
-  mode: "prepare" | "extract"
 }) {
   const sleep = (ms: number) => new Promise<void>((resolve) => window.setTimeout(resolve, ms))
+
+  const normalizeTextInPage = (value: unknown): string =>
+    String(value ?? "")
+      .replace(/\s+/g, " ")
+      .trim()
 
   const getTitle = () => {
     const headingTitle =
@@ -190,7 +223,7 @@ function kisssubDetailExtractionScript(config: {
     return document.title.replace(/\s*-\s*爱恋动漫.*$/u, "").trim()
   }
 
-  const getHash = () => {
+  const getHashFromUrl = () => {
     const fromUrl = window.location.pathname.match(/show-([a-f0-9]+)\.html/i)
     return fromUrl ? fromUrl[1].toLowerCase() : ""
   }
@@ -217,66 +250,59 @@ function kisssubDetailExtractionScript(config: {
     return /mika-mode/i.test(anchor.absoluteHref) || anchor.text === "开启虫洞"
   }
 
+  const buildFromConfig = () => {
+    const configObject = (window as unknown as { Config?: Record<string, unknown> }).Config
+    if (!configObject || configObject.in_script !== "show") {
+      return null
+    }
+
+    const hash = normalizeTextInPage(configObject.hash_id)
+    const title = normalizeTextInPage(configObject.bt_data_title)
+    if (!hash || !/^[a-f0-9]+$/i.test(hash) || !title) {
+      return null
+    }
+
+    const announce = normalizeTextInPage(configObject.announce)
+    const rawFormat = normalizeTextInPage(configObject.down_torrent_format)
+    const format = rawFormat.includes("%s") ? rawFormat : "[kisssub.org]%s"
+    const formattedTitle = format.replace("%s", title)
+    const magnetUrl = announce
+      ? `magnet:?xt=urn:btih:${hash.toLowerCase()}&tr=${announce}`
+      : `magnet:?xt=urn:btih:${hash.toLowerCase()}`
+    const torrentUrl = new URL(
+      `?r=down&hash=${encodeURIComponent(hash.toLowerCase())}&name=${encodeURIComponent(formattedTitle)}`,
+      new URL("//v2.uploadbt.com/", config.detailUrl)
+    ).href
+
+    return {
+      hash: hash.toLowerCase(),
+      magnetUrl,
+      torrentUrl
+    }
+  }
+
   const summarize = (): KisssubDetailSnapshot => {
     const magnet = getAnchorInfo("magnet")
     const download = getAnchorInfo("download")
     const magnetUrl = magnet && /^magnet:/i.test(magnet.absoluteHref) ? magnet.absoluteHref : ""
     const torrentUrl = download && download.absoluteHref && !looksLikeWormhole(download) ? download.absoluteHref : ""
+    const magnetNeedsConfig = !magnetUrl && magnet && looksLikeWormhole(magnet)
+    const torrentNeedsConfig = !torrentUrl && download && looksLikeWormhole(download)
+    const builtLinks = magnetNeedsConfig || torrentNeedsConfig ? buildFromConfig() : null
 
     return {
       title: getTitle(),
-      hash: getHash(),
-      magnetUrl,
-      torrentUrl,
+      hash: builtLinks?.hash || getHashFromUrl(),
+      magnetUrl: magnetUrl || builtLinks?.magnetUrl || "",
+      torrentUrl: torrentUrl || builtLinks?.torrentUrl || "",
       magnetLabel: magnet ? magnet.text : "",
       downloadLabel: download ? download.text : ""
     }
   }
 
-  const setCookies = () => {
-    const ttl = 60 * 60 * 24 * 365 * 10
-    document.cookie = `user_script_url=${encodeURIComponent(config.remoteScriptUrl)}; max-age=${ttl}; path=/`
-    document.cookie = `user_script_rev=${encodeURIComponent(config.remoteScriptRevision)}; max-age=${ttl}; path=/`
-  }
-
-  const injectHelper = () => {
-    const existing = Array.from(document.scripts).find((script) =>
-      (script.src || "").includes("1.acgscript.com/script/miobt/4.js")
-    )
-
-    if (existing) {
-      return
-    }
-
-    const script = document.createElement("script")
-    script.src = config.remoteScriptUrl
-    script.async = true
-    script.dataset.kisssubBatch = "remote-helper"
-    document.head.appendChild(script)
-  }
-
   return (async () => {
-    const initial = summarize()
-    if (initial.magnetUrl || initial.torrentUrl) {
-      return initial
-    }
-
-    setCookies()
-    injectHelper()
-
-    if (config.mode === "prepare") {
-      return initial
-    }
-
-    const deadline = Date.now() + config.injectTimeoutMs
-    while (Date.now() < deadline) {
-      const current = summarize()
-      if (current.magnetUrl || current.torrentUrl) {
-        await sleep(config.domSettleMs)
-        return summarize()
-      }
-
-      await sleep(250)
+    if (config.domSettleMs > 0) {
+      await sleep(config.domSettleMs)
     }
 
     return summarize()

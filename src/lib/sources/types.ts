@@ -4,7 +4,6 @@ import type {
   ExtractionResult,
   SourceId
 } from "../shared/types"
-import type { KisssubScriptConfig } from "./config/types"
 
 export type SourceSubscriptionScanCandidate = {
   sourceId: SourceId
@@ -20,11 +19,6 @@ export type ExtractionContext = {
     retryCount: number
     injectTimeoutMs: number
     domSettleMs: number
-  }
-  source: {
-    kisssub: {
-      script: KisssubScriptConfig
-    }
   }
 }
 
