@@ -673,7 +673,7 @@ describe("OptionsPage", () => {
     })
   })
 
-  it("passes current round context when downloading from a highlighted workbench view", async () => {
+  it("uses the updated round context when downloading after round changes", async () => {
     const user = userEvent.setup()
     const api = createOptionsApi()
 
@@ -687,16 +687,23 @@ describe("OptionsPage", () => {
       expect(screen.getByTestId("subscription-hit-row-hit-1")).toHaveAttribute("data-highlighted", "true")
     })
 
+    window.location.hash = "#/subscription-hits?round=subscription-round:20260414100000000"
+    window.dispatchEvent(new HashChangeEvent("hashchange"))
+
+    await waitFor(() => {
+      expect(screen.getByTestId("subscription-hit-row-hit-2")).toHaveAttribute("data-highlighted", "true")
+    })
+
     await user.click(
-      within(screen.getByTestId("subscription-hit-row-hit-1")).getByRole("button", {
-        name: "下载 [LoliHouse] Medalist - 01 [1080p]"
+      within(screen.getByTestId("subscription-hit-row-hit-2")).getByRole("button", {
+        name: "下载 [LoliHouse] Medalist - 02 [1080p]"
       })
     )
 
     await waitFor(() => {
       expect(api.downloadSubscriptionHits).toHaveBeenCalledWith({
-        hitIds: ["hit-1"],
-        roundId: "subscription-round:20260414093000000"
+        hitIds: ["hit-2"],
+        roundId: "subscription-round:20260414100000000"
       })
     })
   })

@@ -203,7 +203,7 @@ export function useSubscriptionHitsWorkbench(api: OptionsApi, initialRoundId?: s
       clearSubmitting(hitIds)
       setDownloading(false)
     }
-  }, [selectedHitIds, api, clearSelection, clearSubmitting, markSubmitting])
+  }, [selectedHitIds, api, input.roundId, clearSelection, clearSubmitting, markSubmitting])
 
   const downloadSingleHit = useCallback(async (hitId: string) => {
     setDownloading(true)
@@ -235,7 +235,7 @@ export function useSubscriptionHitsWorkbench(api: OptionsApi, initialRoundId?: s
       clearSubmitting([hitId])
       setDownloading(false)
     }
-  }, [api, clearSubmitting, markSubmitting])
+  }, [api, input.roundId, clearSubmitting, markSubmitting])
 
   const setSearchText = useCallback((text: string) => {
     setInput((prev) => ({ ...prev, searchText: text }))
@@ -270,17 +270,13 @@ export function useSubscriptionHitsWorkbench(api: OptionsApi, initialRoundId?: s
 
   return {
     feedback,
-    loading: false,
     downloading,
     workbenchRows,
     input,
     selectedHitIds,
     selectedCount,
-    totalCount,
-    firstHighlightedHitId,
     summary,
     toggleHitSelection,
-    clearSelection,
     downloadSelectedHits,
     downloadSingleHit,
     setSearchText,
