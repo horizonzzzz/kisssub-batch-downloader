@@ -74,11 +74,7 @@ const settings = {
 const sourceConfig: SourceConfig = {
   kisssub: {
     enabled: true,
-    deliveryMode: "magnet",
-    script: {
-      url: "//1.acgscript.com/script/miobt/4.js?3",
-      revision: "20181120.2"
-    }
+    deliveryMode: "magnet"
   },
   dongmanhuayuan: {
     enabled: true,
@@ -1344,11 +1340,6 @@ describe("OptionsPage", () => {
       // Now navigate to sites and edit site settings
       await user.click(screen.getByRole("button", { name: "站点配置" }))
 
-      const kisssubCard = screen.getByTestId("site-card-kisssub")
-      const revisionField = within(kisssubCard).getByLabelText("Kisssub 脚本版本号")
-      await user.clear(revisionField)
-      await user.type(revisionField, "20260324.1")
-
       const acgripCard = screen.getByTestId("site-card-acgrip")
       await user.click(within(acgripCard).getByRole("radio", { name: "直接提交种子链接" }))
 
@@ -1360,11 +1351,6 @@ describe("OptionsPage", () => {
       await waitFor(() => {
         expect(api.saveSourceConfig).toHaveBeenCalledWith(
           expect.objectContaining({
-            kisssub: expect.objectContaining({
-              script: expect.objectContaining({
-                revision: "20260324.1"
-              })
-            }),
             acgrip: expect.objectContaining({
               deliveryMode: "torrent-url"
             }),
@@ -1470,21 +1456,15 @@ describe("OptionsPage", () => {
       await screen.findByTestId("sites-workbench")
 
       const kisssubCard = screen.getByTestId("site-card-kisssub")
-      const revisionField = within(kisssubCard).getByLabelText("Kisssub 脚本版本号")
-      await user.clear(revisionField)
-      await user.type(revisionField, "20260324.1")
       await user.click(within(kisssubCard).getByRole("radio", { name: "先下载种子再上传到 qB" }))
 
       const kisssubSwitch = screen.getByRole("switch", { name: "Kisssub 启用开关" })
       await user.click(kisssubSwitch)
       expect(kisssubSwitch).toHaveAttribute("aria-checked", "false")
-      expect(within(kisssubCard).queryByLabelText("Kisssub 脚本版本号")).not.toBeInTheDocument()
 
       await user.click(kisssubSwitch)
       expect(kisssubSwitch).toHaveAttribute("aria-checked", "true")
 
-      const restoredRevisionField = await within(kisssubCard).findByLabelText("Kisssub 脚本版本号")
-      expect(restoredRevisionField).toHaveValue("20260324.1")
       expect(
         within(kisssubCard).getByRole("radio", { name: "先下载种子再上传到 qB" })
       ).toBeChecked()
@@ -1496,9 +1476,6 @@ describe("OptionsPage", () => {
         expect(api.saveSourceConfig).toHaveBeenCalledWith(
           expect.objectContaining({
             kisssub: expect.objectContaining({
-              script: expect.objectContaining({
-                revision: "20260324.1"
-              }),
               deliveryMode: "torrent-file",
               enabled: true
             })

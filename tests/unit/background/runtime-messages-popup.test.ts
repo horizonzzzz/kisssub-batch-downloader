@@ -150,11 +150,7 @@ describe("background popup runtime boundary", () => {
     setSourceEnabledForPopupMock.mockResolvedValue({
       kisssub: {
         enabled: false,
-        deliveryMode: "magnet",
-        script: {
-          url: "//1.acgscript.com/script/miobt/4.js?3",
-          revision: "20181120.2"
-        }
+        deliveryMode: "magnet"
       },
       dongmanhuayuan: {
         enabled: true,

@@ -22,14 +22,6 @@ function buildTestExtractionContext(overrides: Partial<ExtractionContext> = {}):
       injectTimeoutMs: DEFAULT_BATCH_EXECUTION_CONFIG.injectTimeoutMs,
       domSettleMs: DEFAULT_BATCH_EXECUTION_CONFIG.domSettleMs
     },
-    source: {
-      kisssub: {
-        script: {
-          url: "",
-          revision: ""
-        }
-      }
-    },
     ...overrides
   }
 }

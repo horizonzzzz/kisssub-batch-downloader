@@ -54,15 +54,15 @@ export function buildKisssubLinksFromConfig(
     return null
   }
 
-  const hash = normalizeText(config.hash_id)
-  const title = normalizeText(config.bt_data_title)
+  const hash = normalizeText(String(config.hash_id ?? ""))
+  const title = normalizeText(String(config.bt_data_title ?? ""))
 
   if (!hash || !/^[a-f0-9]+$/i.test(hash) || !title) {
     return null
   }
 
-  const announce = normalizeText(config.announce)
-  const torrentFormat = normalizeText(config.down_torrent_format)
+  const announce = normalizeText(String(config.announce ?? ""))
+  const torrentFormat = normalizeText(String(config.down_torrent_format ?? ""))
   const effectiveFormat = torrentFormat.includes("%s")
     ? torrentFormat
     : KISSSUB_FALLBACK_TORRENT_FORMAT

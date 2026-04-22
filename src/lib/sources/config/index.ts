@@ -3,9 +3,8 @@ export { sanitizeSourceConfig } from "./schema"
 export {
   resolveSourceEnabled,
   resolveSourceDeliveryMode,
-  resolveKisssubScriptConfig,
   getDisabledSources,
   getEnabledSources
 } from "./selectors"
 export { getSourceConfig, saveSourceConfig } from "./storage"
-export type { SourceConfig, KisssubScriptConfig } from "./types"
+export type { SourceConfig } from "./types"

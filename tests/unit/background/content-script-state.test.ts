@@ -29,7 +29,7 @@ describe("content script state query", () => {
     fakeBrowser.storage.local.clear()
 
     vi.mocked(getSourceConfig).mockResolvedValue({
-      kisssub: { enabled: true, deliveryMode: "magnet", script: { url: "//1.acgscript.com/script/miobt/4.js?3", revision: "20181120.2" } },
+      kisssub: { enabled: true, deliveryMode: "magnet" },
       dongmanhuayuan: { enabled: true, deliveryMode: "magnet" },
       acgrip: { enabled: true, deliveryMode: "torrent-file" },
       bangumimoe: { enabled: true, deliveryMode: "magnet" }
@@ -50,7 +50,7 @@ describe("content script state query", () => {
 
   it("returns enabled false when source is disabled in config", async () => {
     vi.mocked(getSourceConfig).mockResolvedValue({
-      kisssub: { enabled: false, deliveryMode: "magnet", script: { url: "//1.acgscript.com/script/miobt/4.js?3", revision: "20181120.2" } },
+      kisssub: { enabled: false, deliveryMode: "magnet" },
       dongmanhuayuan: { enabled: true, deliveryMode: "magnet" },
       acgrip: { enabled: true, deliveryMode: "torrent-file" },
       bangumimoe: { enabled: true, deliveryMode: "magnet" }

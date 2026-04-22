@@ -80,11 +80,7 @@ describe("background source config runtime boundary", () => {
     saveSourceConfigMock.mockResolvedValue({
       kisssub: {
         enabled: false,
-        deliveryMode: "magnet",
-        script: {
-          url: "//1.acgscript.com/script/miobt/4.js?3",
-          revision: "20181120.2"
-        }
+        deliveryMode: "magnet"
       },
       dongmanhuayuan: {
         enabled: true,
@@ -106,11 +102,7 @@ describe("background source config runtime boundary", () => {
         config: {
           kisssub: {
             enabled: false,
-            deliveryMode: "magnet",
-            script: {
-              url: "//1.acgscript.com/script/miobt/4.js?3",
-              revision: "20181120.2"
-            }
+            deliveryMode: "magnet"
           },
           dongmanhuayuan: {
             enabled: true,
@@ -137,11 +129,7 @@ describe("background source config runtime boundary", () => {
     expect(saveSourceConfigMock).toHaveBeenCalledWith({
       kisssub: {
         enabled: false,
-        deliveryMode: "magnet",
-        script: {
-          url: "//1.acgscript.com/script/miobt/4.js?3",
-          revision: "20181120.2"
-        }
+        deliveryMode: "magnet"
       },
       dongmanhuayuan: {
         enabled: true,
@@ -163,11 +151,7 @@ describe("background source config runtime boundary", () => {
       config: {
         kisssub: {
           enabled: false,
-          deliveryMode: "magnet",
-          script: {
-            url: "//1.acgscript.com/script/miobt/4.js?3",
-            revision: "20181120.2"
-          }
+          deliveryMode: "magnet"
         },
         dongmanhuayuan: {
           enabled: true,
@@ -192,11 +176,7 @@ describe("background source config runtime boundary", () => {
     getSourceConfigMock.mockResolvedValue({
       kisssub: {
         enabled: true,
-        deliveryMode: "magnet",
-        script: {
-          url: "//1.acgscript.com/script/miobt/4.js?3",
-          revision: "20181120.2"
-        }
+        deliveryMode: "magnet"
       },
       dongmanhuayuan: {
         enabled: true,
@@ -230,11 +210,7 @@ describe("background source config runtime boundary", () => {
       config: {
         kisssub: {
           enabled: true,
-          deliveryMode: "magnet",
-          script: {
-            url: "//1.acgscript.com/script/miobt/4.js?3",
-            revision: "20181120.2"
-          }
+          deliveryMode: "magnet"
         },
         dongmanhuayuan: {
           enabled: true,
