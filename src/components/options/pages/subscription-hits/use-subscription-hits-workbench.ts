@@ -14,10 +14,10 @@ import {
   countPendingHits
 } from "./subscription-hits-workbench"
 
-export type SubscriptionHitsWorkbenchStatus = {
+export type SubscriptionHitsWorkbenchFeedback = {
   tone: "info" | "success" | "error"
   message: string
-}
+} | null
 
 function createInitialInput(): SubscriptionHitsWorkbenchInput {
   return {
@@ -29,10 +29,7 @@ function createInitialInput(): SubscriptionHitsWorkbenchInput {
 }
 
 export function useSubscriptionHitsWorkbench(api: OptionsApi, initialRoundId?: string | null) {
-  const [status, setStatus] = useState<SubscriptionHitsWorkbenchStatus>({
-    tone: "info",
-    message: i18n.t("options.status.loadingSettings")
-  })
+  const [feedback, setFeedback] = useState<SubscriptionHitsWorkbenchFeedback>(null)
   const [downloading, setDownloading] = useState(false)
   const [input, setInput] = useState<SubscriptionHitsWorkbenchInput>(() => ({
     ...createInitialInput(),
@@ -82,13 +79,6 @@ export function useSubscriptionHitsWorkbench(api: OptionsApi, initialRoundId?: s
           }
     )
   }, [initialRoundId])
-
-  useEffect(() => {
-    setStatus({
-      tone: "success",
-      message: i18n.t("options.status.settingsLoaded")
-    })
-  }, [])
 
   useEffect(() => {
     setSelectedHitIds((current) => {
@@ -185,7 +175,7 @@ export function useSubscriptionHitsWorkbench(api: OptionsApi, initialRoundId?: s
     const hitIds = Array.from(selectedHitIds)
     setDownloading(true)
     markSubmitting(hitIds)
-    setStatus({
+    setFeedback({
       tone: "info",
       message: i18n.t("options.subscriptionHits.downloading")
     })
@@ -195,7 +185,7 @@ export function useSubscriptionHitsWorkbench(api: OptionsApi, initialRoundId?: s
         hitIds,
         roundId: input.roundId
       })
-      setStatus({
+      setFeedback({
         tone: "success",
         message: i18n.t("options.subscriptionHits.downloadSuccess", [
           String(result.submittedHits),
@@ -205,9 +195,9 @@ export function useSubscriptionHitsWorkbench(api: OptionsApi, initialRoundId?: s
       })
       clearSelection()
     } catch (error: unknown) {
-      setStatus({
+      setFeedback({
         tone: "error",
-        message: error instanceof Error ? error.message : i18n.t("options.status.saveFailed")
+        message: error instanceof Error ? error.message : i18n.t("options.subscriptionHits.downloadFailed")
       })
     } finally {
       clearSubmitting(hitIds)
@@ -218,7 +208,7 @@ export function useSubscriptionHitsWorkbench(api: OptionsApi, initialRoundId?: s
   const downloadSingleHit = useCallback(async (hitId: string) => {
     setDownloading(true)
     markSubmitting([hitId])
-    setStatus({
+    setFeedback({
       tone: "info",
       message: i18n.t("options.subscriptionHits.downloading")
     })
@@ -228,7 +218,7 @@ export function useSubscriptionHitsWorkbench(api: OptionsApi, initialRoundId?: s
         hitIds: [hitId],
         roundId: input.roundId
       })
-      setStatus({
+      setFeedback({
         tone: "success",
         message: i18n.t("options.subscriptionHits.downloadSuccess", [
           String(result.submittedHits),
@@ -237,9 +227,9 @@ export function useSubscriptionHitsWorkbench(api: OptionsApi, initialRoundId?: s
         ])
       })
     } catch (error: unknown) {
-      setStatus({
+      setFeedback({
         tone: "error",
-        message: error instanceof Error ? error.message : i18n.t("options.status.saveFailed")
+        message: error instanceof Error ? error.message : i18n.t("options.subscriptionHits.downloadFailed")
       })
     } finally {
       clearSubmitting([hitId])
@@ -279,7 +269,7 @@ export function useSubscriptionHitsWorkbench(api: OptionsApi, initialRoundId?: s
   )
 
   return {
-    status,
+    feedback,
     loading: false,
     downloading,
     workbenchRows,

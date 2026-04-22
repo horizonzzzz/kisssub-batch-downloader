@@ -35,7 +35,7 @@ const SOURCE_FILTER_OPTIONS: Array<{
 
 export function SubscriptionHitsPage({ api, initialRoundId }: SubscriptionHitsPageProps) {
   const {
-    status,
+    feedback,
     downloading,
     workbenchRows,
     input,
@@ -75,9 +75,11 @@ export function SubscriptionHitsPage({ api, initialRoundId }: SubscriptionHitsPa
 
   return (
     <div className="space-y-6" data-testid="subscription-hits-workbench">
-      <div role="status" aria-live="polite">
-        <Alert tone={status.tone} title={status.message} />
-      </div>
+      {feedback ? (
+        <div role="status" aria-live="polite">
+          <Alert tone={feedback.tone} title={feedback.message} />
+        </div>
+      ) : null}
 
       <header>
         <h2 className="text-xl font-semibold text-zinc-900">

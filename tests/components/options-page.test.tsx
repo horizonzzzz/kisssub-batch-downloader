@@ -742,6 +742,48 @@ describe("OptionsPage", () => {
     })
   })
 
+  it("shows action feedback only after subscription-hit downloads start", async () => {
+    const user = userEvent.setup()
+    let resolveDownload: ((value: { attemptedHits: number; submittedHits: number; duplicateHits: number; failedHits: number }) => void) | undefined
+    const api = createOptionsApi({
+      downloadSubscriptionHits: vi.fn().mockImplementation(
+        () =>
+          new Promise<{ attemptedHits: number; submittedHits: number; duplicateHits: number; failedHits: number }>((resolve) => {
+            resolveDownload = resolve
+          })
+      )
+    })
+
+    await seedSubscriptionFixture()
+    window.location.hash = "#/subscription-hits"
+    render(<OptionsPage api={api} />)
+
+    expect(await screen.findByTestId("subscription-hits-workbench")).toBeInTheDocument()
+    expect(screen.queryByRole("status")).not.toBeInTheDocument()
+
+    const hitRow = await screen.findByTestId("subscription-hit-row-hit-1")
+    await user.click(
+      within(hitRow).getByRole("button", {
+        name: "下载 [LoliHouse] Medalist - 01 [1080p]"
+      })
+    )
+
+    await waitFor(() => {
+      expect(screen.getByRole("status")).toHaveTextContent("正在下发命中...")
+    })
+
+    resolveDownload?.({
+      attemptedHits: 1,
+      submittedHits: 1,
+      duplicateHits: 0,
+      failedHits: 0
+    })
+
+    await waitFor(() => {
+      expect(screen.getByRole("status")).toHaveTextContent("已提交 1 条")
+    })
+  })
+
   it(
     "saves filter config via the dedicated save button",
     async () => {
