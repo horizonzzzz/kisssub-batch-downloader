@@ -2,6 +2,23 @@
 
 All notable release changes for `Anime BT Batch Downloader` are tracked here. GitHub Release pages should reuse the matching version section from this file.
 
+## 2.2.0-beta.4
+
+### Features
+
+- Added a dedicated subscription-hits workspace with persisted hit history, selection-based downloads, notification deep links, and an activity-style UI so retained matches stay actionable after scans finish. (`259d8aa`, `16795b7`, `d4a7a23`, `ed6dd15`, `72b86b3`, `dd0d66a`)
+- Added grouped options sidebar navigation so the expanding subscriptions workspace is easier to scan. (`5c9ec69`)
+
+### Fixes
+
+- Fixed subscription hit retention and download follow-through by preserving historical downloads, pruning stale notification rounds, refreshing round context and highlights, and keeping global-download cleanup aligned with retained rounds. (`180fd94`, `99e1dba`, `8a0bef0`, `6198353`, `77aa1da`)
+- Fixed subscription definition and runtime consistency by blocking tombstone revival, restoring legacy reads, validating create/runtime payloads, keeping the no-edit model enforced, and hardening hit-download runtime boundaries. (`0080897`, `ade17f8`, `2e9e393`, `119dad9`, `22a1043`, `f108498`, `a0c1133`, `e76c3af`)
+- Fixed subscription-hits queries and localization so new-status filtering, route params, and translated UI copy stay aligned in the workbench. (`87b51bf`, `fa6373e`, `4dee27f`)
+
+### Refactor
+
+- Refactored subscription persistence and UI feedback by introducing tombstoned records, narrower runtime actions, action-feedback wiring for the hits page, and removal of the legacy subscription upsert flow. (`fd2e830`, `68ab5c5`, `e252255`, `6bf18d4`)
+
 ## 2.2.0-beta.3
 
 ### Features
