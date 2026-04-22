@@ -724,6 +724,7 @@ describe("OptionsPage", () => {
     render(<OptionsPage api={api} />)
 
     expect(await screen.findByTestId("subscription-hits-workbench")).toBeInTheDocument()
+    expect(await screen.findByTestId("subscription-hit-row-hit-1")).toBeInTheDocument()
 
     await user.click(
       screen.getByLabelText("选择 [LoliHouse] Medalist - 01 [1080p]")

@@ -65,7 +65,7 @@ export function SubscriptionHitGroupCard({
 
   return (
     <Card data-testid={`subscription-hit-group-${subscription.id}`}>
-      <div className="px-6 py-4">
+      <div className="px-5 py-4">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
             <div className="flex items-center gap-2">
@@ -86,20 +86,17 @@ export function SubscriptionHitGroupCard({
                 </span>
               )}
             </div>
-            <div className="mt-2 flex items-center gap-4 text-sm text-zinc-500">
+            <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-zinc-500">
               <span>
                 {i18n.t("options.subscriptions.card.sourceScope")}:{" "}
                 {subscription.sourceIds.map(getSourceDisplayName).join(", ")}
               </span>
-              <span className="text-zinc-300">|</span>
               <span>
                 {i18n.t("options.subscriptionHits.hitCount", [String(hits.length)])}
               </span>
-              <span className="text-zinc-300">|</span>
               <span>
                 {i18n.t("options.subscriptionHits.pendingHitCount", [String(pendingHitCount)])}
               </span>
-              <span className="text-zinc-300">|</span>
               <span>
                 {i18n.t("options.subscriptionHits.latestHit")}:{" "}
                 {formatLatestHitTime(hits)}

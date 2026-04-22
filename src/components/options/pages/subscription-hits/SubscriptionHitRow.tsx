@@ -33,12 +33,12 @@ export function SubscriptionHitRow({
     hit.displayStatus === "idle" ||
     hit.displayStatus === "failed"
   const rowClass = hit.highlighted
-    ? "bg-yellow-50 border-l-4 border-l-yellow-400"
+    ? "border-l-2 border-l-amber-400 bg-amber-50/70"
     : "bg-white"
 
   return (
     <div
-      className={`flex items-center gap-3 px-4 py-3 ${rowClass}`}
+      className={`flex items-center gap-3 px-5 py-3 ${rowClass}`}
       data-highlighted={hit.highlighted ? "true" : "false"}
       data-testid={`subscription-hit-row-${hit.id}`}>
       <input
