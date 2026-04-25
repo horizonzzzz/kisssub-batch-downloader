@@ -26,6 +26,10 @@ const SUBSCRIPTION_SOURCE_OPTIONS: SubscriptionSourceOption[] = [
     label: i18n.t("options.sites.catalog.bangumimoe.navLabel")
   },
   {
+    value: "comicat",
+    label: i18n.t("options.sites.catalog.comicat.navLabel")
+  },
+  {
     value: "dongmanhuayuan",
     label: i18n.t("options.sites.catalog.dongmanhuayuan.navLabel")
   }

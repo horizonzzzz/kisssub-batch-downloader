@@ -121,10 +121,11 @@ describe("subscription workbench helpers", () => {
     expect(duplicated).not.toHaveProperty("deletedAt")
   })
 
-  it("keeps subscription source helpers aligned to the three supported background scan sites", () => {
+  it("keeps subscription source helpers aligned to the four supported background scan sites", () => {
     expect(getSubscriptionSourceOptions().map((option) => option.value)).toEqual([
       "acgrip",
       "bangumimoe",
+      "comicat",
       "dongmanhuayuan"
     ])
 
