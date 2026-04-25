@@ -299,6 +299,13 @@
           "navLabel": "Bangumi.moe",
           "displayName": "Bangumi.moe",
           "summary": "追番日历结合最新种子发布的社区"
+        },
+        "comicat": {
+          "navLabel": "Comicat",
+          "displayName": "Comicat 漫猫动漫",
+          "summary": "从漫猫动漫列表页、搜索页和 RSS 订阅中收集 show 详情页资源。",
+          "noteTitle": "建议优先使用磁力链接",
+          "noteDescription": "该站的 down.php 种子地址依赖浏览器 cookie，因此不提供「直接提交种子链接」模式。"
         }
       }
     },

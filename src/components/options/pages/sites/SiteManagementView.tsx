@@ -9,6 +9,7 @@ import { useSourceConfigWorkbench } from "./use-source-config-workbench"
 
 import acgripSiteIcon from "../../../../assets/site-icon-acgrip.png"
 import bangumiMoeSiteIcon from "../../../../assets/site-icon-bangumimoe.svg"
+import comicatSiteIcon from "../../../../assets/site-icon-comicat.svg"
 import dongmanhuayuanSiteIcon from "../../../../assets/site-icon-dongmanhuayuan.png"
 import kisssubSiteIcon from "../../../../assets/site-icon-kisssub.png"
 import { getLocalizedSiteConfigMeta } from "../../../../lib/sources/site-meta"
@@ -25,7 +26,8 @@ const SITE_ICONS: Record<SourceId, string> = {
   kisssub: kisssubSiteIcon,
   dongmanhuayuan: dongmanhuayuanSiteIcon,
   acgrip: acgripSiteIcon,
-  bangumimoe: bangumiMoeSiteIcon
+  bangumimoe: bangumiMoeSiteIcon,
+  comicat: comicatSiteIcon
 }
 
 type SiteManagementViewProps = {

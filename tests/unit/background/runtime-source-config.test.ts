@@ -93,6 +93,10 @@ describe("background source config runtime boundary", () => {
       bangumimoe: {
         enabled: true,
         deliveryMode: "magnet"
+      },
+      comicat: {
+        enabled: true,
+        deliveryMode: "magnet"
       }
     })
 
@@ -113,6 +117,10 @@ describe("background source config runtime boundary", () => {
             deliveryMode: "torrent-file"
           },
           bangumimoe: {
+            enabled: true,
+            deliveryMode: "magnet"
+          },
+          comicat: {
             enabled: true,
             deliveryMode: "magnet"
           }
@@ -142,6 +150,10 @@ describe("background source config runtime boundary", () => {
       bangumimoe: {
         enabled: true,
         deliveryMode: "magnet"
+      },
+      comicat: {
+        enabled: true,
+        deliveryMode: "magnet"
       }
     })
     expect(notifySupportedSourceTabsOfContentSettingsChangeMock).toHaveBeenCalledTimes(1)
@@ -162,6 +174,10 @@ describe("background source config runtime boundary", () => {
           deliveryMode: "torrent-file"
         },
         bangumimoe: {
+          enabled: true,
+          deliveryMode: "magnet"
+        },
+        comicat: {
           enabled: true,
           deliveryMode: "magnet"
         }
@@ -187,6 +203,10 @@ describe("background source config runtime boundary", () => {
         deliveryMode: "torrent-file"
       },
       bangumimoe: {
+        enabled: true,
+        deliveryMode: "magnet"
+      },
+      comicat: {
         enabled: true,
         deliveryMode: "magnet"
       }
@@ -221,6 +241,10 @@ describe("background source config runtime boundary", () => {
           deliveryMode: "torrent-file"
         },
         bangumimoe: {
+          enabled: true,
+          deliveryMode: "magnet"
+        },
+        comicat: {
           enabled: true,
           deliveryMode: "magnet"
         }

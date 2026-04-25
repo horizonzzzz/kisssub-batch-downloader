@@ -299,6 +299,13 @@
           "navLabel": "Bangumi.moe",
           "displayName": "Bangumi.moe",
           "summary": "A community that combines seasonal calendars with the latest torrent releases."
+        },
+        "comicat": {
+          "navLabel": "Comicat",
+          "displayName": "Comicat",
+          "summary": "Collects show detail page resources from Comicat list, search, and RSS subscription.",
+          "noteTitle": "Recommended: prefer magnet-link delivery",
+          "noteDescription": "The site's down.php torrent URL depends on browser cookies, so direct torrent-link submission is not available."
         }
       }
     },

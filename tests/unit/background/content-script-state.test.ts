@@ -32,7 +32,8 @@ describe("content script state query", () => {
       kisssub: { enabled: true, deliveryMode: "magnet" },
       dongmanhuayuan: { enabled: true, deliveryMode: "magnet" },
       acgrip: { enabled: true, deliveryMode: "torrent-file" },
-      bangumimoe: { enabled: true, deliveryMode: "magnet" }
+      bangumimoe: { enabled: true, deliveryMode: "magnet" },
+      comicat: { enabled: true, deliveryMode: "magnet" }
     })
     vi.mocked(getFilterConfig).mockResolvedValue({ rules: [] })
     vi.mocked(getBatchUiPreferences).mockResolvedValue({ lastSavePath: "" })
@@ -53,7 +54,8 @@ describe("content script state query", () => {
       kisssub: { enabled: false, deliveryMode: "magnet" },
       dongmanhuayuan: { enabled: true, deliveryMode: "magnet" },
       acgrip: { enabled: true, deliveryMode: "torrent-file" },
-      bangumimoe: { enabled: true, deliveryMode: "magnet" }
+      bangumimoe: { enabled: true, deliveryMode: "magnet" },
+      comicat: { enabled: true, deliveryMode: "magnet" }
     })
 
     await expect(buildContentScriptState({

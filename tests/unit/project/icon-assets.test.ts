@@ -10,7 +10,8 @@ describe("icon assets", () => {
 
     expect(assetNames.filter((name) => name.endsWith(".svg"))).toEqual([
       "anime-bt-icon-speedline.svg",
-      "site-icon-bangumimoe.svg"
+      "site-icon-bangumimoe.svg",
+      "site-icon-comicat.svg"
     ])
     expect(assetNames.filter((name) => name.endsWith(".png"))).toEqual([
       "icon-grayscale.png",

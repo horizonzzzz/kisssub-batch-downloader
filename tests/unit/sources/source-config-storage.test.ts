@@ -57,6 +57,10 @@ describe("source config storage", () => {
         bangumimoe: {
           enabled: true,
           deliveryMode: "magnet"
+        },
+        comicat: {
+          enabled: true,
+          deliveryMode: "magnet"
         }
       }
     })
@@ -119,6 +123,10 @@ describe("source config storage", () => {
         },
         bangumimoe: {
           enabled: false,
+          deliveryMode: "magnet"
+        },
+        comicat: {
+          enabled: true,
           deliveryMode: "magnet"
         }
       }
