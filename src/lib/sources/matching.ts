@@ -5,7 +5,8 @@ export const SOURCE_MATCH_HOSTS: Readonly<Record<SourceId, readonly string[]>> =
   kisssub: ["kisssub.org"],
   dongmanhuayuan: ["dongmanhuayuan.com"],
   acgrip: ["acg.rip"],
-  bangumimoe: ["bangumi.moe"]
+  bangumimoe: ["bangumi.moe"],
+  comicat: ["comicat.org"]
 })
 
 export const CONTENT_SCRIPT_MATCH_PATTERNS: string[] = SOURCE_IDS.flatMap((sourceId) =>

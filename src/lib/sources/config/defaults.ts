@@ -16,5 +16,9 @@ export const DEFAULT_SOURCE_CONFIG: SourceConfig = Object.freeze({
   bangumimoe: {
     enabled: true,
     deliveryMode: "magnet"
+  },
+  comicat: {
+    enabled: true,
+    deliveryMode: "magnet"
   }
 })

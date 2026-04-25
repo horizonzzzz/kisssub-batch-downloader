@@ -10,4 +10,5 @@ export type SourceConfig = {
   dongmanhuayuan: BaseSourceRuntimeConfig<"magnet">
   acgrip: BaseSourceRuntimeConfig<"torrent-url" | "torrent-file">
   bangumimoe: BaseSourceRuntimeConfig<DeliveryMode>
+  comicat: BaseSourceRuntimeConfig<"magnet" | "torrent-file">
 }

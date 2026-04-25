@@ -10,7 +10,8 @@ export function sanitizeSourceConfig(raw: unknown): SourceConfig {
     kisssub: normalizeKisssubConfig(record.kisssub),
     dongmanhuayuan: normalizeDongmanhuayuanConfig(record.dongmanhuayuan),
     acgrip: normalizeAcgripConfig(record.acgrip),
-    bangumimoe: normalizeBangumimoeConfig(record.bangumimoe)
+    bangumimoe: normalizeBangumimoeConfig(record.bangumimoe),
+    comicat: normalizeComicatConfig(record.comicat)
   }
 }
 
@@ -113,4 +114,21 @@ function normalizeDeliveryModeForAcgrip(
   }
 
   return fallback
+}
+
+function normalizeComicatConfig(raw: unknown): SourceConfig["comicat"] {
+  const defaults = DEFAULT_SOURCE_CONFIG.comicat
+
+  if (!raw || typeof raw !== "object") {
+    return defaults
+  }
+
+  const record = raw as Record<string, unknown>
+  const enabled = normalizeBoolean(record.enabled, defaults.enabled)
+  const deliveryMode =
+    record.deliveryMode === "magnet" || record.deliveryMode === "torrent-file"
+      ? record.deliveryMode
+      : defaults.deliveryMode
+
+  return { enabled, deliveryMode }
 }

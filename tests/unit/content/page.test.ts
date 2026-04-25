@@ -272,4 +272,40 @@ describe("content page helpers", () => {
     expect(normalizeText("  Episode \n  01  ")).toBe("Episode 01")
     expect(normalizeText(null)).toBe("")
   })
+
+  it("detects comicat list pages and returns source-aware batch items", () => {
+    const location = new URL("https://www.comicat.org/")
+    document.body.innerHTML = `
+      <table>
+        <tbody>
+          <tr><td><a href="/show-deadbeefdeadbeefdeadbeefdeadbeefdeadbeef.html">资源一</a></td></tr>
+          <tr><td><a href="/show-feedfacefeedfacefeedfacefeedfacefeedface.html">资源二</a></td></tr>
+        </tbody>
+      </table>
+    `
+
+    const source = getSourceAdapterForLocation(location)
+
+    expect(source?.id).toBe("comicat")
+    expect(
+      getDetailAnchors(source!, document, location).map((anchor) =>
+        getBatchItemFromAnchor(source!, anchor, location)
+      )
+    ).toEqual([
+      {
+        sourceId: "comicat",
+        detailUrl: "https://www.comicat.org/show-deadbeefdeadbeefdeadbeefdeadbeefdeadbeef.html",
+        title: "资源一"
+      },
+      {
+        sourceId: "comicat",
+        detailUrl: "https://www.comicat.org/show-feedfacefeedfacefeedfacefeedfacefeedface.html",
+        title: "资源二"
+      }
+    ])
+  })
+
+  it("treats comicat search pages as list pages", () => {
+    expect(isListPage(new URL("https://www.comicat.org/search.php?keyword=Re%3AZero"))).toBe(true)
+  })
 })

@@ -9,14 +9,16 @@ const SUPPORTED_DELIVERY_MODES: Record<SourceId, readonly DeliveryMode[]> = {
   kisssub: ["magnet", "torrent-url", "torrent-file"],
   dongmanhuayuan: ["magnet"],
   acgrip: ["torrent-url", "torrent-file"],
-  bangumimoe: ["magnet", "torrent-url", "torrent-file"]
+  bangumimoe: ["magnet", "torrent-url", "torrent-file"],
+  comicat: ["magnet", "torrent-file"]
 }
 
 export const DEFAULT_SOURCE_DELIVERY_MODES: Record<SourceId, DeliveryMode> = {
   kisssub: DEFAULT_SOURCE_CONFIG.kisssub.deliveryMode,
   dongmanhuayuan: DEFAULT_SOURCE_CONFIG.dongmanhuayuan.deliveryMode,
   acgrip: DEFAULT_SOURCE_CONFIG.acgrip.deliveryMode,
-  bangumimoe: DEFAULT_SOURCE_CONFIG.bangumimoe.deliveryMode
+  bangumimoe: DEFAULT_SOURCE_CONFIG.bangumimoe.deliveryMode,
+  comicat: DEFAULT_SOURCE_CONFIG.comicat.deliveryMode
 }
 
 export function getSupportedDeliveryModes(sourceId: SourceId): DeliveryMode[] {

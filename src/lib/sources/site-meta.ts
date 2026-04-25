@@ -52,6 +52,14 @@ export const SITE_CONFIG_META: Record<SourceId, SiteConfigMeta> = Object.freeze(
     storageDisplayName: "Bangumi.moe",
     overviewAccent: "default",
     strategyMode: "editable"
+  },
+  comicat: {
+    id: "comicat",
+    url: "comicat.org",
+    storageDisplayName: "Comicat 漫猫动漫",
+    overviewAccent: "emerald",
+    strategyMode: "editable",
+    noteTone: "info"
   }
 })
 
@@ -68,9 +76,12 @@ export function getLocalizedSiteConfigMeta(sourceId: SourceId): LocalizedSiteCon
     badgeWhenDisabled: i18n.t("options.sites.badge.disabled"),
     lockedStrategyLabel:
       site.strategyMode === "locked" ? i18n.t(`${baseKey}.lockedStrategyLabel`) : undefined,
-    noteTitle: sourceId === "acgrip" ? i18n.t(`${baseKey}.noteTitle`) : undefined,
+    noteTitle:
+      sourceId === "acgrip" || sourceId === "comicat"
+        ? i18n.t(`${baseKey}.noteTitle`)
+        : undefined,
     noteDescription:
-      sourceId === "dongmanhuayuan" || sourceId === "acgrip"
+      sourceId === "dongmanhuayuan" || sourceId === "acgrip" || sourceId === "comicat"
         ? i18n.t(`${baseKey}.noteDescription`)
         : undefined
   }
