@@ -8,7 +8,7 @@ The extension injects selection UI into supported list pages, reuses direct magn
 
 ## Current Scope
 
-- Supported source adapters: `kisssub.org`, `dongmanhuayuan.com`, `acg.rip`, `bangumi.moe`
+- Supported source adapters: `kisssub.org`, `dongmanhuayuan.com`, `acg.rip`, `bangumi.moe`, `comicat.org`
 - Supported source management in the options page:
   - `Downloader & Basic Settings`
     - rendered as a downloader-first workspace backed by dedicated `downloader_config`, `batch_execution_config`, and `batch_ui_preferences` storage domains
@@ -21,8 +21,10 @@ The extension injects selection UI into supported list pages, reuses direct magn
     - page interactions write through the dedicated filter workbench, and the quick test bench exercises the same include-only filter engine used by the runtime
   - `Subscriptions`
     - rendered as a first-class workspace backed by persisted subscription definitions, dedicated `subscription_policy_config`, and Dexie-backed scheduler, polling, notification, and bounded recent-hit runtime state
-    - supports creating, duplicating, enabling, disabling, and deleting subscriptions, plus grouped multi-source scans for the subscription-capable sites `acg.rip`, `bangumi.moe`, and `dongmanhuayuan.com`, runtime status visibility, and notification-round retention for recent matched hits
+    - supports creating, duplicating, enabling, disabling, and deleting subscriptions, plus grouped multi-source scans for the subscription-capable sites `acg.rip`, `bangumi.moe`, `comicat.org`, and `dongmanhuayuan.com`, runtime status visibility, and notification-round retention for recent matched hits
     - `kisssub.org` is intentionally excluded from subscription scanning because its robot verification blocks reliable background fetching
+    - `comicat.org` uses RSS for background subscription scanning and restores detail-page `magnet` plus `down.php?...` locally without remote wormhole script injection
+    - `comicat.org` supports `magnet` and `torrent-file`; `torrent-url` is intentionally excluded because `down.php` requires browser cookies
     - subscription creation and duplication submit only editable definition fields; background persistence generates record ids plus creation/tombstone metadata
     - does not currently support editing an existing subscription definition in place; changes require creating or duplicating a new definition instead
     - deleting a subscription removes it from the active catalog but preserves historical hits, which remain visible in `options.html#/subscription-hits` with a deleted marker
@@ -135,7 +137,7 @@ The extension injects selection UI into supported list pages, reuses direct magn
   - `src/lib/sources/config/` for per-source defaults, selectors, storage, and types
   - `src/lib/subscriptions/` for subscription definitions, Dexie-backed runtime cache/manager coordination, retained-notification download workflows, grouped source scans, scheduler/alarm helpers, notification payloads, and recent-hit retention
   - `src/lib/subscriptions/policy/` for subscription policy defaults, sanitization, storage, and types
-  - `src/lib/subscriptions/source-fetch/` for background-only source fetchers that fetch subscription candidates from the subscription-capable sites `acg.rip`, `bangumi.moe`, and `dongmanhuayuan.com` without opening hidden tabs
+  - `src/lib/subscriptions/source-fetch/` for background-only source fetchers that fetch subscription candidates from the subscription-capable sites `acg.rip`, `bangumi.moe`, `comicat.org`, and `dongmanhuayuan.com` without opening hidden tabs
   - `src/lib/shared/` for the WXT browser helper, cross-runtime messages, shared types, and Tailwind utility helpers
 - `.github/workflows/release.yml`
   Tagged-release automation that validates package, manifest `version` / `version_name`, packages the extension, extracts the matching `CHANGELOG.md` section, renames the packaged archive, and publishes the GitHub Release. Prerelease tags must publish prerelease GitHub Releases.
