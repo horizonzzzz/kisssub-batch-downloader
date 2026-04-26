@@ -1,7 +1,8 @@
-import { useState, useEffect, useMemo } from "react"
+import { useState, useMemo } from "react"
 
 import { i18n } from "../../../../lib/i18n"
 import { requestDownloaderPermission } from "../../../../lib/downloader/permissions"
+import { mapDownloaderValidationErrorToSaveMessage } from "../../../../lib/downloader/validation-errors"
 import { HiOutlineArrowPath } from "react-icons/hi2"
 
 import { Button, Alert } from "../../../ui"
@@ -11,8 +12,9 @@ import { ConnectionHelpAlert } from "./ConnectionHelpAlert"
 import { DownloaderSelectorSection } from "./DownloaderSelectorSection"
 import { ExtractionCadenceSection } from "./ExtractionCadenceSection"
 import { GeneralDownloaderSummaryCard } from "./GeneralDownloaderSummaryCard"
-import { QbCredentialsSection, type ConnectionState } from "./QbCredentialsSection"
+import { QbCredentialsSection } from "./QbCredentialsSection"
 import { TransmissionCredentialsSection } from "./TransmissionCredentialsSection"
+import { useDownloaderValidationState } from "./use-downloader-validation-state"
 import { useOptionsPageFooter } from "../../layout/OptionsPageFooter"
 import type { OptionsApi } from "../../OptionsPage"
 import { getDownloaderMeta } from "../../../../lib/downloader"
@@ -31,31 +33,29 @@ export function GeneralSettingsPage({ api }: GeneralSettingsPageProps) {
 
   const downloaderWorkbench = useDownloaderWorkbench()
   const batchWorkbench = useBatchExecutionConfigWorkbench(api)
-
-  const [connectionState, setConnectionState] = useState<ConnectionState>("idle")
-  const [connectionMessage, setConnectionMessage] = useState("")
-  const [connectionVersion, setConnectionVersion] = useState("")
-  const [testing, setTesting] = useState(false)
+  const validationState = useDownloaderValidationState(api, downloaderWorkbench.config)
 
   const currentDownloaderId = downloaderWorkbench.config.activeId
   const currentDownloaderProfile = downloaderWorkbench.config.profiles[currentDownloaderId]
   const currentDownloaderName = getDownloaderMeta(currentDownloaderId).displayName
 
-  // Clear connection state when switching downloaders
-  useEffect(() => {
-    setConnectionState("idle")
-    setConnectionMessage("")
-    setConnectionVersion("")
-  }, [currentDownloaderId])
-
   const handleSaveGeneralSettings = async () => {
+    const requiresFreshValidation = validationState.uiState !== "verified"
+
     setGeneralSaving(true)
-    setSaveStatus({
-      tone: "info",
-      message: i18n.t("options.status.savingSettings")
-    })
+    setSaveStatus(null)
+    if (requiresFreshValidation) {
+      validationState.beginTesting()
+    } else {
+      validationState.beginSaving()
+    }
 
     try {
+      await requestDownloaderPermission(downloaderWorkbench.config)
+      if (requiresFreshValidation) {
+        validationState.beginSaving()
+      }
+
       const saved = await api.saveGeneralSettings({
         downloaderConfig: downloaderWorkbench.config,
         batchExecutionConfig: batchWorkbench.config
@@ -63,41 +63,21 @@ export function GeneralSettingsPage({ api }: GeneralSettingsPageProps) {
 
       downloaderWorkbench.setConfig(saved.downloaderConfig)
       batchWorkbench.setConfig(saved.batchExecutionConfig)
+      validationState.applySavedValidation(saved.validation)
 
       setSaveStatus({
         tone: "success",
-        message: i18n.t("options.status.settingsSaved")
+        message: i18n.t("options.general.validation.saved")
       })
-    } catch {
+    } catch (error: unknown) {
+      const message = mapDownloaderValidationErrorToSaveMessage(error)
+      validationState.markFailed(message)
       setSaveStatus({
         tone: "error",
-        message: i18n.t("options.general.saveCombinedFailed")
+        message
       })
     } finally {
       setGeneralSaving(false)
-    }
-  }
-
-  const handleTestConnection = async () => {
-    setTesting(true)
-    setConnectionState("idle")
-    setConnectionMessage("")
-    setSaveStatus(null)
-
-    try {
-      await requestDownloaderPermission(downloaderWorkbench.config)
-      const result = await api.testConnection(downloaderWorkbench.config)
-      setConnectionState("success")
-      setConnectionVersion(result.version)
-      setConnectionMessage(
-        i18n.t("options.status.connectedTo", [result.displayName, result.baseUrl || i18n.t("options.status.noAddressReturned")])
-      )
-    } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : i18n.t("options.status.connectionTestFailed")
-      setConnectionState("error")
-      setConnectionMessage(message)
-    } finally {
-      setTesting(false)
     }
   }
 
@@ -107,22 +87,22 @@ export function GeneralSettingsPage({ api }: GeneralSettingsPageProps) {
     return "info"
   }
 
-  // Compute unified status for accessibility region
-  const statusMessage = testing
-    ? i18n.t("options.status.testingConnection")
-    : connectionState === "success"
-      ? `${i18n.t("options.general.common.connectionSuccess")}。${connectionVersion}`
-      : connectionState === "error"
-        ? connectionMessage
-        : saveStatus?.message || downloaderWorkbench.status.message || batchWorkbench.status.message || ""
+  const statusMessage =
+    saveStatus?.message || downloaderWorkbench.status.message || batchWorkbench.status.message || ""
 
-  const statusTone = testing
-    ? "info"
-    : connectionState === "success"
-      ? "success"
-      : connectionState === "error"
-        ? "error"
-        : saveStatus?.tone || mapTone(downloaderWorkbench.status.tone)
+  const statusTone =
+    saveStatus?.tone || mapTone(downloaderWorkbench.status.tone)
+
+  const validationTone = validationState.uiState === "verified"
+    ? "success"
+    : validationState.uiState === "failed"
+      ? "error"
+      : "info"
+
+  const validationDescription = validationState.version
+    ? i18n.t("options.general.validation.validatedVersion", [validationState.version])
+    : undefined
+
   const generalSaveBusy = generalSaving || downloaderWorkbench.saving || batchWorkbench.saving
   const footerConfig = useMemo(() => {
     if (downloaderWorkbench.loading || batchWorkbench.loading) {
@@ -178,6 +158,13 @@ export function GeneralSettingsPage({ api }: GeneralSettingsPageProps) {
         baseUrl={currentDownloaderProfile.baseUrl}
       />
 
+      <Alert
+        tone={validationTone}
+        title={validationState.message}
+        description={validationDescription}
+        data-testid="general-validation-state"
+      />
+
       <DownloaderSelectorSection
         activeId={downloaderWorkbench.config.activeId}
         onActiveIdChange={(id) => downloaderWorkbench.setConfig({
@@ -198,10 +185,6 @@ export function GeneralSettingsPage({ api }: GeneralSettingsPageProps) {
               transmission: profile
             }
           })}
-          connectionMessage={connectionMessage}
-          connectionState={connectionState}
-          testing={testing}
-          onTestConnection={handleTestConnection}
         />
       ) : (
         <QbCredentialsSection
@@ -213,10 +196,6 @@ export function GeneralSettingsPage({ api }: GeneralSettingsPageProps) {
               qbittorrent: profile
             }
           })}
-          connectionMessage={connectionMessage}
-          connectionState={connectionState}
-          testing={testing}
-          onTestConnection={handleTestConnection}
         />
       )}
 

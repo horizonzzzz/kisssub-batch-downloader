@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import { OptionsPage, type OptionsApi } from "../../src/components/options/OptionsPage"
 import type { BatchExecutionConfig } from "../../src/lib/batch-config/types"
+import { createDownloaderValidationFingerprint } from "../../src/lib/downloader/validation"
 import type { SubscriptionEntry } from "../../src/lib/shared/types"
 import type { SourceConfig } from "../../src/lib/sources/config/types"
 import type { SubscriptionPolicyConfig } from "../../src/lib/subscriptions/policy/types"
@@ -134,6 +135,7 @@ function createOptionsApi(overrides: Partial<OptionsApi> = {}): OptionsApi {
     saveSourceConfig: vi.fn().mockImplementation(async (config) => config),
     getDownloaderConfig: vi.fn().mockResolvedValue(downloaderConfig),
     saveDownloaderConfig: vi.fn().mockImplementation(async (config) => config),
+    getDownloaderValidationState: vi.fn().mockResolvedValue({}),
     getBatchExecutionConfig: vi.fn().mockResolvedValue({
       concurrency: 3,
       retryCount: 3,
@@ -141,7 +143,16 @@ function createOptionsApi(overrides: Partial<OptionsApi> = {}): OptionsApi {
       domSettleMs: 1200
     }),
     saveBatchExecutionConfig: vi.fn().mockImplementation(async (config) => config),
-    saveGeneralSettings: vi.fn().mockImplementation(async (payload) => payload),
+    saveGeneralSettings: vi.fn().mockImplementation(async (payload) => ({
+      ...payload,
+      validation: {
+        downloaderId: payload.downloaderConfig.activeId,
+        configFingerprint: "mock-fingerprint",
+        validatedAt: "2026-04-26T08:00:00.000Z",
+        version: "5.0.0",
+        reusedExisting: false
+      }
+    })),
     getBatchUiPreferences: vi.fn().mockResolvedValue({ lastSavePath: "" }),
     saveBatchUiPreferences: vi.fn().mockImplementation(async (preferences) => preferences),
     getSubscriptionPolicy: vi.fn().mockResolvedValue(subscriptionPolicy),
@@ -1401,7 +1412,16 @@ describe("OptionsPage", () => {
     async () => {
       const user = userEvent.setup()
       const api = createOptionsApi({
-        saveGeneralSettings: vi.fn().mockImplementation(async (payload) => payload),
+        saveGeneralSettings: vi.fn().mockImplementation(async (payload) => ({
+          ...payload,
+          validation: {
+            downloaderId: payload.downloaderConfig.activeId,
+            configFingerprint: "mock-fingerprint",
+            validatedAt: "2026-04-26T08:00:00.000Z",
+            version: "5.0.0",
+            reusedExisting: false
+          }
+        })),
         saveSourceConfig: vi.fn().mockImplementation(async (config) => config)
       })
 
@@ -1466,6 +1486,13 @@ describe("OptionsPage", () => {
       | ((value: {
           downloaderConfig: DownloaderConfig
           batchExecutionConfig: BatchExecutionConfig
+          validation: {
+            downloaderId: "qbittorrent" | "transmission"
+            configFingerprint: string
+            validatedAt: string
+            version: string
+            reusedExisting: boolean
+          }
         }) => void)
       | undefined
     const api = createOptionsApi({
@@ -1474,6 +1501,13 @@ describe("OptionsPage", () => {
           new Promise<{
             downloaderConfig: DownloaderConfig
             batchExecutionConfig: BatchExecutionConfig
+            validation: {
+              downloaderId: "qbittorrent" | "transmission"
+              configFingerprint: string
+              validatedAt: string
+              version: string
+              reusedExisting: boolean
+            }
           }>((resolve) => {
             resolveSave = resolve
           })
@@ -1501,6 +1535,13 @@ describe("OptionsPage", () => {
         retryCount: 3,
         injectTimeoutMs: 15000,
         domSettleMs: 1200
+      },
+      validation: {
+        downloaderId: "qbittorrent",
+        configFingerprint: "mock-fingerprint",
+        validatedAt: "2026-04-26T08:00:00.000Z",
+        version: "5.0.0",
+        reusedExisting: false
       }
     })
 
@@ -1524,12 +1565,111 @@ describe("OptionsPage", () => {
     await user.click(screen.getByRole("button", { name: "保存基础设置" }))
 
     await waitFor(() => {
-      expect(screen.getByRole("status")).toHaveTextContent("基础设置中有配置项保存失败，请重试。")
+      expect(screen.getByRole("status")).toHaveTextContent("general save failed")
     })
 
     expect(api.saveGeneralSettings).toHaveBeenCalledTimes(1)
     expect(api.saveDownloaderConfig).not.toHaveBeenCalled()
     expect(api.saveBatchExecutionConfig).not.toHaveBeenCalled()
+  })
+
+  it("loads verified status when the active downloader snapshot matches", async () => {
+    const fingerprint = await createDownloaderValidationFingerprint(downloaderConfig)
+    const api = createOptionsApi({
+      getDownloaderValidationState: vi.fn().mockResolvedValue({
+        qbittorrent: {
+          configFingerprint: fingerprint,
+          validatedAt: "2026-04-26T08:00:00.000Z",
+          version: "5.0.0"
+        }
+      })
+    })
+
+    render(<OptionsPage api={api} />)
+
+    expect(await screen.findByText("当前下载器配置已验证。")).toBeInTheDocument()
+    expect(screen.getByText("已验证版本：5.0.0")).toBeInTheDocument()
+  })
+
+  it("invalidates verified status immediately when active downloader credentials change", async () => {
+    const user = userEvent.setup()
+    const fingerprint = await createDownloaderValidationFingerprint(downloaderConfig)
+    const api = createOptionsApi({
+      getDownloaderValidationState: vi.fn().mockResolvedValue({
+        qbittorrent: {
+          configFingerprint: fingerprint,
+          validatedAt: "2026-04-26T08:00:00.000Z",
+          version: "5.0.0"
+        }
+      })
+    })
+
+    render(<OptionsPage api={api} />)
+
+    expect(await screen.findByText("当前下载器配置已验证。")).toBeInTheDocument()
+
+    await user.clear(screen.getByLabelText("用户名"))
+    await user.type(screen.getByLabelText("用户名"), "operator")
+
+    expect(screen.getByText("当前下载器配置尚未完成验证。")).toBeInTheDocument()
+  })
+
+  it("surfaces auto-validation failures when saving basic settings", async () => {
+    const user = userEvent.setup()
+    const api = createOptionsApi({
+      getDownloaderValidationState: vi.fn().mockResolvedValue({}),
+      saveGeneralSettings: vi.fn().mockRejectedValue(
+        new Error("已连接到下载器，但身份验证失败。请检查用户名或密码，未保存任何设置。")
+      )
+    })
+
+    render(<OptionsPage api={api} />)
+
+    expect(await screen.findByDisplayValue("http://127.0.0.1:17474")).toBeInTheDocument()
+
+    await user.click(screen.getByRole("button", { name: "保存基础设置" }))
+
+    await waitFor(() => {
+      expect(screen.getByRole("status")).toHaveTextContent("已连接到下载器，但身份验证失败。请检查用户名或密码，未保存任何设置。")
+    })
+  })
+
+  it("keeps verified state when saving batch-only edits with reused validation snapshot", async () => {
+    const user = userEvent.setup()
+    const fingerprint = await createDownloaderValidationFingerprint(downloaderConfig)
+    const api = createOptionsApi({
+      getDownloaderValidationState: vi.fn().mockResolvedValue({
+        qbittorrent: {
+          configFingerprint: fingerprint,
+          validatedAt: "2026-04-26T08:00:00.000Z",
+          version: "5.0.0"
+        }
+      }),
+      saveGeneralSettings: vi.fn().mockImplementation(async (payload) => ({
+        ...payload,
+        validation: {
+          downloaderId: "qbittorrent",
+          configFingerprint: await createDownloaderValidationFingerprint(payload.downloaderConfig),
+          validatedAt: "2026-04-26T08:00:00.000Z",
+          version: "5.0.0",
+          reusedExisting: true
+        }
+      }))
+    })
+
+    render(<OptionsPage api={api} />)
+
+    await screen.findByText("当前下载器配置已验证。")
+
+    await user.clear(screen.getByLabelText("并发数"))
+    await user.type(screen.getByLabelText("并发数"), "4")
+    await user.click(screen.getByRole("button", { name: "保存基础设置" }))
+
+    await waitFor(() => {
+      expect(api.saveGeneralSettings).toHaveBeenCalledTimes(1)
+    })
+
+    expect(screen.getByText("当前下载器配置已验证。")).toBeInTheDocument()
   })
 
   it(
@@ -1584,63 +1724,17 @@ describe("OptionsPage", () => {
     20000
   )
 
-  it(
-    "shows a live status region and connection feedback while testing",
-    async () => {
-      const user = userEvent.setup()
-      let resolveConnection:
-        | ((value: {
-            downloaderId: "qbittorrent"
-            displayName: "qBittorrent"
-            baseUrl: string
-            version: string
-          }) => void)
-        | undefined
-      const api = createOptionsApi({
-        testConnection: vi.fn().mockImplementation(
-          () =>
-            new Promise<{
-              downloaderId: "qbittorrent"
-              displayName: "qBittorrent"
-              baseUrl: string
-              version: string
-            }>((resolve) => {
-              resolveConnection = resolve
-            })
-        )
-      })
+  it("does not render a manual test connection button in downloader settings", async () => {
+    const api = createOptionsApi()
 
-      render(<OptionsPage api={api} />)
+    render(<OptionsPage api={api} />)
 
-      await waitFor(() => {
-        expect(screen.getByRole("status")).toHaveTextContent("设置已加载。")
-      })
-
-      await user.click(screen.getByRole("button", { name: "测试连接" }))
-
-      expect(api.testConnection).toHaveBeenCalledWith(downloaderConfig)
-      await waitFor(() => {
-        expect(screen.getByRole("button", { name: "测试连接" })).toBeDisabled()
-        expect(screen.getByRole("status")).toHaveTextContent("正在测试连接。")
-      })
-
-      resolveConnection?.({
-        downloaderId: "qbittorrent",
-        displayName: "qBittorrent",
-        baseUrl: settings.downloaders.qbittorrent.baseUrl,
-        version: "5.0.0"
-      })
-
-      await waitFor(() => {
-        expect(screen.getByRole("status")).toHaveTextContent("连接成功。")
-        expect(screen.getByRole("status")).toHaveTextContent("5.0.0")
-      })
-    },
-    10000
-  )
+    expect(await screen.findByDisplayValue("http://127.0.0.1:17474")).toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: "测试连接" })).not.toBeInTheDocument()
+  })
 
   it(
-    "requests downloader host permission from the options page before testing the connection",
+    "requests downloader host permission from the options page before saving basic settings",
     async () => {
       const user = userEvent.setup()
       const api = createOptionsApi()
@@ -1651,7 +1745,7 @@ describe("OptionsPage", () => {
 
       await screen.findByText("设置已加载。")
 
-      await user.click(screen.getByRole("button", { name: "测试连接" }))
+      await user.click(screen.getByRole("button", { name: "保存基础设置" }))
 
       expect(permissionsContainsMock).toHaveBeenCalledWith({
         origins: ["http://127.0.0.1/*"]
@@ -1659,13 +1753,18 @@ describe("OptionsPage", () => {
       expect(permissionsRequestMock).toHaveBeenCalledWith({
         origins: ["http://127.0.0.1/*"]
       })
-      expect(api.testConnection).toHaveBeenCalledWith(downloaderConfig)
+      expect(api.saveGeneralSettings).toHaveBeenCalledWith(
+        expect.objectContaining({
+          downloaderConfig,
+          batchExecutionConfig: expect.any(Object)
+        })
+      )
     },
     10000
   )
 
   it(
-    "surfaces a permission error and skips the connection probe when the user denies host access",
+    "surfaces a permission error and skips saving when the user denies downloader host access",
     async () => {
       const user = userEvent.setup()
       const api = createOptionsApi()
@@ -1677,58 +1776,12 @@ describe("OptionsPage", () => {
 
       await screen.findByText("设置已加载。")
 
-      await user.click(screen.getByRole("button", { name: "测试连接" }))
+      await user.click(screen.getByRole("button", { name: "保存基础设置" }))
 
       await waitFor(() => {
-        expect(screen.getByRole("status")).toHaveTextContent("权限")
+        expect(screen.getByRole("status")).toHaveTextContent("未获得当前下载器地址的访问权限，未保存任何设置。")
       })
-      expect(api.testConnection).not.toHaveBeenCalled()
-    },
-    10000
-  )
-
-  it(
-    "tests the active downloader even when the inactive downloader address is blank",
-    async () => {
-      const user = userEvent.setup()
-      const api = createOptionsApi({
-        testConnection: vi.fn().mockResolvedValue({
-          downloaderId: "qbittorrent",
-          displayName: "qBittorrent",
-          baseUrl: settings.downloaders.qbittorrent.baseUrl,
-          version: "5.0.0"
-        })
-      })
-
-      render(<OptionsPage api={api} />)
-
-      expect(await screen.findByDisplayValue("http://127.0.0.1:17474")).toBeInTheDocument()
-
-      await user.click(screen.getByRole("radio", { name: "Transmission" }))
-      const transmissionBaseUrlField = await screen.findByPlaceholderText(
-        "http://127.0.0.1:9091/transmission/rpc"
-      )
-      await user.clear(transmissionBaseUrlField)
-      expect(transmissionBaseUrlField).toHaveValue("")
-
-      await user.click(screen.getByRole("radio", { name: "qBittorrent" }))
-      await user.click(screen.getByRole("button", { name: "测试连接" }))
-
-      await waitFor(() => {
-        expect(api.testConnection).toHaveBeenCalledWith({
-          ...downloaderConfig,
-          activeId: "qbittorrent",
-          profiles: {
-            ...downloaderConfig.profiles,
-            transmission: {
-              ...downloaderConfig.profiles.transmission,
-              baseUrl: ""
-            }
-          }
-        })
-      })
-
-      expect(screen.getByRole("status")).not.toHaveTextContent("请先修正表单中的错误。")
+      expect(api.saveGeneralSettings).not.toHaveBeenCalled()
     },
     10000
   )
@@ -1738,7 +1791,16 @@ describe("OptionsPage", () => {
     async () => {
       const user = userEvent.setup()
       const api = createOptionsApi({
-        saveGeneralSettings: vi.fn().mockImplementation(async (payload) => payload)
+        saveGeneralSettings: vi.fn().mockImplementation(async (payload) => ({
+          ...payload,
+          validation: {
+            downloaderId: payload.downloaderConfig.activeId,
+            configFingerprint: "mock-fingerprint",
+            validatedAt: "2026-04-26T08:00:00.000Z",
+            version: "5.0.0",
+            reusedExisting: false
+          }
+        }))
       })
 
       render(<OptionsPage api={api} />)
@@ -1770,29 +1832,6 @@ describe("OptionsPage", () => {
           })
         )
       })
-    },
-    10000
-  )
-
-  it(
-    "clears the displayed connection result when switching downloaders",
-    async () => {
-      const user = userEvent.setup()
-      const api = createOptionsApi()
-
-      render(<OptionsPage api={api} />)
-
-      expect(await screen.findByDisplayValue("http://127.0.0.1:17474")).toBeInTheDocument()
-
-      await user.click(screen.getByRole("button", { name: "测试连接" }))
-
-      expect(
-        await screen.findByText(/已连接到 qBittorrent（http:\/\/127.0.0.1:17474）。/)
-      ).toBeInTheDocument()
-
-      await user.click(screen.getByRole("radio", { name: "Transmission" }))
-
-      expect(screen.queryByText(/已连接到 qBittorrent/)).not.toBeInTheDocument()
     },
     10000
   )

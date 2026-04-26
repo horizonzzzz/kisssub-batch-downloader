@@ -6,6 +6,7 @@ type RuntimeMessageListener = Parameters<typeof fakeBrowser.runtime.onMessage.ad
 const {
   activeJobsMock,
   buildPopupStateMock,
+  getDownloaderValidationStateMock,
   openOptionsPageForRouteMock,
   getDownloaderConfigMock,
   saveGeneralSettingsMock,
@@ -14,6 +15,7 @@ const {
 } = vi.hoisted(() => ({
   activeJobsMock: new Map<number, unknown>(),
   buildPopupStateMock: vi.fn(),
+  getDownloaderValidationStateMock: vi.fn(),
   openOptionsPageForRouteMock: vi.fn(),
   getDownloaderConfigMock: vi.fn(),
   saveGeneralSettingsMock: vi.fn(),
@@ -44,6 +46,10 @@ vi.mock("../../../src/lib/background", async () => {
 vi.mock("../../../src/lib/downloader/config/storage", () => ({
   getDownloaderConfig: getDownloaderConfigMock,
   saveDownloaderConfig: saveDownloaderConfigMock
+}))
+
+vi.mock("../../../src/lib/downloader/validation", () => ({
+  getDownloaderValidationState: getDownloaderValidationStateMock
 }))
 
 function installBrowserSpies() {
@@ -120,6 +126,43 @@ describe("background downloader config runtime boundary", () => {
             username: "",
             password: ""
           }
+        }
+      }
+    })
+  })
+
+  it("returns downloader validation state for GET_DOWNLOADER_VALIDATION_STATE request", async () => {
+    const listener = onMessageAddListener.mock.calls[0]?.[0]
+    const sendResponse = vi.fn()
+
+    getDownloaderValidationStateMock.mockResolvedValue({
+      qbittorrent: {
+        configFingerprint: "fingerprint",
+        validatedAt: "2026-04-26T10:00:00.000Z",
+        version: "5.0.0"
+      }
+    })
+
+    listener?.(
+      {
+        type: "GET_DOWNLOADER_VALIDATION_STATE"
+      },
+      {},
+      sendResponse
+    )
+
+    await vi.waitFor(() => {
+      expect(sendResponse).toHaveBeenCalledTimes(1)
+    })
+
+    expect(getDownloaderValidationStateMock).toHaveBeenCalledTimes(1)
+    expect(sendResponse).toHaveBeenCalledWith({
+      ok: true,
+      state: {
+        qbittorrent: {
+          configFingerprint: "fingerprint",
+          validatedAt: "2026-04-26T10:00:00.000Z",
+          version: "5.0.0"
         }
       }
     })
@@ -233,6 +276,13 @@ describe("background downloader config runtime boundary", () => {
         retryCount: 4,
         injectTimeoutMs: 25000,
         domSettleMs: 900
+      },
+      validation: {
+        downloaderId: "qbittorrent",
+        reusedExisting: false,
+        configFingerprint: "fingerprint",
+        validatedAt: "2026-04-26T10:00:00.000Z",
+        version: "5.0.0"
       }
     })
 
@@ -315,6 +365,13 @@ describe("background downloader config runtime boundary", () => {
         retryCount: 4,
         injectTimeoutMs: 25000,
         domSettleMs: 900
+      },
+      validation: {
+        downloaderId: "qbittorrent",
+        reusedExisting: false,
+        configFingerprint: "fingerprint",
+        validatedAt: "2026-04-26T10:00:00.000Z",
+        version: "5.0.0"
       }
     })
   })

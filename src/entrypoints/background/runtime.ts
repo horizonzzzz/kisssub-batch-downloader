@@ -40,6 +40,7 @@ import {
   getDownloaderConfig,
   saveDownloaderConfig
 } from "../../lib/downloader/config/storage"
+import { getDownloaderValidationState } from "../../lib/downloader/validation"
 import { getHistoryPageContext } from "../../lib/background/queries/history-context"
 import { buildContentScriptState } from "../../lib/background/queries/content-script-state"
 import { SOURCE_IDS } from "../../lib/sources/catalog"
@@ -213,6 +214,13 @@ export function registerBackgroundRuntime() {
               })
             )
             return
+          case "GET_DOWNLOADER_VALIDATION_STATE":
+            sendResponse(
+              createRuntimeSuccessResponse("GET_DOWNLOADER_VALIDATION_STATE", {
+                state: await getDownloaderValidationState()
+              })
+            )
+            return
           case "TEST_DOWNLOADER_CONNECTION":
             sendResponse(
               createRuntimeSuccessResponse("TEST_DOWNLOADER_CONNECTION", {
@@ -236,7 +244,8 @@ export function registerBackgroundRuntime() {
             sendResponse(
               createRuntimeSuccessResponse("SAVE_GENERAL_SETTINGS", {
                 downloaderConfig: savedGeneralSettings.downloaderConfig,
-                batchExecutionConfig: savedGeneralSettings.batchExecutionConfig
+                batchExecutionConfig: savedGeneralSettings.batchExecutionConfig,
+                validation: savedGeneralSettings.validation
               })
             )
             return

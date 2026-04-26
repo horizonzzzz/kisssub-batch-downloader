@@ -72,6 +72,25 @@ describe("runtime message helpers", () => {
     })
   })
 
+  it("supports downloader validation-state runtime requests", async () => {
+    runtimeSendMessage.mockResolvedValue({
+      ok: true,
+      state: {
+        qbittorrent: {
+          configFingerprint: "fingerprint",
+          validatedAt: "2026-04-26T10:00:00.000Z",
+          version: "5.0.0"
+        }
+      }
+    })
+
+    await sendRuntimeRequest({ type: "GET_DOWNLOADER_VALIDATION_STATE" })
+
+    expect(runtimeSendMessage).toHaveBeenCalledWith({
+      type: "GET_DOWNLOADER_VALIDATION_STATE"
+    })
+  })
+
   it("supports unified general-settings runtime requests", async () => {
     runtimeSendMessage.mockResolvedValue({
       ok: true,
@@ -95,6 +114,13 @@ describe("runtime message helpers", () => {
         retryCount: 3,
         injectTimeoutMs: 15000,
         domSettleMs: 1200
+      },
+      validation: {
+        downloaderId: "qbittorrent",
+        reusedExisting: false,
+        configFingerprint: "fingerprint",
+        validatedAt: "2026-04-26T10:00:00.000Z",
+        version: "5.0.0"
       }
     })
 

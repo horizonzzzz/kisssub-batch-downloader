@@ -13,6 +13,8 @@ import {
 
 import type {
   CreateSubscriptionInput,
+  DownloaderValidationState,
+  GeneralSettingsValidationResult,
   TestDownloaderConnectionResult
 } from "../../lib/shared/types"
 import type { SubscriptionPolicyConfig } from "../../lib/subscriptions/policy/types"
@@ -44,6 +46,7 @@ import {
 
 export type OptionsApi = {
   testConnection: (config: DownloaderConfig) => Promise<TestDownloaderConnectionResult>
+  getDownloaderValidationState: () => Promise<DownloaderValidationState>
   getFilterConfig: () => Promise<FilterConfig>
   saveFilterConfig: (config: FilterConfig) => Promise<FilterConfig>
   getSourceConfig: () => Promise<SourceConfig>
@@ -58,6 +61,7 @@ export type OptionsApi = {
   }) => Promise<{
     downloaderConfig: DownloaderConfig
     batchExecutionConfig: BatchExecutionConfig
+    validation: GeneralSettingsValidationResult
   }>
   getBatchUiPreferences: () => Promise<BatchUiPreferences>
   saveBatchUiPreferences: (preferences: Partial<BatchUiPreferences>) => Promise<BatchUiPreferences>

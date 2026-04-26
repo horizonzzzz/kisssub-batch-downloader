@@ -3,7 +3,11 @@ import type { DownloaderConfig } from "../../lib/downloader/config/types"
 import type { BatchExecutionConfig } from "../../lib/batch-config/types"
 import type { BatchUiPreferences } from "../../lib/batch-preferences/types"
 import type { SubscriptionPolicyConfig } from "../../lib/subscriptions/policy/types"
-import type { TestDownloaderConnectionResult } from "../../lib/shared/types"
+import type {
+  DownloaderValidationState,
+  GeneralSettingsValidationResult,
+  TestDownloaderConnectionResult
+} from "../../lib/shared/types"
 import type { CreateSubscriptionInput } from "../../lib/shared/types"
 import type { FilterConfig } from "../../lib/filter-rules/types"
 import type { SourceConfig } from "../../lib/sources/config/types"
@@ -17,6 +21,7 @@ export type OptionsApi = {
   getDownloaderConfig: () => Promise<DownloaderConfig>
   saveDownloaderConfig: (config: DownloaderConfig) => Promise<DownloaderConfig>
   testConnection: (config: DownloaderConfig) => Promise<TestDownloaderConnectionResult>
+  getDownloaderValidationState: () => Promise<DownloaderValidationState>
   getBatchExecutionConfig: () => Promise<BatchExecutionConfig>
   saveBatchExecutionConfig: (config: BatchExecutionConfig) => Promise<BatchExecutionConfig>
   saveGeneralSettings: (payload: {
@@ -25,6 +30,7 @@ export type OptionsApi = {
   }) => Promise<{
     downloaderConfig: DownloaderConfig
     batchExecutionConfig: BatchExecutionConfig
+    validation: GeneralSettingsValidationResult
   }>
   getBatchUiPreferences: () => Promise<BatchUiPreferences>
   saveBatchUiPreferences: (preferences: Partial<BatchUiPreferences>) => Promise<BatchUiPreferences>
@@ -107,6 +113,14 @@ export const optionsApi: OptionsApi = {
     }
 
     return response.result
+  },
+  async getDownloaderValidationState() {
+    const response = await sendRuntimeRequest({ type: "GET_DOWNLOADER_VALIDATION_STATE" })
+    if (!response.ok) {
+      throw new Error(response.error || i18n.t("options.status.loadFailed"))
+    }
+
+    return response.state
   },
   async getFilterConfig() {
     const response = await sendRuntimeRequest({ type: "GET_FILTER_CONFIG" })
@@ -201,7 +215,8 @@ export const optionsApi: OptionsApi = {
 
     return {
       downloaderConfig: response.downloaderConfig,
-      batchExecutionConfig: response.batchExecutionConfig
+      batchExecutionConfig: response.batchExecutionConfig,
+      validation: response.validation
     }
   },
   async getBatchUiPreferences() {

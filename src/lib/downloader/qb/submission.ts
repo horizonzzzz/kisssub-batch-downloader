@@ -7,9 +7,10 @@ function getQbProfile(config: DownloaderConfig) {
   return config.profiles.qbittorrent
 }
 
-export async function loginQb(
+async function submitQbLogin(
   config: DownloaderConfig,
-  fetchImpl: FetchLike = fetch
+  credentialsMode: RequestCredentials,
+  fetchImpl: FetchLike
 ): Promise<void> {
   const qbProfile = getQbProfile(config)
   const body = new URLSearchParams()
@@ -18,7 +19,7 @@ export async function loginQb(
 
   const response = await fetchImpl(`${qbProfile.baseUrl}/api/v2/auth/login`, {
     method: "POST",
-    credentials: "include",
+    credentials: credentialsMode,
     headers: {
       "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8"
     },
@@ -33,6 +34,16 @@ export async function loginQb(
   if (!/^ok/i.test(text.trim())) {
     throw new Error(`qBittorrent login rejected the credentials: ${text.trim() || "unknown response"}`)
   }
+}
+
+export async function loginQb(
+  config: DownloaderConfig,
+  fetchImpl: FetchLike = fetch
+): Promise<void> {
+  // Verify the submitted credentials without any ambient qB cookie first,
+  // then establish the cookie-backed session used by subsequent API calls.
+  await submitQbLogin(config, "omit", fetchImpl)
+  await submitQbLogin(config, "include", fetchImpl)
 }
 
 export async function qbFetchText(

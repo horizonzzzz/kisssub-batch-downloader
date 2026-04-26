@@ -201,8 +201,8 @@
       "downloaderSelector": {
         "title": "下载器选择",
         "description": "先选择当前使用的下载器，再填写对应连接信息。",
-        "qbDescription": "通过 qBittorrent WebUI 测试连接并提交 magnet、种子链接或种子文件。",
-        "transmissionDescription": "通过 Transmission RPC 测试连接并提交 magnet、种子链接或种子文件。"
+        "qbDescription": "保存设置时验证 qBittorrent WebUI 连接，并在通过后提交 magnet、种子链接或种子文件。",
+        "transmissionDescription": "保存设置时验证 Transmission RPC 连接，并在通过后提交 magnet、种子链接或种子文件。"
       },
       "common": {
         "usernameLabel": "用户名",
@@ -214,13 +214,13 @@
       },
       "qb": {
         "title": "qBittorrent 配置",
-        "description": "配置扩展用于测试连接和提交任务的 WebUI 地址与账号信息。",
+        "description": "配置扩展用于保存时验证连接并提交任务的 WebUI 地址与账号信息。",
         "baseUrlLabel": "qBittorrent WebUI 地址",
         "passwordPlaceholder": "你的 WebUI 密码"
       },
       "transmission": {
         "title": "Transmission 配置",
-        "description": "配置扩展用于测试连接和提交任务的 Transmission RPC 地址与账号信息。",
+        "description": "配置扩展用于保存时验证连接并提交任务的 Transmission RPC 地址与账号信息。",
         "baseUrlLabel": "Transmission RPC 地址",
         "passwordPlaceholder": "你的 Transmission 密码"
       },
@@ -235,7 +235,7 @@
       "connectionHelp": {
         "title": "下载器兼容性提示",
         "body1": {
-          "prefix": "首次连接到新的下载器地址时，浏览器会请求该地址访问权限。若 qBittorrent 连接测试返回 401，而账号密码确认无误，请先在 qBittorrent 的",
+          "prefix": "首次保存新的下载器地址时，浏览器会请求该地址访问权限。若保存时的 qBittorrent 连接验证返回 401，而账号密码确认无误，请先在 qBittorrent 的",
           "middle": "中关闭",
           "suffix": "。"
         },
@@ -248,6 +248,20 @@
       "saveBatchExecution": "保存批量执行设置",
       "saveCombined": "保存基础设置",
       "saveCombinedFailed": "基础设置中有配置项保存失败，请重试。",
+      "validation": {
+        "unverified": "当前下载器配置尚未完成验证。",
+        "testing": "正在验证当前下载器配置。",
+        "saving": "连接验证通过，正在保存基础设置。",
+        "verified": "当前下载器配置已验证。",
+        "saved": "连接验证通过，基础设置已保存。",
+        "validatedVersion": "已验证版本：$1",
+        "errors": {
+          "invalidUrl": "下载器地址格式无效，未保存任何设置。",
+          "permissionDenied": "未获得当前下载器地址的访问权限，未保存任何设置。",
+          "connectFailed": "无法连接到当前下载器，请检查地址、端口和服务状态，未保存任何设置。",
+          "authFailed": "已连接到下载器，但身份验证失败。请检查用户名或密码，未保存任何设置。"
+        }
+      },
       "summary": {
         "eyebrow": "当前目标",
         "title": "当前下载器",
@@ -687,7 +701,7 @@
   "downloader": {
     "permissions": {
       "invalidUrl": "下载器地址无效：$1",
-      "required": "扩展缺少访问 $1（$2）的权限。请先在“下载器与基础设置”里点击“测试连接”授权后再重试。",
+      "required": "扩展缺少访问 $1（$2）的权限。请先在“下载器与基础设置”里保存当前设置完成授权后再重试。",
       "denied": "扩展未获得访问 $1（$2）的权限。请在浏览器弹窗中允许该地址访问后重试。"
     }
   },

@@ -121,6 +121,19 @@ export type BatchStats = {
 
 export type DownloaderId = "qbittorrent" | "transmission"
 
+export type DownloaderValidationSnapshot = {
+  configFingerprint: string
+  validatedAt: string
+  version: string
+}
+
+export type DownloaderValidationState = Partial<Record<DownloaderId, DownloaderValidationSnapshot>>
+
+export type GeneralSettingsValidationResult = DownloaderValidationSnapshot & {
+  downloaderId: DownloaderId
+  reusedExisting: boolean
+}
+
 export type TestDownloaderConnectionResult = {
   downloaderId: DownloaderId
   displayName: string

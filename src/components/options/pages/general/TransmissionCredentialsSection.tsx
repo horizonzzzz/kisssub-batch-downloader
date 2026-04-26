@@ -1,10 +1,7 @@
 import { i18n } from "../../../../lib/i18n"
 import type { JSX } from "react"
 
-import { HiOutlineArrowPath } from "react-icons/hi2"
-
 import {
-  Button,
   Card,
   CardContent,
   CardDescription,
@@ -14,32 +11,15 @@ import {
 } from "../../../ui"
 import { FormField } from "../../form/Field"
 import type { DownloaderProfile } from "../../../../lib/downloader/config/types"
-import type { ConnectionState } from "./QbCredentialsSection"
 
 type TransmissionCredentialsSectionProps = {
   config: DownloaderProfile
   onConfigChange: (config: DownloaderProfile) => void
-  connectionMessage: string
-  connectionState: ConnectionState
-  testing: boolean
-  onTestConnection: () => Promise<void>
-}
-
-function getConnectionStatusClassName(connectionState: ConnectionState): string {
-  if (connectionState === "success") {
-    return "inline-flex items-center text-sm font-medium text-emerald-600"
-  }
-
-  return "inline-flex items-center text-sm font-medium text-red-600"
 }
 
 export function TransmissionCredentialsSection({
   config,
-  onConfigChange,
-  connectionMessage,
-  connectionState,
-  testing,
-  onTestConnection
+  onConfigChange
 }: TransmissionCredentialsSectionProps): JSX.Element {
   return (
     <Card>
@@ -99,33 +79,6 @@ export function TransmissionCredentialsSection({
               })}
             />
           </FormField>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-3">
-          <Button
-            type="button"
-            variant="secondary"
-            aria-label={i18n.t("options.general.common.testConnection")}
-            onClick={() => void onTestConnection()}
-            disabled={testing}>
-            {testing ? (
-              <HiOutlineArrowPath className="h-4 w-4 animate-spin" aria-hidden="true" />
-            ) : null}
-            <span>
-              {testing
-                ? i18n.t("options.general.common.testingConnection")
-                : i18n.t("options.general.common.testConnection")}
-            </span>
-          </Button>
-
-          {connectionState !== "idle" ? (
-            <span className={getConnectionStatusClassName(connectionState)}>
-              {connectionState === "success"
-                ? i18n.t("options.general.common.connectionSuccess")
-                : i18n.t("options.general.common.connectionFailed")}
-              {connectionMessage ? ` · ${connectionMessage}` : ""}
-            </span>
-          ) : null}
         </div>
       </CardContent>
     </Card>

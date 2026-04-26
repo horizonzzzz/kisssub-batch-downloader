@@ -60,8 +60,8 @@ describe("getQbLoginErrorMessage", () => {
 })
 
 describe("loginQb", () => {
-  it("submits the login form with cookies included", async () => {
-    const fetchImpl = vi.fn().mockResolvedValue(
+  it("verifies fresh credentials first, then establishes a cookie-backed session", async () => {
+    const fetchImpl = vi.fn().mockImplementation(async () =>
       new Response("Ok.", {
         status: 200
       })
@@ -69,19 +69,30 @@ describe("loginQb", () => {
 
     await expect(loginQb(qbConfig, fetchImpl)).resolves.toBeUndefined()
 
-    expect(fetchImpl).toHaveBeenCalledTimes(1)
+    expect(fetchImpl).toHaveBeenCalledTimes(2)
 
-    const [url, request] = fetchImpl.mock.calls[0] as [string, RequestInit]
-    const body = new URLSearchParams(String(request.body))
+    const [firstUrl, firstRequest] = fetchImpl.mock.calls[0] as [string, RequestInit]
+    const [secondUrl, secondRequest] = fetchImpl.mock.calls[1] as [string, RequestInit]
+    const firstBody = new URLSearchParams(String(firstRequest.body))
+    const secondBody = new URLSearchParams(String(secondRequest.body))
 
-    expect(url).toBe("http://127.0.0.1:17474/api/v2/auth/login")
-    expect(request.method).toBe("POST")
-    expect(request.credentials).toBe("include")
-    expect(request.headers).toEqual({
+    expect(firstUrl).toBe("http://127.0.0.1:17474/api/v2/auth/login")
+    expect(firstRequest.method).toBe("POST")
+    expect(firstRequest.credentials).toBe("omit")
+    expect(firstRequest.headers).toEqual({
       "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8"
     })
-    expect(body.get("username")).toBe("admin")
-    expect(body.get("password")).toBe("secret")
+    expect(firstBody.get("username")).toBe("admin")
+    expect(firstBody.get("password")).toBe("secret")
+
+    expect(secondUrl).toBe("http://127.0.0.1:17474/api/v2/auth/login")
+    expect(secondRequest.method).toBe("POST")
+    expect(secondRequest.credentials).toBe("include")
+    expect(secondRequest.headers).toEqual({
+      "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8"
+    })
+    expect(secondBody.get("username")).toBe("admin")
+    expect(secondBody.get("password")).toBe("secret")
   })
 
   it("throws the mapped HTTP login error when qB rejects the request", async () => {
@@ -106,6 +117,25 @@ describe("loginQb", () => {
     await expect(loginQb(qbConfig, fetchImpl)).rejects.toThrow(
       "qBittorrent login rejected the credentials: Fails."
     )
+  })
+
+  it("rejects stale browser sessions when fresh credentials are invalid", async () => {
+    const fetchImpl = vi.fn().mockImplementation(async (_url: string, request?: RequestInit) => {
+      if (request?.credentials === "omit") {
+        return new Response("Fails.", {
+          status: 200
+        })
+      }
+
+      return new Response("Ok.", {
+        status: 200
+      })
+    })
+
+    await expect(loginQb(qbConfig, fetchImpl)).rejects.toThrow(
+      "qBittorrent login rejected the credentials: Fails."
+    )
+    expect(fetchImpl).toHaveBeenCalledTimes(1)
   })
 })
 

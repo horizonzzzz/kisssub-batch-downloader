@@ -51,8 +51,8 @@ The extension injects selection UI into supported list pages, reuses direct magn
   - `options.html#/overview`
 - Supported downloader targets: `qBittorrent WebUI` and `Transmission RPC`
 - downloader host access is granted dynamically from the user-configured downloader `baseUrl`:
-  - supported `http` and `https` hosts are requested through browser optional host permissions at connection-test time or before real submissions/retries
-  - saving settings does not force a permission prompt; permission is requested only when the extension actually needs to reach the configured downloader host
+  - supported `http` and `https` hosts are requested through browser optional host permissions during save-time downloader validation or before real submissions/retries
+  - saving `Downloader & Basic Settings` may trigger the permission prompt because save now validates the active downloader before persistence
 - Optional per-batch save path override is supported
 - Pre-submit filters can keep resources by selected source scope, title field, and subgroup text extracted from the list-page title
 - When the current source has effective filters (rules whose `sourceIds[]` include that source), unmatched resources are blocked; when the current source has no effective filters, resources are allowed by default

@@ -201,8 +201,8 @@
       "downloaderSelector": {
         "title": "Downloader selection",
         "description": "Choose the downloader you currently use before editing its connection settings.",
-        "qbDescription": "Test the qBittorrent WebUI connection and submit magnet links, torrent URLs, or torrent files.",
-        "transmissionDescription": "Test the Transmission RPC connection and submit magnet links, torrent URLs, or torrent files."
+        "qbDescription": "Validate the qBittorrent WebUI connection when saving settings, then submit magnet links, torrent URLs, or torrent files.",
+        "transmissionDescription": "Validate the Transmission RPC connection when saving settings, then submit magnet links, torrent URLs, or torrent files."
       },
       "common": {
         "usernameLabel": "Username",
@@ -214,13 +214,13 @@
       },
       "qb": {
         "title": "qBittorrent settings",
-        "description": "Configure the WebUI endpoint and credentials used for connection testing and submissions.",
+        "description": "Configure the WebUI endpoint and credentials used for save-time validation and submissions.",
         "baseUrlLabel": "qBittorrent WebUI URL",
         "passwordPlaceholder": "Your WebUI password"
       },
       "transmission": {
         "title": "Transmission settings",
-        "description": "Configure the Transmission RPC endpoint and credentials used for connection testing and submissions.",
+        "description": "Configure the Transmission RPC endpoint and credentials used for save-time validation and submissions.",
         "baseUrlLabel": "Transmission RPC URL",
         "passwordPlaceholder": "Your Transmission password"
       },
@@ -235,7 +235,7 @@
       "connectionHelp": {
         "title": "Downloader compatibility note",
         "body1": {
-          "prefix": "The browser will request host access the first time you connect to a new downloader address. If qBittorrent returns 401 while the credentials are correct, first disable",
+          "prefix": "The browser will request host access the first time you save a new downloader address. If qBittorrent validation returns 401 while the credentials are correct, first disable",
           "middle": "and turn off",
           "suffix": "."
         },
@@ -248,6 +248,20 @@
       "saveBatchExecution": "Save batch execution settings",
       "saveCombined": "Save basic settings",
       "saveCombinedFailed": "Some basic settings failed to save. Please try again.",
+      "validation": {
+        "unverified": "Current downloader configuration has not been validated yet.",
+        "testing": "Validating the current downloader configuration.",
+        "saving": "Validation passed. Saving general settings.",
+        "verified": "Current downloader configuration is verified.",
+        "saved": "Connection validation passed. General settings were saved.",
+        "validatedVersion": "Validated version: $1",
+        "errors": {
+          "invalidUrl": "Downloader URL format is invalid. Nothing was saved.",
+          "permissionDenied": "Access to the current downloader address was not granted. Nothing was saved.",
+          "connectFailed": "Could not connect to the current downloader. Check the address, port, and service status. Nothing was saved.",
+          "authFailed": "Connected to the downloader, but authentication failed. Check the username or password. Nothing was saved."
+        }
+      },
       "summary": {
         "eyebrow": "Current target",
         "title": "Current downloader",
@@ -679,7 +693,7 @@
   "downloader": {
     "permissions": {
       "invalidUrl": "Invalid downloader URL: $1",
-      "required": "The extension is missing permission to access $1 at $2. Open Downloader & Basic Settings, click Test Connection, then try again.",
+      "required": "The extension is missing permission to access $1 at $2. Open Downloader & Basic Settings, save the current settings to grant access, then try again.",
       "denied": "The extension was not granted permission to access $1 at $2. Allow that host in the browser prompt and try again."
     }
   },

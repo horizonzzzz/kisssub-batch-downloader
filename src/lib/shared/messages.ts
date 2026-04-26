@@ -2,6 +2,8 @@ import type {
   BatchEventPayload,
   BatchItem,
   CreateSubscriptionInput,
+  DownloaderValidationState,
+  GeneralSettingsValidationResult,
   SourceId,
   TestDownloaderConnectionResult
 } from "./types"
@@ -39,6 +41,7 @@ export type RuntimeRequest =
   | { type: "RETRY_FAILED_ITEMS"; recordId: string; itemIds?: string[] }
   | { type: "TEST_DOWNLOADER_CONNECTION"; settings?: DownloaderConfig }
   | { type: "GET_DOWNLOADER_CONFIG" }
+  | { type: "GET_DOWNLOADER_VALIDATION_STATE" }
   | { type: "SAVE_DOWNLOADER_CONFIG"; config: DownloaderConfig }
   | {
       type: "SAVE_GENERAL_SETTINGS"
@@ -159,10 +162,16 @@ export type SaveDownloaderConfigSuccessResponse = {
   config: DownloaderConfig
 }
 
+export type GetDownloaderValidationStateSuccessResponse = {
+  ok: true
+  state: DownloaderValidationState
+}
+
 export type SaveGeneralSettingsSuccessResponse = {
   ok: true
   downloaderConfig: DownloaderConfig
   batchExecutionConfig: BatchExecutionConfig
+  validation: GeneralSettingsValidationResult
 }
 
 export type GetHistoryPageContextSuccessResponse = {
@@ -228,6 +237,7 @@ export type RuntimeSuccessResponseMap = {
   GET_SOURCE_CONFIG: GetSourceConfigSuccessResponse
   SAVE_SOURCE_CONFIG: SaveSourceConfigSuccessResponse
   GET_DOWNLOADER_CONFIG: GetDownloaderConfigSuccessResponse
+  GET_DOWNLOADER_VALIDATION_STATE: GetDownloaderValidationStateSuccessResponse
   SAVE_DOWNLOADER_CONFIG: SaveDownloaderConfigSuccessResponse
   SAVE_GENERAL_SETTINGS: SaveGeneralSettingsSuccessResponse
   GET_HISTORY_PAGE_CONTEXT: GetHistoryPageContextSuccessResponse
@@ -272,6 +282,7 @@ export type SaveFilterConfigResponse = RuntimeResponseFor<"SAVE_FILTER_CONFIG">
 export type GetSourceConfigResponse = RuntimeResponseFor<"GET_SOURCE_CONFIG">
 export type SaveSourceConfigResponse = RuntimeResponseFor<"SAVE_SOURCE_CONFIG">
 export type GetDownloaderConfigResponse = RuntimeResponseFor<"GET_DOWNLOADER_CONFIG">
+export type GetDownloaderValidationStateResponse = RuntimeResponseFor<"GET_DOWNLOADER_VALIDATION_STATE">
 export type SaveDownloaderConfigResponse = RuntimeResponseFor<"SAVE_DOWNLOADER_CONFIG">
 export type SaveGeneralSettingsResponse = RuntimeResponseFor<"SAVE_GENERAL_SETTINGS">
 export type GetHistoryPageContextResponse = RuntimeResponseFor<"GET_HISTORY_PAGE_CONTEXT">
