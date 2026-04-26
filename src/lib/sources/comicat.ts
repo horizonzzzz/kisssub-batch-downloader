@@ -10,12 +10,15 @@ const ENTRY_SELECTOR = 'a[href*="show-"][href$=".html"]'
 const MAIN_EXECUTION_WORLD = "MAIN" as const
 const COMICAT_FIELD_FAILURE =
   "The Comicat detail page no longer exposes the fields required to build download links."
+const COMICAT_TORRENT_BASE_URL = "//v2.uploadbt.com/"
 
 type ComicatDetailSnapshot = {
   title: string
   hash: string
   announce: string
   torrentUrl: string
+  torrentFormat?: string
+  detailUrl?: string
 }
 
 type ComicatDownloadAnchorInfo = {
@@ -55,20 +58,45 @@ export function parseComicatDetailSnapshot(
 ): Omit<ExtractionResult, "detailUrl"> {
   const hash = normalizeText(snapshot.hash).toLowerCase()
   const announce = normalizeText(snapshot.announce)
-  const torrentUrl = normalizeText(snapshot.torrentUrl)
+  const title = normalizeText(snapshot.title)
+  const torrentUrl =
+    normalizeText(snapshot.torrentUrl) || buildComicatPublicTorrentUrlFromConfig(hash, title, snapshot)
   const magnetUrl = hash
     ? announce
       ? `magnet:?xt=urn:btih:${hash}&tr=${announce}`
       : `magnet:?xt=urn:btih:${hash}`
-    : ""
+      : ""
 
   return {
     ok: Boolean(magnetUrl || torrentUrl),
-    title: normalizeTitle(snapshot.title),
+    title: normalizeTitle(title),
     hash,
     magnetUrl,
     torrentUrl,
     failureReason: magnetUrl || torrentUrl ? "" : COMICAT_FIELD_FAILURE
+  }
+}
+
+function buildComicatPublicTorrentUrlFromConfig(
+  hash: string,
+  title: string,
+  snapshot: Pick<ComicatDetailSnapshot, "torrentFormat" | "detailUrl">
+): string {
+  const torrentFormat = normalizeText(snapshot.torrentFormat)
+  const detailUrl = normalizeText(snapshot.detailUrl)
+  if (!hash || !title || !detailUrl || !torrentFormat.includes("%s")) {
+    return ""
+  }
+
+  const formattedTitle = torrentFormat.replace("%s", title)
+
+  try {
+    return new URL(
+      `?r=down&hash=${encodeURIComponent(hash)}&name=${encodeURIComponent(formattedTitle)}`,
+      new URL(COMICAT_TORRENT_BASE_URL, detailUrl)
+    ).href
+  } catch {
+    return ""
   }
 }
 
@@ -221,7 +249,9 @@ function comicatDetailExtractionScript(domSettleMs: number): Promise<ComicatDeta
       title: normalize(config["bt_data_title"]) || document.title.replace(/\s*-\s*漫猫动漫.*$/u, "").trim(),
       hash: normalize(config["hash_id"]) || (window.location.pathname.match(/show-([a-f0-9]{40})\.html/i)?.[1] ?? ""),
       announce: normalize(config["announce"]),
-      torrentUrl: extractTorrentUrl()
+      torrentUrl: extractTorrentUrl(),
+      torrentFormat: normalize(config["down_torrent_format"]),
+      detailUrl: window.location.href
     }
   })()
 }

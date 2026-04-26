@@ -28,6 +28,22 @@ describe("parseComicatDetailSnapshot", () => {
     })
   })
 
+  it("builds a public uploadbt torrent URL from Config when the download anchor is missing", () => {
+    expect(
+      parseComicatDetailSnapshot({
+        title: "Episode 02",
+        hash: "86584c42ac1abb6a346effaa1faff53448f1b71a",
+        announce: "http://open.acgtracker.com:1096/announce",
+        torrentUrl: "",
+        torrentFormat: "[Comicat]%s",
+        detailUrl: "https://www.comicat.org/show-86584c42ac1abb6a346effaa1faff53448f1b71a.html"
+      } as never)
+    ).toMatchObject({
+      torrentUrl:
+        "https://v2.uploadbt.com/?r=down&hash=86584c42ac1abb6a346effaa1faff53448f1b71a&name=%5BComicat%5DEpisode%2002"
+    })
+  })
+
   it("fails when both hash and torrentUrl are missing", () => {
     expect(
       parseComicatDetailSnapshot({
