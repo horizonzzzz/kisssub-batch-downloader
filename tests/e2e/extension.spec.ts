@@ -430,6 +430,9 @@ test("options page saves settings through the background worker", async () => {
   const extension = await launchExtensionContext()
 
   try {
+    await mockDownloaderPermissions(extension)
+    await mockQbWebUiApi(extension)
+
     const page = await openOptionsPage(extension)
     await expect(page.getByRole("link", { name: "查看 GitHub 仓库" })).toHaveAttribute(
       "href",
@@ -440,7 +443,8 @@ test("options page saves settings through the background worker", async () => {
     await page.getByLabel("用户名").fill("admin")
     await page.getByRole("button", { name: "保存基础设置" }).click()
 
-    await expect(page.getByText("设置已保存。")).toBeVisible()
+    await expect(page.getByRole("status")).toContainText("当前下载器配置已验证。")
+    await expect(page.getByRole("status")).toContainText("连接验证通过，基础设置已保存。")
   } finally {
     await extension.close()
   }

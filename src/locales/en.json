@@ -263,10 +263,11 @@
         }
       },
       "summary": {
-        "eyebrow": "Current target",
-        "title": "Current downloader",
         "nameLabel": "Downloader",
         "baseUrlLabel": "Base URL"
+      },
+      "statusPanel": {
+        "lastActionLabel": "Latest action"
       }
     },
     "sites": {

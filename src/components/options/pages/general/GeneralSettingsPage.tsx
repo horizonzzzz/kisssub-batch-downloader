@@ -11,7 +11,7 @@ import { useBatchExecutionConfigWorkbench } from "./use-batch-execution-workbenc
 import { ConnectionHelpAlert } from "./ConnectionHelpAlert"
 import { DownloaderSelectorSection } from "./DownloaderSelectorSection"
 import { ExtractionCadenceSection } from "./ExtractionCadenceSection"
-import { GeneralDownloaderSummaryCard } from "./GeneralDownloaderSummaryCard"
+import { GeneralStatusPanel } from "./GeneralStatusPanel"
 import { QbCredentialsSection } from "./QbCredentialsSection"
 import { TransmissionCredentialsSection } from "./TransmissionCredentialsSection"
 import { useDownloaderValidationState } from "./use-downloader-validation-state"
@@ -81,17 +81,10 @@ export function GeneralSettingsPage({ api }: GeneralSettingsPageProps) {
     }
   }
 
-  const mapTone = (tone: string) => {
-    if (tone === "success") return "success"
-    if (tone === "error") return "error"
-    return "info"
-  }
-
-  const statusMessage =
-    saveStatus?.message || downloaderWorkbench.status.message || batchWorkbench.status.message || ""
-
-  const statusTone =
-    saveStatus?.tone || mapTone(downloaderWorkbench.status.tone)
+  const workbenchStatus =
+    [downloaderWorkbench.status, batchWorkbench.status].find((status) => status.tone === "error" && status.message)
+    ?? [downloaderWorkbench.status, batchWorkbench.status].find((status) => status.message)
+    ?? { tone: "info", message: "" as string }
 
   const validationTone = validationState.uiState === "verified"
     ? "success"
@@ -101,6 +94,24 @@ export function GeneralSettingsPage({ api }: GeneralSettingsPageProps) {
 
   const validationDescription = validationState.version
     ? i18n.t("options.general.validation.validatedVersion", [validationState.version])
+    : undefined
+
+  const panelTone = saveStatus?.tone
+    || (workbenchStatus.tone === "error" ? "error" : validationTone)
+
+  const panelTitle = saveStatus?.tone === "success"
+    ? validationState.message
+    : saveStatus?.message
+    || (workbenchStatus.tone === "error" && workbenchStatus.message
+      ? workbenchStatus.message
+      : validationState.message)
+
+  const latestActionCandidate = saveStatus
+    ? (saveStatus.tone === "success" ? saveStatus.message : undefined)
+    : workbenchStatus.message
+
+  const latestActionMessage = latestActionCandidate && latestActionCandidate !== panelTitle
+    ? latestActionCandidate
     : undefined
 
   const generalSaveBusy = generalSaving || downloaderWorkbench.saving || batchWorkbench.saving
@@ -147,23 +158,16 @@ export function GeneralSettingsPage({ api }: GeneralSettingsPageProps) {
 
   return (
     <div className="space-y-6">
-      {statusMessage ? (
-        <div role="status" aria-live="polite">
-          <Alert tone={statusTone} title={statusMessage} />
-        </div>
-      ) : null}
-
-      <GeneralDownloaderSummaryCard
-        downloaderName={currentDownloaderName}
-        baseUrl={currentDownloaderProfile.baseUrl}
-      />
-
-      <Alert
-        tone={validationTone}
-        title={validationState.message}
-        description={validationDescription}
-        data-testid="general-validation-state"
-      />
+      <div role="status" aria-live="polite">
+        <GeneralStatusPanel
+          tone={panelTone}
+          title={panelTitle}
+          downloaderName={currentDownloaderName}
+          baseUrl={currentDownloaderProfile.baseUrl}
+          latestActionMessage={latestActionMessage}
+          validatedVersionText={validationDescription}
+        />
+      </div>
 
       <DownloaderSelectorSection
         activeId={downloaderWorkbench.config.activeId}
@@ -172,8 +176,6 @@ export function GeneralSettingsPage({ api }: GeneralSettingsPageProps) {
           activeId: id
         })}
       />
-
-      <ConnectionHelpAlert />
 
       {currentDownloaderId === "transmission" ? (
         <TransmissionCredentialsSection
@@ -198,6 +200,8 @@ export function GeneralSettingsPage({ api }: GeneralSettingsPageProps) {
           })}
         />
       )}
+
+      <ConnectionHelpAlert />
 
       <ExtractionCadenceSection
         open={advancedOpen}

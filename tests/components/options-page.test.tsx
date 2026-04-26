@@ -551,17 +551,21 @@ describe("OptionsPage", () => {
 
     expect(await screen.findByDisplayValue("http://127.0.0.1:17474")).toBeInTheDocument()
     expect(screen.getByText("当前下载器：qBittorrent")).toBeInTheDocument()
-    expect(within(screen.getByTestId("general-downloader-summary-card")).getAllByText("qBittorrent")).toHaveLength(2)
-    expect(
-      within(screen.getByTestId("general-downloader-summary-card")).getByText("http://127.0.0.1:17474")
-    ).toBeInTheDocument()
+    expect(screen.queryByTestId("general-downloader-summary-card")).not.toBeInTheDocument()
+
+    const statusPanel = screen.getByTestId("general-status-panel")
+    expect(statusPanel).toHaveTextContent("当前下载器配置尚未完成验证。")
+    expect(statusPanel).toHaveTextContent("设置已加载。")
+    expect(within(statusPanel).getByText("qBittorrent")).toBeInTheDocument()
+    expect(within(statusPanel).getByText("http://127.0.0.1:17474")).toBeInTheDocument()
 
     await user.click(screen.getByRole("radio", { name: "Transmission" }))
 
     expect(screen.getByText("当前下载器：Transmission")).toBeInTheDocument()
-    expect(within(screen.getByTestId("general-downloader-summary-card")).getAllByText("Transmission")).toHaveLength(2)
+    expect(screen.getByTestId("general-status-panel")).toHaveTextContent("当前下载器配置尚未完成验证。")
+    expect(within(screen.getByTestId("general-status-panel")).getByText("Transmission")).toBeInTheDocument()
     expect(
-      within(screen.getByTestId("general-downloader-summary-card")).getByText("http://127.0.0.1:9091/transmission/rpc")
+      within(screen.getByTestId("general-status-panel")).getByText("http://127.0.0.1:9091/transmission/rpc")
     ).toBeInTheDocument()
   })
 

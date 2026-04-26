@@ -263,10 +263,11 @@
         }
       },
       "summary": {
-        "eyebrow": "当前目标",
-        "title": "当前下载器",
         "nameLabel": "下载器",
         "baseUrlLabel": "地址"
+      },
+      "statusPanel": {
+        "lastActionLabel": "最近操作"
       }
     },
     "sites": {
