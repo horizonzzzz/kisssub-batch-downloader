@@ -1,6 +1,9 @@
 import { defineConfig } from "wxt"
 
-import { CONTENT_SCRIPT_MATCH_PATTERNS } from "./src/lib/sources/matching"
+import {
+  CONTENT_SCRIPT_MATCH_PATTERNS,
+  TORRENT_FILE_FETCH_MATCH_PATTERNS
+} from "./src/lib/sources/matching"
 
 export default defineConfig({
   browser: "chrome",
@@ -24,7 +27,10 @@ export default defineConfig({
     default_locale: "zh_CN",
     minimum_chrome_version: "114",
     permissions: ["storage", "tabs", "scripting", "alarms", "notifications"],
-    host_permissions: CONTENT_SCRIPT_MATCH_PATTERNS,
+    host_permissions: [
+      ...CONTENT_SCRIPT_MATCH_PATTERNS,
+      ...TORRENT_FILE_FETCH_MATCH_PATTERNS
+    ],
     optional_host_permissions: ["http://*/*", "https://*/*"],
     icons: {
       16: "/icon.png",

@@ -76,11 +76,21 @@ describe("package metadata", () => {
     expect(existsSync(resolve(process.cwd(), "src", "locales", "en.json"))).toBe(true)
   })
 
-  it("keeps source host permissions narrow while declaring optional host permissions for downloader access", () => {
+  it("keeps downloader host access optional while declaring fixed fetch permissions", () => {
     const wxtConfig = readText("wxt.config.ts")
 
-    expect(wxtConfig).toContain("host_permissions: CONTENT_SCRIPT_MATCH_PATTERNS")
+    expect(wxtConfig).toContain("host_permissions: [")
+    expect(wxtConfig).toContain("...CONTENT_SCRIPT_MATCH_PATTERNS")
+    expect(wxtConfig).toContain("...TORRENT_FILE_FETCH_MATCH_PATTERNS")
     expect(wxtConfig).toContain('optional_host_permissions: ["http://*/*", "https://*/*"]')
+  })
+
+  it("declares fixed host permissions for shared torrent-file download providers", () => {
+    const wxtConfig = readText("wxt.config.ts")
+    const matchingDefinitions = readText("src/lib/sources/matching.ts")
+
+    expect(wxtConfig).toContain("TORRENT_FILE_FETCH_MATCH_PATTERNS")
+    expect(matchingDefinitions).toContain("*://*.uploadbt.com/*")
   })
 
   it("does not keep Kisssub remote helper script defaults in production source", () => {

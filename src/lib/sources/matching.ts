@@ -13,6 +13,10 @@ export const CONTENT_SCRIPT_MATCH_PATTERNS: string[] = SOURCE_IDS.flatMap((sourc
   SOURCE_MATCH_HOSTS[sourceId].map((host) => `*://*.${host}/*`)
 )
 
+export const TORRENT_FILE_FETCH_MATCH_PATTERNS: string[] = [
+  "*://*.uploadbt.com/*"
+]
+
 export function matchesSourceHost(sourceId: SourceId, url: URL): boolean {
   const hostname = url.hostname.toLowerCase()
 

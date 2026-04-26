@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest"
 
-import { CONTENT_SCRIPT_MATCH_PATTERNS, matchesSourceHost } from "../../../src/lib/sources/matching"
+import {
+  CONTENT_SCRIPT_MATCH_PATTERNS,
+  TORRENT_FILE_FETCH_MATCH_PATTERNS,
+  matchesSourceHost
+} from "../../../src/lib/sources/matching"
 
 describe("source matching definitions", () => {
   it("matches bare and www host variants from the shared source host map", () => {
@@ -29,5 +33,10 @@ describe("source matching definitions", () => {
       "*://*.comicat.org/*"
     ])
     expect(new Set(CONTENT_SCRIPT_MATCH_PATTERNS).size).toBe(CONTENT_SCRIPT_MATCH_PATTERNS.length)
+  })
+
+  it("keeps third-party torrent-file fetch hosts out of content-script matches", () => {
+    expect(TORRENT_FILE_FETCH_MATCH_PATTERNS).toEqual(["*://*.uploadbt.com/*"])
+    expect(CONTENT_SCRIPT_MATCH_PATTERNS).not.toContain("*://*.uploadbt.com/*")
   })
 })

@@ -95,7 +95,7 @@ The extension injects selection UI into supported list pages, reuses direct magn
 ## Source Of Truth Files
 
 - `wxt.config.ts`
-  WXT project configuration, including manifest metadata, downloader optional host permissions, React module registration, and build output paths.
+  WXT project configuration, including manifest metadata, source/content-script host permissions, fixed torrent-file provider fetch permissions, downloader optional host permissions, React module registration, and build output paths.
 - `src/entrypoints/background/index.ts`
   Boots the background runtime through WXT and delegates orchestration to `src/entrypoints/background/runtime.ts`.
 - `src/entrypoints/options/`
@@ -262,7 +262,7 @@ Use this section as the shortest runtime-oriented guide to the current code layo
 
 - Runtime protocol constants and shared message/request types belong in `src/lib/shared/`.
 - Source-specific parsing, page matching, and capability defaults belong in `src/lib/sources/`.
-- Source host aliases and runtime host matching belong in `src/lib/sources/matching.ts`; keep the WXT content-script entrypoint aligned with these shared wildcard patterns, and use tests to prevent drift.
+- Source host aliases, content-script match patterns, and fixed torrent-file fetch host patterns belong in `src/lib/sources/matching.ts`; keep the WXT content-script entrypoint aligned only with content-script patterns, keep manifest host permissions aligned with both content and fetch patterns, and use tests to prevent drift.
 - Batch orchestration belongs in `src/lib/background/`; source adapters should not take over job-level concerns.
 - Source-agnostic magnet/torrent preparation, delivery-mode classification, and duplicate detection belong in `src/lib/download-preparation.ts`; neither `src/lib/background/` nor `src/lib/subscriptions/` should own those shared rules.
 - Dedicated config domains may sanitize and persist their own storage payloads, but qB/network behavior belongs outside them.
