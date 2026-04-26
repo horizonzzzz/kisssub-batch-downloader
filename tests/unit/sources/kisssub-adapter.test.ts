@@ -34,6 +34,7 @@ describe("kisssubSourceAdapter", () => {
 
   it("matches supported list pages and rejects detail, addon, and user pages", () => {
     expect(kisssubSourceAdapter.matchesListPage(new URL("https://www.kisssub.org/list-test.html"))).toBe(true)
+    expect(kisssubSourceAdapter.matchesListPage(new URL("https://www.kisssub.org/public/html/start/"))).toBe(false)
     expect(kisssubSourceAdapter.matchesListPage(new URL("https://www.kisssub.org/show-deadbeef.html"))).toBe(false)
     expect(kisssubSourceAdapter.matchesListPage(new URL("https://www.kisssub.org/addon.php"))).toBe(false)
     expect(kisssubSourceAdapter.matchesListPage(new URL("https://www.kisssub.org/user.php"))).toBe(false)

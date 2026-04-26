@@ -7,6 +7,7 @@ import { withDetailTab } from "./detail-tab"
 import type { ExtractionContext, SourceAdapter } from "./types"
 
 const ENTRY_SELECTOR = 'a[href*="show-"][href$=".html"]'
+const VISITOR_TEST_PATHNAME = /^\/public\/html\/start\/?$/i
 const MAIN_EXECUTION_WORLD = "MAIN" as const
 const KISSSUB_FIELD_FAILURE =
   "The Kisssub detail page no longer exposes the fields required to build download links."
@@ -106,7 +107,7 @@ export const kisssubSourceAdapter: SourceAdapter = {
       return false
     }
 
-    if (this.matchesDetailUrl(url)) {
+    if (this.matchesDetailUrl(url) || VISITOR_TEST_PATHNAME.test(url.pathname)) {
       return false
     }
 

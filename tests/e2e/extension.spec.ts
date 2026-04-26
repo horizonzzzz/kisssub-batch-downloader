@@ -689,6 +689,26 @@ test("content script injects the batch panel on a Kisssub list page", async () =
   }
 })
 
+test("content script does not inject on the Kisssub visitor-test page", async () => {
+  const extension = await launchExtensionContext()
+
+  try {
+    const fixturePath = path.join(process.cwd(), "tests", "e2e", "fixtures", "kisssub-visitor-test.html")
+
+    await extension.context.route("https://www.kisssub.org/public/html/start/", async (route) => {
+      await route.fulfill({ path: fixturePath, contentType: "text/html" })
+    })
+
+    const page = await extension.context.newPage()
+    await page.goto("https://www.kisssub.org/public/html/start/")
+
+    await expect(page.locator("[data-anime-bt-batch-panel-root]")).toHaveCount(0)
+    await expect(page.locator("[data-anime-bt-batch-checkbox-root]")).toHaveCount(0)
+  } finally {
+    await extension.close()
+  }
+})
+
 test("content script keeps injected control metrics consistent across supported sites", async () => {
   const extension = await launchExtensionContext()
 

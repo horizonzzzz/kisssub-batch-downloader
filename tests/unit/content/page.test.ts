@@ -333,4 +333,28 @@ describe("content page helpers", () => {
     expect(getSourceAdapterForDocument(document, location)).toBeNull()
     expect(isListPage(location, document)).toBe(false)
   })
+
+  it("does not treat kisssub visitor-test pages as list pages even if list DOM later appears on the same path", () => {
+    const location = new URL("https://www.kisssub.org/public/html/start/")
+    document.body.innerHTML = `
+      <form action="/addon.php?r=document/view&page=visitor-test">
+        <div>I'm not a robot</div>
+      </form>
+    `
+
+    expect(getSourceAdapterForLocation(location)).toBeNull()
+    expect(getSourceAdapterForDocument(document, location)).toBeNull()
+
+    document.body.innerHTML = `
+      <table>
+        <tbody>
+          <tr><td><a href="/show-deadbeef.html">资源一</a></td></tr>
+        </tbody>
+      </table>
+    `
+
+    expect(getSourceAdapterForLocation(location)).toBeNull()
+    expect(getSourceAdapterForDocument(document, location)).toBeNull()
+    expect(isListPage(location, document)).toBe(false)
+  })
 })
